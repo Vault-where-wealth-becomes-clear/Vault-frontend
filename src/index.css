@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-vault-bg text-vault-text font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-syne;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-vault bg-vault-accent px-4 py-2.5
+      text-sm font-semibold text-vault-bg transition-opacity hover:opacity-90
+      disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-vault border border-vault-border2
+      bg-transparent px-4 py-2.5 text-sm font-medium text-vault-text transition-colors
+      hover:border-vault-accent/40 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .input-vault {
+    @apply w-full rounded-vault border border-vault-border2 bg-vault-s2 px-3.5 py-2.5 text-sm
+      text-vault-text placeholder:text-vault-muted outline-none transition-colors
+      focus:border-vault-accent/50;
+  }
+
+  .card-vault {
+    @apply rounded-vault-lg border border-vault-border bg-vault-s1 p-5;
+  }
+}
