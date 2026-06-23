@@ -1,13 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { useAccounts } from "@/api/accounts.api";
 import { useSubmitUpload, useUploadStatus, useUploads, type UploadStatus } from "@/api/uploads.api";
+import { ModuleSelector, type SkillModule } from "@/components/upload/ModuleSelector";
 import { extractErrorMessage } from "@/utils/apiError";
 import { getCurrentPeriod } from "@/utils/formatDate";
 
 const STATUS_LABELS: Record<UploadStatus, string> = {
   pending: "Pendiente",
   processing: "Procesando",
-  review: "Necesita revision",
+  review: "Necesita revisión",
   done: "Completado",
   error: "Error",
 };
@@ -30,6 +31,7 @@ export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
+  const [requestedModules, setRequestedModules] = useState<SkillModule[]>(["flujo_mensual"]);
 
   const { data: activeStatus } = useUploadStatus(activeUploadId);
 
@@ -38,7 +40,12 @@ export function UploadPage() {
     if (!file || !accountId) return;
     setError(null);
     try {
-      const uploadId = await submitUpload.mutateAsync({ accountId, periodMonth, file });
+      const uploadId = await submitUpload.mutateAsync({
+        accountId,
+        periodMonth,
+        file,
+        requestedModules,
+      });
       setActiveUploadId(uploadId);
       setFile(null);
     } catch (err) {
@@ -51,7 +58,7 @@ export function UploadPage() {
       <div className="mb-6">
         <h1 className="font-syne text-2xl font-bold">Cargar extracto</h1>
         <p className="text-sm text-vault-muted2">
-          Subi un PDF o XLSX de tu cuenta para que la IA lo categorice automaticamente.
+          Subí un PDF o XLSX de tu cuenta para que la IA lo categorice automáticamente.
         </p>
       </div>
 
@@ -85,7 +92,7 @@ export function UploadPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Periodo</label>
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Período</label>
                 <input
                   type="date"
                   required
@@ -106,6 +113,8 @@ export function UploadPage() {
                 />
               </div>
 
+              <ModuleSelector selected={requestedModules} onChange={setRequestedModules} />
+
               {error && (
                 <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
                   {error}
@@ -120,7 +129,7 @@ export function UploadPage() {
 
           {activeStatus && (
             <div className="mt-4 rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm">
-              Estado del ultimo envio:{" "}
+              Estado del último envío:{" "}
               <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
                 {STATUS_LABELS[activeStatus.status]}
               </span>
@@ -134,7 +143,7 @@ export function UploadPage() {
         <div className="card-vault">
           <h2 className="mb-3 font-syne text-sm font-bold">Historial</h2>
           {!uploads || uploads.length === 0 ? (
-            <p className="text-sm text-vault-muted2">Todavia no subiste ningun extracto.</p>
+            <p className="text-sm text-vault-muted2">Todavía no subiste ningún extracto.</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {uploads.map((upload) => (

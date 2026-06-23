@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login, submitTotp } from "@/api/auth.api";
 import { extractErrorMessage } from "@/utils/apiError";
+import vaultLogo from "@/assets/vault-logo.png";
 
 export function LoginPage() {
   const [email, setEmail] = useState("");
@@ -49,22 +50,20 @@ export function LoginPage() {
     <div className="flex h-full items-center justify-center p-8">
       <div className="w-full max-w-sm">
         <div className="mb-10 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-vault-navy text-sm font-bold text-white">
-            V
-          </div>
+          <img src={vaultLogo} alt="Vault" className="h-8 w-8 rounded-lg" />
           <span className="font-syne text-lg font-bold">Vault</span>
         </div>
 
         {challengeSession ? (
           <>
-            <h1 className="mb-1 font-syne text-2xl font-bold">Verificacion en dos pasos</h1>
+            <h1 className="mb-1 font-syne text-2xl font-bold">Verificación en dos pasos</h1>
             <p className="mb-8 text-sm text-vault-muted2">
-              Ingresa el codigo TOTP de tu app de autenticacion.
+              Ingresa el código TOTP de tu app de autenticación.
             </p>
 
             <form onSubmit={handleTotp} className="flex flex-col gap-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Codigo</label>
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Código</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -109,7 +108,7 @@ export function LoginPage() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-vault-muted2">
-                  Contrasena
+                  Contraseña
                 </label>
                 <input
                   type="password"
@@ -136,6 +135,12 @@ export function LoginPage() {
               No tenes cuenta?{" "}
               <Link to="/register" className="text-vault-accent hover:underline">
                 Registrate
+              </Link>
+            </p>
+            <p className="mt-2 text-center text-xs text-vault-muted">
+              No confirmaste tu cuenta todavía?{" "}
+              <Link to="/confirm" state={{ email }} className="text-vault-accent hover:underline">
+                Confirmala acá
               </Link>
             </p>
           </>

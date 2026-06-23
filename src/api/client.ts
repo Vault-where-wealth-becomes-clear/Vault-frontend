@@ -27,6 +27,15 @@ async function refreshAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+export function refreshSessionFromStorage(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
 interface RetryableConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }

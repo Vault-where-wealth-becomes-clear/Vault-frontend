@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { logout } from "@/api/auth.api";
 import { useDeleteAccount } from "@/api/users.api";
 import { extractErrorMessage } from "@/utils/apiError";
+import { PLAN_LABELS } from "@/utils/planLabels";
 
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -30,7 +31,7 @@ export function SettingsPage() {
   return (
     <div className="p-7">
       <div className="mb-6">
-        <h1 className="font-syne text-2xl font-bold">Configuracion</h1>
+        <h1 className="font-syne text-2xl font-bold">Configuración</h1>
         <p className="text-sm text-vault-muted2">Datos de tu cuenta y privacidad.</p>
       </div>
 
@@ -40,14 +41,14 @@ export function SettingsPage() {
           Email: <span className="text-vault-text">{user?.email}</span>
         </p>
         <p className="text-sm text-vault-muted2">
-          Plan: <span className="capitalize text-vault-text">{user?.plan}</span>
+          Plan: <span className="text-vault-text">{PLAN_LABELS[user?.plan ?? "free"]}</span>
         </p>
       </div>
 
       <div className="card-vault max-w-md border-vault-red/30">
         <h2 className="mb-2 font-syne text-sm font-bold text-vault-red">Zona de riesgo</h2>
         <p className="mb-3 text-sm text-vault-muted2">
-          Elimina tu cuenta, tus cuentas registradas, movimientos y archivos subidos. Esta accion
+          Elimina tu cuenta, tus cuentas registradas, movimientos y archivos subidos. Esta acción
           es permanente.
         </p>
 

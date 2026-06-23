@@ -49,6 +49,14 @@ export async function register(email: string, password: string, name: string): P
   await apiClient.post("/auth/register", { email, password, name });
 }
 
+export async function confirmSignUp(email: string, code: string): Promise<void> {
+  await apiClient.post("/auth/confirm", { email, code });
+}
+
+export async function resendConfirmationCode(email: string): Promise<void> {
+  await apiClient.post("/auth/resend-code", { email });
+}
+
 export async function login(email: string, password: string): Promise<LoginResult> {
   const { data } = await apiClient.post<TokenResponse | ChallengeResponse>("/auth/login", {
     email,

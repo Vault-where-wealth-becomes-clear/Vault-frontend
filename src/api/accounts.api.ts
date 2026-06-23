@@ -32,12 +32,12 @@ export interface AccountCreate {
 }
 
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  credit_card_ars: "Tarjeta de credito (ARS)",
-  credit_card_usd: "Tarjeta de credito (USD)",
+  credit_card_ars: "Tarjeta de crédito (ARS)",
+  credit_card_usd: "Tarjeta de crédito (USD)",
   checking_ars: "Cuenta corriente (ARS)",
   checking_usd: "Cuenta corriente (USD)",
   broker: "Broker",
-  crypto: "Crypto",
+  crypto: "Cripto",
   cash: "Efectivo",
   savings_box: "Caja de ahorro",
 };

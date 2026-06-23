@@ -56,3 +56,31 @@ export function useDashboardEvolution() {
     staleTime: 1000 * 60 * 5,
   });
 }
+
+export interface FullDashboard {
+  period: string;
+  flujo_mensual: Record<string, unknown> | null;
+  categorizacion: Record<string, unknown> | null;
+  flujo_periodo: Record<string, unknown> | null;
+  cartera: Record<string, unknown> | null;
+  tablero_general: Record<string, unknown> | null;
+  proyeccion: Record<string, unknown> | null;
+  compromisos: Record<string, unknown> | null;
+  insights: string[];
+}
+
+export function useFullDashboard(period?: string) {
+  return useQuery({
+    queryKey: ["dashboard-full", period],
+    queryFn: async (): Promise<FullDashboard | null> => {
+      const params = period ? `?period=${period}` : "";
+      try {
+        const { data } = await apiClient.get<FullDashboard>(`/dashboard/full${params}`);
+        return data;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+}

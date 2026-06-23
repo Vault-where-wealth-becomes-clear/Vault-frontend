@@ -1,6 +1,8 @@
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 import { logout } from "@/api/auth.api";
+import { PLAN_LABELS } from "@/utils/planLabels";
+import vaultLogo from "@/assets/vault-logo.png";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: "▤", label: "Tablero" },
@@ -9,7 +11,7 @@ const NAV_ITEMS = [
   { to: "/installments", icon: "≡", label: "Cuotas" },
 ];
 
-const SETTINGS_ITEMS = [{ to: "/settings", icon: "⚙", label: "Configuracion" }];
+const SETTINGS_ITEMS = [{ to: "/settings", icon: "⚙", label: "Configuración" }];
 
 export function Sidebar() {
   const user = useAuthStore((s) => s.user);
@@ -18,9 +20,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-56 flex-shrink-0 flex-col border-r border-vault-border bg-vault-s1">
       <div className="p-6 pb-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-vault-navy text-sm font-bold text-white">
-            V
-          </div>
+          <img src={vaultLogo} alt="Vault" className="h-7 w-7 rounded-lg" />
           <span className="font-syne font-bold text-vault-text">Vault</span>
         </div>
       </div>
@@ -80,11 +80,11 @@ export function Sidebar() {
             <p className="truncate text-sm font-medium leading-tight text-vault-text">
               {user?.name ?? "Usuario"}
             </p>
-            <p className="text-xs capitalize text-vault-muted">{user?.plan ?? "free"}</p>
+            <p className="text-xs text-vault-muted">{PLAN_LABELS[user?.plan ?? "free"]}</p>
           </div>
           <button
             onClick={logout}
-            title="Cerrar sesion"
+            title="Cerrar sesión"
             className="text-vault-muted transition-colors hover:text-vault-red"
           >
             &#x2192;

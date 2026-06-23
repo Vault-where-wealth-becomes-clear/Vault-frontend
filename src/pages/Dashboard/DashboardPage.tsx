@@ -1,14 +1,21 @@
-import { useDashboard, useDashboardBreakdown, useDashboardEvolution } from "@/api/dashboard.api";
+import { useDashboard, useDashboardBreakdown, useDashboardEvolution, useFullDashboard } from "@/api/dashboard.api";
 import { PatrimonioChart } from "@/components/charts/PatrimonioChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { formatCurrency, formatPercent } from "@/utils/formatCurrency";
 import { formatPeriod } from "@/utils/formatDate";
 
+const ADVANCED_SECTIONS: { key: "cartera" | "proyeccion" | "compromisos"; label: string; cta: string }[] = [
+  { key: "cartera", label: "Cartera de inversiones", cta: "Pedí este análisis la próxima vez que subas un extracto de broker" },
+  { key: "proyeccion", label: "Proyección a 3 meses", cta: "Pedí este análisis la próxima vez que subas un extracto" },
+  { key: "compromisos", label: "Cuotas pendientes", cta: "Pedí este análisis la próxima vez que subas un extracto" },
+];
+
 export function DashboardPage() {
   const { data: summary, isLoading: isLoadingSummary } = useDashboard();
   const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown();
   const { data: evolution, isLoading: isLoadingEvolution } = useDashboardEvolution();
+  const { data: fullDashboard } = useFullDashboard();
 
   if (isLoadingSummary || !summary) {
     return (
@@ -36,7 +43,7 @@ export function DashboardPage() {
 
       <div className="mb-5 grid grid-cols-3 gap-4">
         <div className="card-vault col-span-2">
-          <h2 className="mb-3 font-syne text-sm font-bold">Evolucion del patrimonio</h2>
+          <h2 className="mb-3 font-syne text-sm font-bold">Evolución del patrimonio</h2>
           {isLoadingEvolution || !evolution ? (
             <div className="flex h-44 items-center justify-center text-sm text-vault-muted2">
               Cargando...
@@ -47,14 +54,14 @@ export function DashboardPage() {
         </div>
 
         <div className="card-vault">
-          <h2 className="mb-3 font-syne text-sm font-bold">Gastos por categoria</h2>
+          <h2 className="mb-3 font-syne text-sm font-bold">Gastos por categoría</h2>
           {isLoadingBreakdown || !breakdown ? (
             <div className="flex h-32 items-center justify-center text-sm text-vault-muted2">
               Cargando...
             </div>
           ) : breakdown.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2">
-              Todavia no hay movimientos este mes.
+              Todavía no hay movimientos este mes.
             </div>
           ) : (
             <BreakdownChart data={breakdown} />
@@ -62,15 +69,15 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="card-vault">
+      <div className="mb-5 card-vault">
         <h2 className="mb-3 font-syne text-sm font-bold">Insights</h2>
-        {summary.insights.length === 0 ? (
+        {summary.insights.length === 0 && (!fullDashboard || fullDashboard.insights.length === 0) ? (
           <p className="text-sm text-vault-muted2">
-            Todavia no hay suficientes movimientos para generar insights.
+            Todavía no hay suficientes movimientos para generar insights.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {summary.insights.map((insight) => (
+            {[...summary.insights, ...(fullDashboard?.insights ?? [])].map((insight) => (
               <li
                 key={insight}
                 className="flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm text-vault-muted2"
@@ -81,6 +88,28 @@ export function DashboardPage() {
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="card-vault">
+        <h2 className="mb-3 font-syne text-sm font-bold">Análisis avanzado</h2>
+        <div className="grid grid-cols-3 gap-4">
+          {ADVANCED_SECTIONS.map((section) => {
+            const data = fullDashboard?.[section.key];
+            return (
+              <div
+                key={section.key}
+                className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm"
+              >
+                <p className="mb-1 font-medium">{section.label}</p>
+                {data ? (
+                  <p className="text-xs text-vault-green">Disponible para este período</p>
+                ) : (
+                  <p className="text-xs text-vault-muted2">{section.cta}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

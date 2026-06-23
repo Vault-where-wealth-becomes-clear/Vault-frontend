@@ -4,5 +4,5 @@ export function extractErrorMessage(err: unknown): string {
     if (response?.data?.error) return response.data.error;
   }
   if (err instanceof Error) return err.message;
-  return "Ocurrio un error inesperado";
+  return "Ocurrió un error inesperado";
 }

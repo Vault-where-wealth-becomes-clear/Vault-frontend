@@ -43,7 +43,7 @@ export function AccountsPage() {
       <div className="mb-6">
         <h1 className="font-syne text-2xl font-bold">Mis cuentas</h1>
         <p className="text-sm text-vault-muted2">
-          Las cuentas que registres aca son las que vas a poder usar para cargar extractos.
+          Las cuentas que registres acá son las que vas a poder usar para cargar extractos.
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export function AccountsPage() {
           {isLoading ? (
             <p className="text-sm text-vault-muted2">Cargando...</p>
           ) : !accounts || accounts.length === 0 ? (
-            <p className="text-sm text-vault-muted2">Todavia no registraste ninguna cuenta.</p>
+            <p className="text-sm text-vault-muted2">Todavía no registraste ninguna cuenta.</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {accounts.map((account) => (

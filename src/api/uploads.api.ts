@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
+import type { SkillModule } from "@/components/upload/ModuleSelector";
 
 export type UploadStatus = "pending" | "processing" | "review" | "done" | "error";
 
@@ -11,6 +12,7 @@ export interface Upload {
   status: UploadStatus;
   detected_bank: string | null;
   error_message: string | null;
+  requested_modules: SkillModule[];
   uploaded_at: string;
   processed_at: string | null;
 }
@@ -58,16 +60,23 @@ interface SubmitUploadParams {
   accountId: string;
   periodMonth: string;
   file: File;
+  requestedModules: SkillModule[];
 }
 
 export function useSubmitUpload() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ accountId, periodMonth, file }: SubmitUploadParams): Promise<string> => {
+    mutationFn: async ({
+      accountId,
+      periodMonth,
+      file,
+      requestedModules,
+    }: SubmitUploadParams): Promise<string> => {
       const { data: presign } = await apiClient.post<PresignResponse>("/uploads/presign", {
         account_id: accountId,
         period_month: periodMonth,
         filename: file.name,
+        requested_modules: requestedModules,
       });
 
       await axios.put(presign.presigned_url, file, {
