@@ -13,6 +13,7 @@ export interface Upload {
   detected_bank: string | null;
   error_message: string | null;
   requested_modules: SkillModule[];
+  pending_mep: boolean;
   uploaded_at: string;
   processed_at: string | null;
 }
@@ -23,6 +24,7 @@ export interface UploadStatusResponse {
   error_message: string | null;
   processed_at: string | null;
   review_count: number | null;
+  pending_mep: boolean;
 }
 
 interface PresignResponse {

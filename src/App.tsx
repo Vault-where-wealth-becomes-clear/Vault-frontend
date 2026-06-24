@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ComingSoon } from "@/components/ui/ComingSoon";
 import { LoginPage } from "@/pages/Login/LoginPage";
 import { RegisterPage } from "@/pages/Register/RegisterPage";
 import { ConfirmPage } from "@/pages/Confirm/ConfirmPage";
@@ -9,6 +8,8 @@ import { DashboardPage } from "@/pages/Dashboard/DashboardPage";
 import { UploadPage } from "@/pages/Upload/UploadPage";
 import { AccountsPage } from "@/pages/Accounts/AccountsPage";
 import { SettingsPage } from "@/pages/Settings/SettingsPage";
+import { InstallmentsPage } from "@/pages/Installments/InstallmentsPage";
+import { ReviewPage } from "@/pages/Review/ReviewPage";
 import { refreshSessionFromStorage } from "@/api/client";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -61,8 +62,9 @@ export function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="upload" element={<UploadPage />} />
+        <Route path="uploads/:uploadId/review" element={<ReviewPage />} />
         <Route path="accounts" element={<AccountsPage />} />
-        <Route path="installments" element={<ComingSoon title="Cuotas" />} />
+        <Route path="installments" element={<InstallmentsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

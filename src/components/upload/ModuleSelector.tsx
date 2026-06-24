@@ -1,5 +1,3 @@
-import { useAuthStore } from "@/store/auth.store";
-
 export type SkillModule =
   | "flujo_mensual"
   | "categorizacion_gasto"
@@ -54,21 +52,12 @@ export const MODULES: ModuleDefinition[] = [
   },
 ];
 
-const PLAN_MODULE_ACCESS: Record<string, SkillModule[]> = {
-  free: ["flujo_mensual", "categorizacion_gasto"],
-  pro: MODULES.map((m) => m.id),
-  family: MODULES.map((m) => m.id),
-};
-
 interface ModuleSelectorProps {
   selected: SkillModule[];
   onChange: (selected: SkillModule[]) => void;
 }
 
 export function ModuleSelector({ selected, onChange }: ModuleSelectorProps) {
-  const plan = useAuthStore((state) => state.user?.plan) ?? "free";
-  const allowedModules = PLAN_MODULE_ACCESS[plan] ?? PLAN_MODULE_ACCESS.free;
-
   const toggle = (moduleId: SkillModule) => {
     if (moduleId === "flujo_mensual") return;
     if (selected.includes(moduleId)) {
@@ -96,33 +85,21 @@ export function ModuleSelector({ selected, onChange }: ModuleSelectorProps) {
         Qué querés analizar
       </label>
       {MODULES.map((module) => {
-        const isAllowed = allowedModules.includes(module.id);
         const isChecked = selected.includes(module.id) || module.required === true;
         const notice = inlineNoticeFor(module.id);
 
         return (
           <div key={module.id}>
-            <label
-              className={`flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2.5 text-sm ${
-                isAllowed ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-              }`}
-            >
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2.5 text-sm">
               <input
                 type="checkbox"
                 checked={isChecked}
-                disabled={module.required || !isAllowed}
+                disabled={module.required}
                 onChange={() => toggle(module.id)}
                 className="mt-0.5"
               />
               <span>
-                <span className="flex items-center gap-1.5 font-medium">
-                  {module.label}
-                  {!isAllowed && (
-                    <span className="rounded bg-vault-yellow/20 px-1.5 py-0.5 text-[10px] text-vault-yellow">
-                      Mejorá tu plan
-                    </span>
-                  )}
-                </span>
+                <span className="font-medium">{module.label}</span>
                 <span className="block text-xs text-vault-muted2">{module.desc}</span>
               </span>
             </label>

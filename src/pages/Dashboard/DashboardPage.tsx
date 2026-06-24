@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useDashboard, useDashboardBreakdown, useDashboardEvolution, useFullDashboard } from "@/api/dashboard.api";
+import { useExportXlsx } from "@/api/exports.api";
 import { PatrimonioChart } from "@/components/charts/PatrimonioChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
+import { extractErrorMessage } from "@/utils/apiError";
 import { formatCurrency, formatPercent } from "@/utils/formatCurrency";
 import { formatPeriod } from "@/utils/formatDate";
 
@@ -16,6 +19,18 @@ export function DashboardPage() {
   const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown();
   const { data: evolution, isLoading: isLoadingEvolution } = useDashboardEvolution();
   const { data: fullDashboard } = useFullDashboard();
+  const exportXlsx = useExportXlsx();
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    setExportError(null);
+    try {
+      const url = await exportXlsx.mutateAsync();
+      window.open(url, "_blank");
+    } catch (err) {
+      setExportError(extractErrorMessage(err));
+    }
+  };
 
   if (isLoadingSummary || !summary) {
     return (
@@ -27,9 +42,17 @@ export function DashboardPage() {
 
   return (
     <div className="p-7">
-      <div className="mb-6">
-        <h1 className="font-syne text-2xl font-bold capitalize">{formatPeriod(summary.period)}</h1>
-        <p className="text-sm text-vault-muted2">Resumen de tu patrimonio y movimientos.</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="font-syne text-2xl font-bold capitalize">{formatPeriod(summary.period)}</h1>
+          <p className="text-sm text-vault-muted2">Resumen de tu patrimonio y movimientos.</p>
+        </div>
+        <div className="text-right">
+          <button onClick={handleExport} disabled={exportXlsx.isPending} className="btn-ghost">
+            {exportXlsx.isPending ? "Generando..." : "Exportar XLSX"}
+          </button>
+          {exportError && <p className="mt-1.5 text-xs text-vault-red">{exportError}</p>}
+        </div>
       </div>
 
       <div className="mb-5 grid grid-cols-4 gap-4">

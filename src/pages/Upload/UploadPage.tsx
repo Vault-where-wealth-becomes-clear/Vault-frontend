@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { useAccounts } from "@/api/accounts.api";
 import { useSubmitUpload, useUploadStatus, useUploads, type UploadStatus } from "@/api/uploads.api";
 import { ModuleSelector, type SkillModule } from "@/components/upload/ModuleSelector";
@@ -136,6 +137,23 @@ export function UploadPage() {
               {activeStatus.error_message && (
                 <p className="mt-1 text-xs text-vault-red">{activeStatus.error_message}</p>
               )}
+              {activeStatus.status === "review" && (
+                <Link
+                  to={`/uploads/${activeStatus.upload_id}/review`}
+                  className="mt-2 inline-block text-xs font-medium text-vault-accent hover:underline"
+                >
+                  Revisar transacciones pendientes →
+                </Link>
+              )}
+              {activeStatus.pending_mep && (
+                <p className="mt-2 text-xs text-vault-yellow">
+                  Falta declarar el TC MEP de este período —{" "}
+                  <Link to="/settings" className="underline">
+                    declaralo en Configuración
+                  </Link>{" "}
+                  para que el total en USD sea correcto.
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -151,10 +169,19 @@ export function UploadPage() {
                   key={upload.id}
                   className="flex items-center justify-between gap-2 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 text-xs"
                 >
-                  <span className="text-vault-muted2">{upload.period_month}</span>
-                  <span className={`font-medium ${STATUS_COLORS[upload.status]}`}>
-                    {STATUS_LABELS[upload.status]}
+                  <span className="flex items-center gap-1.5 text-vault-muted2">
+                    {upload.period_month}
+                    {upload.pending_mep && <span title="Falta TC MEP">⚠</span>}
                   </span>
+                  {upload.status === "review" ? (
+                    <Link to={`/uploads/${upload.id}/review`} className="font-medium text-vault-yellow hover:underline">
+                      Revisar →
+                    </Link>
+                  ) : (
+                    <span className={`font-medium ${STATUS_COLORS[upload.status]}`}>
+                      {STATUS_LABELS[upload.status]}
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>

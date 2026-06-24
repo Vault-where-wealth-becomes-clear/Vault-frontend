@@ -5,6 +5,8 @@ import { logout } from "@/api/auth.api";
 import { useDeleteAccount } from "@/api/users.api";
 import { extractErrorMessage } from "@/utils/apiError";
 import { PLAN_LABELS } from "@/utils/planLabels";
+import { ExchangeRateSettings } from "./ExchangeRateSettings";
+import { CategoryRulesSettings } from "./CategoryRulesSettings";
 
 export function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -44,6 +46,9 @@ export function SettingsPage() {
           Plan: <span className="text-vault-text">{PLAN_LABELS[user?.plan ?? "free"]}</span>
         </p>
       </div>
+
+      <ExchangeRateSettings />
+      <CategoryRulesSettings />
 
       <div className="card-vault max-w-md border-vault-red/30">
         <h2 className="mb-2 font-syne text-sm font-bold text-vault-red">Zona de riesgo</h2>
