@@ -2,7 +2,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { BreakdownItem } from "@/api/dashboard.api";
 import { formatCurrency } from "@/utils/formatCurrency";
 
-const COLORS = ["#c8f135", "#5b9cf6", "#a78bfa", "#fb923c", "#fbbf24", "#535970"];
+const COLORS = ["#2563eb", "#7c3aed", "#16a34a", "#ea580c", "#d97706", "#6b7280"];
 
 interface BreakdownChartProps {
   data: BreakdownItem[];
@@ -20,8 +20,8 @@ export function BreakdownChart({ data }: BreakdownChartProps) {
           </Pie>
           <Tooltip
             contentStyle={{
-              background: "#1a1d28",
-              border: "1px solid rgba(255,255,255,0.13)",
+              background: "#ffffff",
+              border: "1px solid rgba(37,99,235,0.20)",
               borderRadius: 8,
               fontSize: 12,
             }}
