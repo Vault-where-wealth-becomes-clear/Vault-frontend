@@ -65,6 +65,19 @@ export function useCreateAccount() {
   });
 }
 
+export function useUpdateAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...body }: Partial<AccountCreate> & { id: string }): Promise<Account> => {
+      const { data } = await apiClient.patch<Account>(`/accounts/${id}`, body);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
+  });
+}
+
 export function useDeleteAccount() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -9,6 +9,7 @@ import { DashboardPage } from "@/pages/Dashboard/DashboardPage";
 import { UploadPage } from "@/pages/Upload/UploadPage";
 import { AccountsPage } from "@/pages/Accounts/AccountsPage";
 import { SettingsPage } from "@/pages/Settings/SettingsPage";
+import { ProfilePage } from "@/pages/Profile/ProfilePage";
 import { InstallmentsPage } from "@/pages/Installments/InstallmentsPage";
 import { ReviewPage } from "@/pages/Review/ReviewPage";
 import { refreshSessionFromStorage } from "@/api/client";
@@ -69,6 +70,7 @@ export function App() {
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="installments" element={<InstallmentsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
