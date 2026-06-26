@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useDashboard, useDashboardBreakdown, useDashboardEvolution, useFullDashboard } from "@/api/dashboard.api";
 import { useExportXlsx } from "@/api/exports.api";
+import { useExchangeRates } from "@/api/exchangeRates.api";
 import { PatrimonioChart } from "@/components/charts/PatrimonioChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
@@ -19,8 +21,17 @@ export function DashboardPage() {
   const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown();
   const { data: evolution, isLoading: isLoadingEvolution } = useDashboardEvolution();
   const { data: fullDashboard } = useFullDashboard();
+  const { data: exchangeRates } = useExchangeRates();
   const exportXlsx = useExportXlsx();
   const [exportError, setExportError] = useState<string | null>(null);
+  const [currencyDisplay, setCurrencyDisplay] = useState<"USD" | "ARS">(() => {
+    return (localStorage.getItem("vault_currency_display") as "USD" | "ARS") ?? "USD";
+  });
+
+  const toggleCurrency = (currency: "USD" | "ARS") => {
+    setCurrencyDisplay(currency);
+    localStorage.setItem("vault_currency_display", currency);
+  };
 
   const handleExport = async () => {
     setExportError(null);
@@ -32,9 +43,14 @@ export function DashboardPage() {
     }
   };
 
+  const currentPeriodRate = exchangeRates?.find((r) =>
+    r.period_month.startsWith(summary?.period ?? "__")
+  );
+  const mepForPeriod = currentPeriodRate?.mep_rate;
+
   if (isLoadingSummary || !summary) {
     return (
-      <div className="flex h-full items-center justify-center text-vault-muted2">
+      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#8b949e]">
         Cargando tablero...
       </div>
     );
@@ -44,31 +60,63 @@ export function DashboardPage() {
     <div className="p-7">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="font-syne text-2xl font-bold capitalize">{formatPeriod(summary.period)}</h1>
-          <p className="text-sm text-vault-muted2">Resumen de tu patrimonio y movimientos.</p>
+          <h1 className="page-title">{formatPeriod(summary.period)}</h1>
+          <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">Resumen de tu patrimonio y movimientos.</p>
         </div>
-        <div className="text-right">
-          <button onClick={handleExport} disabled={exportXlsx.isPending} className="btn-ghost">
-            {exportXlsx.isPending ? "Generando..." : "Exportar XLSX"}
-          </button>
-          {exportError && <p className="mt-1.5 text-xs text-vault-red">{exportError}</p>}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex overflow-hidden rounded-lg border border-vault-border2">
+              {(["USD", "ARS"] as const).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => toggleCurrency(c)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    currencyDisplay === c
+                      ? "bg-[#1e3a8a] text-white"
+                      : "bg-transparent text-vault-muted2 dark:text-[#8b949e] hover:text-vault-text"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <button onClick={handleExport} disabled={exportXlsx.isPending} className="btn-primary">
+              {exportXlsx.isPending ? "Generando..." : "Exportar XLSX"}
+            </button>
+          </div>
+          {exportError && <p className="text-xs text-vault-red">{exportError}</p>}
         </div>
       </div>
 
       <div className="mb-5 grid grid-cols-4 gap-4">
-        <SummaryCard
-          label="Patrimonio total"
-          value={formatCurrency(summary.total_usd, "USD")}
-          hint={`${formatPercent(summary.variation_pct)} vs. mes anterior`}
-          hintColor={summary.variation_pct >= 0 ? "green" : "red"}
-        />
+        {currencyDisplay === "ARS" && !mepForPeriod ? (
+          <div className="col-span-4 flex items-center gap-1.5 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#161b22] px-4 py-3 text-sm text-vault-muted2 dark:text-[#8b949e] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+            <span>Sin TC MEP para este período —</span>
+            <Link to="/settings" className="text-vault-accent hover:underline">
+              configuralo en Configuración
+            </Link>
+            <span>para ver valores en ARS.</span>
+          </div>
+        ) : (
+          <SummaryCard
+            label="Patrimonio total"
+            value={
+              currencyDisplay === "USD"
+                ? formatCurrency(summary.total_usd, "USD")
+                : formatCurrency(summary.total_usd * mepForPeriod!, "ARS")
+            }
+            hint={`${formatPercent(summary.variation_pct)} vs. mes anterior`}
+            hintColor={summary.variation_pct >= 0 ? "green" : "red"}
+          />
+        )}
       </div>
 
       <div className="mb-5 grid grid-cols-3 gap-4">
         <div className="card-vault col-span-2">
-          <h2 className="mb-3 font-syne text-sm font-bold">Evolución del patrimonio</h2>
+          <h2 className="section-label mb-4">Evolución del patrimonio</h2>
           {isLoadingEvolution || !evolution ? (
-            <div className="flex h-44 items-center justify-center text-sm text-vault-muted2">
+            <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
               Cargando...
             </div>
           ) : (
@@ -77,13 +125,13 @@ export function DashboardPage() {
         </div>
 
         <div className="card-vault">
-          <h2 className="mb-3 font-syne text-sm font-bold">Gastos por categoría</h2>
+          <h2 className="section-label mb-4">Gastos por categoría</h2>
           {isLoadingBreakdown || !breakdown ? (
-            <div className="flex h-32 items-center justify-center text-sm text-vault-muted2">
+            <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
               Cargando...
             </div>
           ) : breakdown.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2">
+            <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2 dark:text-[#8b949e]">
               Todavía no hay movimientos este mes.
             </div>
           ) : (
@@ -93,9 +141,9 @@ export function DashboardPage() {
       </div>
 
       <div className="mb-5 card-vault">
-        <h2 className="mb-3 font-syne text-sm font-bold">Insights</h2>
+        <h2 className="section-label mb-4">Insights</h2>
         {summary.insights.length === 0 && (!fullDashboard || fullDashboard.insights.length === 0) ? (
-          <p className="text-sm text-vault-muted2">
+          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
             Todavía no hay suficientes movimientos para generar insights.
           </p>
         ) : (
@@ -103,7 +151,7 @@ export function DashboardPage() {
             {[...summary.insights, ...(fullDashboard?.insights ?? [])].map((insight) => (
               <li
                 key={insight}
-                className="flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm text-vault-muted2"
+                className="flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm text-vault-muted2 dark:text-[#8b949e]"
               >
                 <span className="mt-0.5 text-vault-accent">&#8226;</span>
                 {insight}
@@ -114,20 +162,20 @@ export function DashboardPage() {
       </div>
 
       <div className="card-vault">
-        <h2 className="mb-3 font-syne text-sm font-bold">Análisis avanzado</h2>
+        <h2 className="section-label mb-4">Análisis avanzado</h2>
         <div className="grid grid-cols-3 gap-4">
           {ADVANCED_SECTIONS.map((section) => {
             const data = fullDashboard?.[section.key];
             return (
               <div
                 key={section.key}
-                className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm"
+                className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm"
               >
                 <p className="mb-1 font-medium">{section.label}</p>
                 {data ? (
                   <p className="text-xs text-vault-green">Disponible para este período</p>
                 ) : (
-                  <p className="text-xs text-vault-muted2">{section.cta}</p>
+                  <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">{section.cta}</p>
                 )}
               </div>
             );

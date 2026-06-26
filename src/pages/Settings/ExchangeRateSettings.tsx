@@ -13,6 +13,33 @@ export function ExchangeRateSettings() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const [autoFetching, setAutoFetching] = useState(false);
+  const [autoResult, setAutoResult] = useState<{ value: number; fetchedAt: string } | null>(null);
+  const [autoError, setAutoError] = useState<string | null>(null);
+
+  const handleAutoFetch = async () => {
+    setAutoFetching(true);
+    setAutoError(null);
+    setAutoResult(null);
+    try {
+      const res = await fetch("https://dolarapi.com/v1/dolares/mep");
+      if (!res.ok) throw new Error("HTTP error");
+      const json = await res.json();
+      const venta = Number(json.venta);
+      if (!venta || isNaN(venta)) throw new Error("Valor inválido");
+      const fetchedAt = new Date().toLocaleString("es-AR", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      });
+      setAutoResult({ value: venta, fetchedAt });
+      setMepRate(String(venta));
+    } catch {
+      setAutoError("No se pudo obtener el TC MEP. Ingresalo manualmente.");
+    } finally {
+      setAutoFetching(false);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const rate = Number(mepRate);
@@ -34,15 +61,40 @@ export function ExchangeRateSettings() {
 
   return (
     <div className="card-vault mb-5 max-w-md">
-      <h2 className="mb-1 font-syne text-sm font-bold">Tipo de cambio MEP</h2>
-      <p className="mb-3 text-xs text-vault-muted2">
+      <h2 className="mb-1 section-label">Tipo de cambio MEP</h2>
+      <p className="mb-3 text-xs text-vault-muted2 dark:text-[#8b949e]">
         Se usa para convertir tus movimientos en ARS a USD en el tablero. Sin un TC declarado para
         el período, los totales en USD no son confiables.
       </p>
 
+      <div className="mb-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleAutoFetch}
+          disabled={autoFetching}
+          className="btn-ghost flex items-center gap-1.5 py-1.5 text-xs"
+        >
+          <span className={autoFetching ? "inline-block animate-spin" : "inline-block"}>↻</span>
+          {autoFetching ? "Obteniendo..." : "Obtener MEP actual"}
+        </button>
+        {autoResult && (
+          <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+            <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">${autoResult.value.toFixed(2)}</span>
+            {" · "}
+            {autoResult.fetchedAt}
+          </span>
+        )}
+      </div>
+
+      {autoError && (
+        <div className="mb-3 rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
+          {autoError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="mb-4 flex items-end gap-2">
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Período</label>
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Período</label>
           <input
             type="date"
             required
@@ -52,7 +104,7 @@ export function ExchangeRateSettings() {
           />
         </div>
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2">TC MEP</label>
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">TC MEP</label>
           <input
             type="number"
             step="0.01"
@@ -80,15 +132,15 @@ export function ExchangeRateSettings() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-vault-muted2">Cargando...</p>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</p>
       ) : !rates || rates.length === 0 ? (
-        <p className="text-sm text-vault-muted2">Todavía no declaraste ningún TC.</p>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Todavía no declaraste ningún TC.</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {rates.map((rate) => (
             <li key={rate.id} className="flex items-center justify-between text-xs">
-              <span className="capitalize text-vault-muted2">{formatPeriod(rate.period_month)}</span>
-              <span className="font-mono text-vault-text">${rate.mep_rate.toFixed(2)}</span>
+              <span className="capitalize text-vault-muted2 dark:text-[#8b949e]">{formatPeriod(rate.period_month)}</span>
+              <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">${rate.mep_rate.toFixed(2)}</span>
             </li>
           ))}
         </ul>

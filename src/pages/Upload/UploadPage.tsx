@@ -1,10 +1,29 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { useAccounts } from "@/api/accounts.api";
+import { useAccounts, type AccountType } from "@/api/accounts.api";
 import { useSubmitUpload, useUploadStatus, useUploads, type UploadStatus } from "@/api/uploads.api";
-import { ModuleSelector, type SkillModule } from "@/components/upload/ModuleSelector";
+import type { SkillModule } from "@/components/upload/ModuleSelector";
 import { extractErrorMessage } from "@/utils/apiError";
-import { getCurrentPeriod } from "@/utils/formatDate";
+
+function getMonthStart(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+function getMonthEnd(): string {
+  const now = new Date();
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
+}
+
+function getModulesForAccountType(accountType: AccountType): SkillModule[] {
+  if (accountType === "credit_card_ars" || accountType === "credit_card_usd") {
+    return ["flujo_mensual", "compromisos_futuros"];
+  }
+  if (accountType === "broker") return ["cuenta_comitente", "tablero_general"];
+  if (accountType === "crypto") return ["flujo_mensual"];
+  return ["flujo_mensual", "categorizacion_gasto", "tablero_general"];
+}
 
 const STATUS_LABELS: Record<UploadStatus, string> = {
   pending: "Pendiente",
@@ -15,7 +34,7 @@ const STATUS_LABELS: Record<UploadStatus, string> = {
 };
 
 const STATUS_COLORS: Record<UploadStatus, string> = {
-  pending: "text-vault-muted2",
+  pending: "text-vault-muted2 dark:text-[#8b949e]",
   processing: "text-vault-accent",
   review: "text-vault-yellow",
   done: "text-vault-green",
@@ -28,13 +47,18 @@ export function UploadPage() {
   const submitUpload = useSubmitUpload();
 
   const [accountId, setAccountId] = useState("");
-  const [periodMonth, setPeriodMonth] = useState(getCurrentPeriod());
+  const [periodStart, setPeriodStart] = useState(getMonthStart());
+  const [periodEnd, setPeriodEnd] = useState(getMonthEnd());
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
-  const [requestedModules, setRequestedModules] = useState<SkillModule[]>(["flujo_mensual"]);
 
   const { data: activeStatus } = useUploadStatus(activeUploadId);
+
+  const selectedAccount = accounts?.find((a) => a.id === accountId);
+  const requestedModules: SkillModule[] = selectedAccount
+    ? getModulesForAccountType(selectedAccount.account_type)
+    : ["flujo_mensual"];
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -43,7 +67,7 @@ export function UploadPage() {
     try {
       const uploadId = await submitUpload.mutateAsync({
         accountId,
-        periodMonth,
+        periodMonth: periodStart,
         file,
         requestedModules,
       });
@@ -57,8 +81,8 @@ export function UploadPage() {
   return (
     <div className="p-7">
       <div className="mb-6">
-        <h1 className="font-syne text-2xl font-bold">Cargar extracto</h1>
-        <p className="text-sm text-vault-muted2">
+        <h1 className="page-title">Cargar extracto</h1>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
           Subí un PDF o XLSX de tu cuenta para que la IA lo categorice automáticamente.
         </p>
       </div>
@@ -66,7 +90,7 @@ export function UploadPage() {
       <div className="mb-5 grid grid-cols-3 gap-4">
         <div className="card-vault col-span-2">
           {!accounts || accounts.length === 0 ? (
-            <p className="text-sm text-vault-muted2">
+            <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
               {isLoadingAccounts
                 ? "Cargando cuentas..."
                 : "Primero crea una cuenta en “Mis cuentas” para poder cargar un extracto."}
@@ -74,7 +98,7 @@ export function UploadPage() {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Cuenta</label>
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Cuenta</label>
                 <select
                   required
                   value={accountId}
@@ -92,19 +116,31 @@ export function UploadPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Período</label>
-                <input
-                  type="date"
-                  required
-                  value={periodMonth}
-                  onChange={(e) => setPeriodMonth(e.target.value)}
-                  className="input-vault"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Desde</label>
+                  <input
+                    type="date"
+                    required
+                    value={periodStart}
+                    onChange={(e) => setPeriodStart(e.target.value)}
+                    className="input-vault"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Hasta</label>
+                  <input
+                    type="date"
+                    required
+                    value={periodEnd}
+                    onChange={(e) => setPeriodEnd(e.target.value)}
+                    className="input-vault"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Archivo</label>
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Archivo</label>
                 <input
                   type="file"
                   required
@@ -113,8 +149,6 @@ export function UploadPage() {
                   className="input-vault"
                 />
               </div>
-
-              <ModuleSelector selected={requestedModules} onChange={setRequestedModules} />
 
               {error && (
                 <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
@@ -129,7 +163,7 @@ export function UploadPage() {
           )}
 
           {activeStatus && (
-            <div className="mt-4 rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm">
+            <div className="mt-4 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm">
               Estado del último envío:{" "}
               <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
                 {STATUS_LABELS[activeStatus.status]}
@@ -159,17 +193,17 @@ export function UploadPage() {
         </div>
 
         <div className="card-vault">
-          <h2 className="mb-3 font-syne text-sm font-bold">Historial</h2>
+          <h2 className="mb-3 section-label">Historial</h2>
           {!uploads || uploads.length === 0 ? (
-            <p className="text-sm text-vault-muted2">Todavía no subiste ningún extracto.</p>
+            <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Todavía no subiste ningún extracto.</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {uploads.map((upload) => (
                 <li
                   key={upload.id}
-                  className="flex items-center justify-between gap-2 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 text-xs"
+                  className="flex items-center justify-between gap-2 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3 py-2 text-xs"
                 >
-                  <span className="flex items-center gap-1.5 text-vault-muted2">
+                  <span className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#8b949e]">
                     {upload.period_month}
                     {upload.pending_mep && <span title="Falta TC MEP">⚠</span>}
                   </span>

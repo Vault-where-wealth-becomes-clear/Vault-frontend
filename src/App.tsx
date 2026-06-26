@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useTheme } from "@/hooks/useTheme";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { LoginPage } from "@/pages/Login/LoginPage";
 import { RegisterPage } from "@/pages/Register/RegisterPage";
@@ -35,7 +36,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isBootstrapping) {
     return (
-      <div className="flex h-full items-center justify-center text-vault-muted2">
+      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#8b949e]">
         Restaurando sesión...
       </div>
     );
@@ -45,6 +46,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export function App() {
+  useTheme();
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

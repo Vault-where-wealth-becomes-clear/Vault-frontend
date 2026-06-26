@@ -52,7 +52,7 @@ export function ReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-vault-muted2">
+      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#8b949e]">
         Cargando transacciones a revisar...
       </div>
     );
@@ -61,8 +61,8 @@ export function ReviewPage() {
   return (
     <div className="p-7">
       <div className="mb-6">
-        <h1 className="font-syne text-2xl font-bold">Revisar transacciones</h1>
-        <p className="text-sm text-vault-muted2">
+        <h1 className="page-title">Revisar transacciones</h1>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
           La IA no pudo categorizar estas transacciones con suficiente confianza. Asignales una
           categoría para terminar de procesar el extracto.
         </p>
@@ -76,7 +76,7 @@ export function ReviewPage() {
 
       {!transactions || transactions.length === 0 ? (
         <div className="card-vault">
-          <p className="mb-4 text-sm text-vault-muted2">
+          <p className="mb-4 text-sm text-vault-muted2 dark:text-[#8b949e]">
             No quedan transacciones pendientes de revisión para este extracto.
           </p>
           <button onClick={handleConfirm} disabled={confirmReview.isPending} className="btn-primary">
@@ -91,8 +91,8 @@ export function ReviewPage() {
               className="card-vault flex flex-wrap items-center justify-between gap-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-vault-text">{txn.description}</p>
-                <p className="text-xs text-vault-muted2">
+                <p className="text-sm font-medium text-vault-text dark:text-[#e6edf3]">{txn.description}</p>
+                <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
                   {formatDate(txn.date)} ·{" "}
                   {formatCurrency(txn.amount_ars, "ARS")}
                   {txn.confidence !== null && ` · confianza ${(txn.confidence * 100).toFixed(0)}%`}
@@ -114,7 +114,7 @@ export function ReviewPage() {
                 ))}
               </select>
 
-              <label className="flex items-center gap-1.5 text-xs text-vault-muted2">
+              <label className="flex items-center gap-1.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
                 <input
                   type="checkbox"
                   checked={rememberByTxn[txn.id] ?? false}

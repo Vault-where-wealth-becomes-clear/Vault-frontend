@@ -33,17 +33,17 @@ export function SettingsPage() {
   return (
     <div className="p-7">
       <div className="mb-6">
-        <h1 className="font-syne text-2xl font-bold">Configuración</h1>
-        <p className="text-sm text-vault-muted2">Datos de tu cuenta y privacidad.</p>
+        <h1 className="page-title">Configuración</h1>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Datos de tu cuenta y privacidad.</p>
       </div>
 
       <div className="card-vault mb-5 max-w-md">
-        <h2 className="mb-3 font-syne text-sm font-bold">Tu cuenta</h2>
-        <p className="text-sm text-vault-muted2">
-          Email: <span className="text-vault-text">{user?.email}</span>
+        <h2 className="mb-3 section-label">Tu cuenta</h2>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          Email: <span className="text-vault-text dark:text-[#e6edf3]">{user?.email}</span>
         </p>
-        <p className="text-sm text-vault-muted2">
-          Plan: <span className="text-vault-text">{PLAN_LABELS[user?.plan ?? "free"]}</span>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          Plan: <span className="text-vault-text dark:text-[#e6edf3]">{PLAN_LABELS[user?.plan ?? "free"]}</span>
         </p>
       </div>
 
@@ -51,8 +51,8 @@ export function SettingsPage() {
       <CategoryRulesSettings />
 
       <div className="card-vault max-w-md border-vault-red/30">
-        <h2 className="mb-2 font-syne text-sm font-bold text-vault-red">Zona de riesgo</h2>
-        <p className="mb-3 text-sm text-vault-muted2">
+        <h2 className="mb-2 section-label text-vault-red">Zona de riesgo</h2>
+        <p className="mb-3 text-sm text-vault-muted2 dark:text-[#8b949e]">
           Elimina tu cuenta, tus cuentas registradas, movimientos y archivos subidos. Esta acción
           es permanente.
         </p>

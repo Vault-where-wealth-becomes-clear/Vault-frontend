@@ -31,17 +31,17 @@ export function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="mb-10 flex items-center gap-2">
           <img src={vaultLogo} alt="Vault" className="h-8 w-8 rounded-lg" />
-          <span className="font-syne text-lg font-bold">Vault</span>
+          <span className="text-lg font-semibold text-vault-text dark:text-[#e6edf3]">Vault</span>
         </div>
 
-        <h1 className="mb-1 font-syne text-2xl font-bold">Crea tu cuenta</h1>
-        <p className="mb-8 text-sm text-vault-muted2">
+        <h1 className="mb-1 page-title">Crea tu cuenta</h1>
+        <p className="mb-8 text-sm text-vault-muted2 dark:text-[#8b949e]">
           Empeza a llevar el control de tu patrimonio.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Nombre</label>
+            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Nombre</label>
             <input
               type="text"
               required
@@ -53,7 +53,7 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vault-muted2">Email</label>
+            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Email</label>
             <input
               type="email"
               required
@@ -65,7 +65,7 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vault-muted2">
+            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
               Contraseña
             </label>
             <input
@@ -90,7 +90,7 @@ export function RegisterPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-vault-muted">
+        <p className="mt-6 text-center text-xs text-vault-muted dark:text-[#8b949e]">
           Ya tenes cuenta?{" "}
           <Link to="/login" className="text-vault-accent hover:underline">
             Ingresa
