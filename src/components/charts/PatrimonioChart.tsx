@@ -27,7 +27,14 @@ export function PatrimonioChart({ data }: PatrimonioChartProps) {
           labelStyle={{ color: "#64748b" }}
           formatter={(value: number) => [`USD ${value.toLocaleString("es-AR")}`, "Patrimonio"]}
         />
-        <Area type="monotone" dataKey="total_usd" stroke="#1e3a8a" strokeWidth={2} fill="url(#patGradient)" />
+        <Area
+          type="monotone"
+          dataKey="total_usd"
+          stroke="#1e3a8a"
+          strokeWidth={2}
+          fill="url(#patGradient)"
+          connectNulls={false}
+        />
       </AreaChart>
     </ResponsiveContainer>
   );

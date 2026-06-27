@@ -31,6 +31,7 @@ interface PresignResponse {
   upload_id: string;
   presigned_url: string;
   s3_key: string;
+  content_type: string;
 }
 
 export function useUploads() {
@@ -82,7 +83,7 @@ export function useSubmitUpload() {
       });
 
       await axios.put(presign.presigned_url, file, {
-        headers: { "Content-Type": file.type || "application/octet-stream" },
+        headers: { "Content-Type": presign.content_type },
       });
 
       await apiClient.post("/uploads", {

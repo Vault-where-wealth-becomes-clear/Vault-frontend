@@ -59,6 +59,7 @@ export function DashboardPage() {
   }
 
   const isEmpty = !accounts || accounts.length === 0;
+  const insights = [...(summary.insights ?? []), ...(fullDashboard?.insights ?? [])];
 
   const steps = [
     { n: 1, active: true,  title: "Creá una cuenta",    desc: "Agregá tu billetera" },
@@ -101,7 +102,6 @@ export function DashboardPage() {
 
       {isEmpty ? (
         <div className="card-vault overflow-hidden p-0">
-          {/* Sección superior */}
           <div style={{ padding: "32px 32px 24px" }}>
             <h2
               className="text-vault-text dark:text-[#e6edf3]"
@@ -116,7 +116,6 @@ export function DashboardPage() {
               Agregá tu primera cuenta para empezar a ver tu patrimonio real.
             </p>
 
-            {/* Pasos */}
             <div style={{ display: "flex", justifyContent: "center", gap: 0, alignItems: "flex-start" }}>
               {steps.map((step, i) => (
                 <>
@@ -163,7 +162,6 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Botones */}
           <div style={{ padding: "0 32px 24px", display: "flex", gap: 10 }}>
             <Link to="/accounts" className="btn-primary">
               Agregar mi primera cuenta
@@ -172,7 +170,6 @@ export function DashboardPage() {
               Ver cómo funciona
             </a>
           </div>
-
         </div>
       ) : (
         <>
@@ -229,13 +226,13 @@ export function DashboardPage() {
 
           <div className="mb-5 card-vault">
             <h2 className="section-label mb-4">Insights</h2>
-            {summary.insights.length === 0 && (!fullDashboard || fullDashboard.insights.length === 0) ? (
+            {insights.length === 0 ? (
               <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
                 Todavía no hay suficientes movimientos para generar insights.
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {[...summary.insights, ...(fullDashboard?.insights ?? [])].map((insight) => (
+                {insights.map((insight) => (
                   <li
                     key={insight}
                     className="flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm text-vault-muted2 dark:text-[#8b949e]"
