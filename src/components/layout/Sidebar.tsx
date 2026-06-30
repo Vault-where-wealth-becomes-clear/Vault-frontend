@@ -126,6 +126,11 @@ export function Sidebar() {
           )}
         </div>
 
+        <NavLink to="/upload" className={({ isActive }) => navLinkClass(isActive)}>
+          <span className="w-4 text-center">↑</span>
+          Subir extracto
+        </NavLink>
+
         <NavLink to="/installments" className={({ isActive }) => navLinkClass(isActive)}>
           <span className="w-4 text-center">◷</span>
           Historial de gastos

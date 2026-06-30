@@ -141,8 +141,11 @@ export function AccountsPage() {
 
   const [searchParams] = useSearchParams();
   const entityParam = searchParams.get("entity");
+  const newParam = searchParams.get("new");
 
-  const [rightPanel, setRightPanel] = useState<RightPanel>("none");
+  const [rightPanel, setRightPanel] = useState<RightPanel>(() =>
+    newParam === "true" ? "new-account" : "none"
+  );
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() =>
     entityParam ? new Set([entityParam]) : new Set()
   );
