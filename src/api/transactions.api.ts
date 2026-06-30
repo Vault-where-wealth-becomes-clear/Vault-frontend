@@ -21,7 +21,7 @@ export const STANDARD_CATEGORIES = [
 
 export interface Transaction {
   id: string;
-  upload_id: string;
+  upload_id: string | null;
   account_id: string;
   date: string;
   description: string;
@@ -93,6 +93,32 @@ export function useCorrectTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["review-queue"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    },
+  });
+}
+
+export interface ManualTransactionCreate {
+  account_id: string;
+  date: string;
+  description: string;
+  amount: number;
+  currency: "ARS" | "USD";
+  category: string | null;
+  transaction_type: "ingreso" | "egreso";
+}
+
+export function useCreateManualTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: ManualTransactionCreate): Promise<Transaction> => {
+      const { data } = await apiClient.post<Transaction>("/transactions/manual", body);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-breakdown"] });
     },
   });
 }

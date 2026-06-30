@@ -11,6 +11,7 @@ import {
   type CurrencyType,
 } from "@/api/accounts.api";
 import { useSubmitUpload, useUploadStatus, type UploadStatus } from "@/api/uploads.api";
+import { useCreateManualTransaction } from "@/api/transactions.api";
 import type { SkillModule } from "@/components/upload/ModuleSelector";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { extractErrorMessage } from "@/utils/apiError";
@@ -136,6 +137,7 @@ export function AccountsPage() {
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
   const submitUpload = useSubmitUpload();
+  const createManualTransaction = useCreateManualTransaction();
 
   const [searchParams] = useSearchParams();
   const entityParam = searchParams.get("entity");
@@ -183,6 +185,7 @@ export function AccountsPage() {
   const [manualType, setManualType] = useState<"ingreso" | "egreso">("egreso");
   const [manualAmount, setManualAmount] = useState("");
   const [manualSuccess, setManualSuccess] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
 
   const groupedAccounts = useMemo(() => {
     const map = new Map<string, Account[]>();
@@ -255,7 +258,18 @@ export function AccountsPage() {
   const openNewAccountForm = (preselectedInstitution?: string) => {
     setSelectedAccount(null);
     setRightPanel("new-account");
-    setInstitution(preselectedInstitution ?? "");
+    setCreateError(null);
+    setReference("");
+    setBalance("0");
+    setNotes("");
+    setIssuer("");
+    if (preselectedInstitution === "Efectivo") {
+      setBaseType("cash");
+      setInstitution("");
+    } else {
+      setBaseType("checking");
+      setInstitution(preselectedInstitution ?? "");
+    }
   };
 
   const handleCreateSubmit = async (event: FormEvent) => {
@@ -336,15 +350,29 @@ export function AccountsPage() {
 
   const handleManualMovement = async (event: FormEvent) => {
     event.preventDefault();
-    // TODO: conectar con POST /transactions/manual cuando el backend lo implemente
-    setManualSuccess(true);
-    setTimeout(() => {
-      setManualSuccess(false);
-      setManualDescription("");
-      setManualAmount("");
-      setManualCategory("");
-      setShowMovementForm(false);
-    }, 2000);
+    if (!selectedAccount || !manualAmount) return;
+    setManualError(null);
+    try {
+      await createManualTransaction.mutateAsync({
+        account_id: selectedAccount.id,
+        date: manualDate,
+        description: manualDescription || "Movimiento manual",
+        amount: Number(manualAmount),
+        currency: selectedAccount.currency,
+        category: manualCategory || null,
+        transaction_type: manualType,
+      });
+      setManualSuccess(true);
+      setTimeout(() => {
+        setManualSuccess(false);
+        setManualDescription("");
+        setManualAmount("");
+        setManualCategory("");
+        setShowMovementForm(false);
+      }, 2000);
+    } catch (err) {
+      setManualError(extractErrorMessage(err));
+    }
   };
 
   return (
@@ -619,6 +647,11 @@ export function AccountsPage() {
                     />
                   </div>
 
+                  {manualError && (
+                    <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
+                      {manualError}
+                    </div>
+                  )}
                   {manualSuccess ? (
                     <div
                       className="text-vault-green"
@@ -627,8 +660,14 @@ export function AccountsPage() {
                       ✓ Movimiento registrado
                     </div>
                   ) : (
-                    <button type="submit" className="btn-primary mt-2 w-full">
-                      Registrar movimiento
+                    <button
+                      type="submit"
+                      disabled={createManualTransaction.isPending}
+                      className="btn-primary mt-2 w-full"
+                    >
+                      {createManualTransaction.isPending
+                        ? "Registrando..."
+                        : "Registrar movimiento"}
                     </button>
                   )}
                 </form>

@@ -75,6 +75,13 @@ export async function submitTotp(email: string, session: string, code: string): 
   await establishSession(data);
 }
 
+export async function changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  await apiClient.post("/auth/change-password", {
+    old_password: oldPassword,
+    new_password: newPassword,
+  });
+}
+
 export async function logout(): Promise<void> {
   try {
     await apiClient.post("/auth/logout");

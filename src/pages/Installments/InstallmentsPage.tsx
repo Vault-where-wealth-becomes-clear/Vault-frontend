@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useInstallments } from "@/api/installments.api";
+import { useDashboardBreakdown } from "@/api/dashboard.api";
+import { formatCurrency } from "@/utils/formatCurrency";
 
 const DEFAULT_CATEGORIES = [
   "Supermercado",
@@ -42,6 +44,9 @@ function loadCustomCategories(): string[] {
 
 export function InstallmentsPage() {
   const { data: installments } = useInstallments();
+  const { data: breakdown } = useDashboardBreakdown();
+
+  const hasBreakdown = breakdown && breakdown.length > 0;
 
   const [customCategories, setCustomCategories] = useState<string[]>(loadCustomCategories);
   const [addingCategory, setAddingCategory] = useState(false);
@@ -113,7 +118,7 @@ export function InstallmentsPage() {
         </div>
       )}
 
-      <div className="card-vault">
+      <div className="card-vault mb-5">
         <h2 className="mb-4 section-label">Mis categorías</h2>
         <div
           style={{
@@ -186,6 +191,38 @@ export function InstallmentsPage() {
           )}
         </div>
       </div>
+      {hasBreakdown && (
+        <div className="card-vault">
+          <h2 className="mb-4 section-label">Resumen por categoría</h2>
+          <p className="mb-4 text-xs text-vault-muted2 dark:text-[#8b949e]">
+            Gastos del mes actual agrupados por categoría.
+          </p>
+          <ul className="flex flex-col gap-2">
+            {breakdown
+              .slice()
+              .sort((a, b) => b.pct_of_total - a.pct_of_total)
+              .map((item) => (
+                <li key={item.category} className="flex items-center gap-3">
+                  <span className="w-32 truncate text-sm text-vault-text dark:text-[#e6edf3]">
+                    {item.category}
+                  </span>
+                  <div className="flex-1 overflow-hidden rounded-full bg-vault-border dark:bg-[#30363d]">
+                    <div
+                      className="h-2 rounded-full bg-vault-accent"
+                      style={{ width: `${Math.min(item.pct_of_total, 100)}%` }}
+                    />
+                  </div>
+                  <span className="w-20 text-right text-xs tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                    {formatCurrency(item.amount_ars, "ARS")}
+                  </span>
+                  <span className="w-10 text-right text-xs tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                    {item.pct_of_total.toFixed(0)}%
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

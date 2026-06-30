@@ -5,16 +5,54 @@ import {
   useDashboardBreakdown,
   useDashboardEvolution,
   useFullDashboard,
+  type BreakdownItem,
+  type DashboardSummary,
+  type EvolutionPoint,
 } from "@/api/dashboard.api";
 import { useExportXlsx } from "@/api/exports.api";
-import { useExchangeRates } from "@/api/exchangeRates.api";
+import { useExchangeRates, useSetExchangeRate } from "@/api/exchangeRates.api";
 import { useAccounts } from "@/api/accounts.api";
 import { PatrimonioChart } from "@/components/charts/PatrimonioChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { extractErrorMessage } from "@/utils/apiError";
 import { formatCurrency, formatPercent } from "@/utils/formatCurrency";
-import { formatPeriod } from "@/utils/formatDate";
+import { formatPeriod, getCurrentPeriod } from "@/utils/formatDate";
+
+const MOCK_SUMMARY: DashboardSummary = {
+  period: getCurrentPeriod(),
+  total_usd: 12450,
+  variation_pct: 4.3,
+  insights: [
+    "Tu patrimonio creció 4.3% este mes.",
+    "El mayor gasto fue en Restaurantes (18% del total).",
+    "Tus inversiones representan el 35% del portafolio.",
+  ],
+};
+
+const MOCK_EVOLUTION: EvolutionPoint[] = [
+  { month: "2025-07", total_usd: 9800 },
+  { month: "2025-08", total_usd: 10100 },
+  { month: "2025-09", total_usd: 9950 },
+  { month: "2025-10", total_usd: 10400 },
+  { month: "2025-11", total_usd: 11200 },
+  { month: "2025-12", total_usd: 11800 },
+  { month: "2026-01", total_usd: 11500 },
+  { month: "2026-02", total_usd: 11900 },
+  { month: "2026-03", total_usd: 12100 },
+  { month: "2026-04", total_usd: 11700 },
+  { month: "2026-05", total_usd: 12000 },
+  { month: "2026-06", total_usd: 12450 },
+];
+
+const MOCK_BREAKDOWN: BreakdownItem[] = [
+  { category: "Supermercado", amount_ars: 180000, amount_usd: 150, pct_of_total: 30 },
+  { category: "Restaurantes", amount_ars: 108000, amount_usd: 90, pct_of_total: 18 },
+  { category: "Transporte", amount_ars: 72000, amount_usd: 60, pct_of_total: 12 },
+  { category: "Servicios", amount_ars: 60000, amount_usd: 50, pct_of_total: 10 },
+  { category: "Entretenimiento", amount_ars: 48000, amount_usd: 40, pct_of_total: 8 },
+  { category: "Varios", amount_ars: 132000, amount_usd: 110, pct_of_total: 22 },
+];
 
 const ADVANCED_SECTIONS: {
   key: "cartera" | "proyeccion" | "compromisos";
@@ -46,10 +84,16 @@ export function DashboardPage() {
   const { data: exchangeRates } = useExchangeRates();
   const { data: accounts } = useAccounts();
   const exportXlsx = useExportXlsx();
+  const setRate = useSetExchangeRate();
+
   const [exportError, setExportError] = useState<string | null>(null);
   const [currencyDisplay, setCurrencyDisplay] = useState<"USD" | "ARS">(() => {
     return (localStorage.getItem("vault_currency_display") as "USD" | "ARS") ?? "USD";
   });
+  const [demoMode, setDemoMode] = useState(false);
+  const [mepFetching, setMepFetching] = useState(false);
+  const [liveMep, setLiveMep] = useState<number | null>(null);
+  const [mepSaving, setMepSaving] = useState(false);
 
   const toggleCurrency = (currency: "USD" | "ARS") => {
     setCurrencyDisplay(currency);
@@ -63,6 +107,34 @@ export function DashboardPage() {
       window.open(url, "_blank");
     } catch (err) {
       setExportError(extractErrorMessage(err));
+    }
+  };
+
+  const handleFetchLiveMep = async () => {
+    setMepFetching(true);
+    setLiveMep(null);
+    try {
+      const res = await fetch("https://dolarapi.com/v1/dolares/mep");
+      if (!res.ok) throw new Error("HTTP");
+      const json = await res.json();
+      const venta = Number(json.venta);
+      if (!venta || isNaN(venta)) throw new Error("invalid");
+      setLiveMep(venta);
+    } catch {
+      // silently fail — leave liveMep null
+    } finally {
+      setMepFetching(false);
+    }
+  };
+
+  const handleSaveLiveMep = async () => {
+    if (!liveMep || !summary) return;
+    setMepSaving(true);
+    try {
+      await setRate.mutateAsync({ periodMonth: summary.period, mepRate: liveMep });
+      setLiveMep(null);
+    } finally {
+      setMepSaving(false);
     }
   };
 
@@ -82,6 +154,10 @@ export function DashboardPage() {
   const isEmpty = !accounts || accounts.length === 0;
   const insights = [...(summary.insights ?? []), ...(fullDashboard?.insights ?? [])];
 
+  const activeSummary = demoMode ? MOCK_SUMMARY : summary;
+  const activeEvolution = demoMode ? MOCK_EVOLUTION : evolution;
+  const activeBreakdown = demoMode ? MOCK_BREAKDOWN : breakdown;
+
   const steps = [
     { n: 1, active: true, title: "Creá una cuenta", desc: "Agregá tu billetera" },
     { n: 2, active: false, title: "Subí tu extracto", desc: "PDF o XLSX de tu resumen mensual" },
@@ -95,9 +171,21 @@ export function DashboardPage() {
 
   return (
     <div className="p-7">
+      {demoMode && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-vault-accent/30 bg-vault-accent/10 px-4 py-2.5 text-sm">
+          <span className="text-vault-accent">Estás viendo datos de ejemplo</span>
+          <button
+            type="button"
+            onClick={() => setDemoMode(false)}
+            className="ml-auto text-xs text-vault-muted2 underline hover:text-vault-text dark:text-[#8b949e]"
+          >
+            Salir del ejemplo
+          </button>
+        </div>
+      )}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="page-title">{formatPeriod(summary.period)}</h1>
+          <h1 className="page-title">{formatPeriod(activeSummary.period)}</h1>
           <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">
             Resumen de tu patrimonio y movimientos.
           </p>
@@ -128,7 +216,7 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {isEmpty ? (
+      {isEmpty && !demoMode ? (
         <div className="card-vault overflow-hidden p-0">
           <div style={{ padding: "32px 32px 24px" }}>
             <h2
@@ -214,32 +302,55 @@ export function DashboardPage() {
             <Link to="/accounts" className="btn-primary">
               Agregar mi primera cuenta
             </Link>
-            <a href="#" className="btn-ghost">
-              Ver cómo funciona
-            </a>
+            <button type="button" onClick={() => setDemoMode(true)} className="btn-ghost">
+              Ver ejemplo
+            </button>
           </div>
         </div>
       ) : (
         <>
           <div className="mb-5 grid grid-cols-4 gap-4">
-            {currencyDisplay === "ARS" && !mepForPeriod ? (
-              <div className="col-span-4 flex items-center gap-1.5 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#161b22] px-4 py-3 text-sm text-vault-muted2 dark:text-[#8b949e] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-                <span>Sin TC MEP para este período —</span>
-                <Link to="/settings" className="text-vault-accent hover:underline">
-                  configuralo en Configuración
+            {currencyDisplay === "ARS" && !mepForPeriod && !demoMode ? (
+              <div className="col-span-4 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#161b22] px-4 py-3 text-sm text-vault-muted2 dark:text-[#8b949e] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                <span>Sin TC MEP para este período.</span>
+                {liveMep ? (
+                  <>
+                    <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+                      TC MEP: ${liveMep.toFixed(2)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSaveLiveMep}
+                      disabled={mepSaving}
+                      className="rounded border border-vault-accent/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent hover:bg-vault-accent/20"
+                    >
+                      {mepSaving ? "Guardando..." : "Guardar y usar"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleFetchLiveMep}
+                    disabled={mepFetching}
+                    className="rounded border border-vault-accent/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent hover:bg-vault-accent/20"
+                  >
+                    {mepFetching ? "Obteniendo..." : "Obtener TC MEP actual"}
+                  </button>
+                )}
+                <Link to="/settings" className="ml-auto text-xs text-vault-accent hover:underline">
+                  Configurar manualmente
                 </Link>
-                <span>para ver valores en ARS.</span>
               </div>
             ) : (
               <SummaryCard
                 label="Patrimonio total"
                 value={
-                  currencyDisplay === "USD"
-                    ? formatCurrency(summary.total_usd, "USD")
-                    : formatCurrency(summary.total_usd * mepForPeriod!, "ARS")
+                  currencyDisplay === "USD" || demoMode
+                    ? formatCurrency(activeSummary.total_usd, "USD")
+                    : formatCurrency(activeSummary.total_usd * mepForPeriod!, "ARS")
                 }
-                hint={`${formatPercent(summary.variation_pct)} vs. mes anterior`}
-                hintColor={summary.variation_pct >= 0 ? "green" : "red"}
+                hint={`${formatPercent(activeSummary.variation_pct)} vs. mes anterior`}
+                hintColor={activeSummary.variation_pct >= 0 ? "green" : "red"}
               />
             )}
           </div>
@@ -247,40 +358,40 @@ export function DashboardPage() {
           <div className="mb-5 grid grid-cols-3 gap-4">
             <div className="card-vault col-span-2">
               <h2 className="section-label mb-4">Evolución del patrimonio</h2>
-              {isLoadingEvolution || !evolution ? (
+              {!demoMode && (isLoadingEvolution || !activeEvolution) ? (
                 <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
                   Cargando...
                 </div>
               ) : (
-                <PatrimonioChart data={evolution} />
+                <PatrimonioChart data={activeEvolution!} />
               )}
             </div>
 
             <div className="card-vault">
               <h2 className="section-label mb-4">Gastos por categoría</h2>
-              {isLoadingBreakdown || !breakdown ? (
+              {!demoMode && (isLoadingBreakdown || !activeBreakdown) ? (
                 <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
                   Cargando...
                 </div>
-              ) : breakdown.length === 0 ? (
+              ) : !activeBreakdown || activeBreakdown.length === 0 ? (
                 <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2 dark:text-[#8b949e]">
                   Todavía no hay movimientos este mes.
                 </div>
               ) : (
-                <BreakdownChart data={breakdown} />
+                <BreakdownChart data={activeBreakdown} />
               )}
             </div>
           </div>
 
           <div className="mb-5 card-vault">
             <h2 className="section-label mb-4">Insights</h2>
-            {insights.length === 0 ? (
+            {(demoMode ? MOCK_SUMMARY.insights : insights).length === 0 ? (
               <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
                 Todavía no hay suficientes movimientos para generar insights.
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {insights.map((insight) => (
+                {(demoMode ? MOCK_SUMMARY.insights : insights).map((insight) => (
                   <li
                     key={insight}
                     className="flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm text-vault-muted2 dark:text-[#8b949e]"
