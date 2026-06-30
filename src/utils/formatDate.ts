@@ -1,6 +1,7 @@
 export function formatPeriod(dateString: string): string {
   const date = new Date(`${dateString}T00:00:00`);
-  return date.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  const str = date.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 export function formatDate(dateString: string): string {

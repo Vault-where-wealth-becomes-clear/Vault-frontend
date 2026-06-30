@@ -1,5 +1,10 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const APP_ICON = path.join(__dirname, "../public/vault-logo.png");
@@ -10,7 +15,7 @@ function createWindow(): void {
     height: 820,
     minWidth: 1024,
     minHeight: 680,
-    backgroundColor: "#07090f",
+    backgroundColor: "#ffffff",
     titleBarStyle: "hiddenInset",
     icon: APP_ICON,
     webPreferences: {
