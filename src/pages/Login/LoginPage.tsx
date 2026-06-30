@@ -81,21 +81,69 @@ export function LoginPage() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100%", background: "#080c18", position: "relative", overflow: "hidden" }}>
-
+    <div
+      style={{
+        display: "flex",
+        height: "100%",
+        background: "#080c18",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
       {/* Capa 1 — formas geométricas SVG */}
       <svg
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+        }}
         preserveAspectRatio="none"
       >
-        <circle cx="25%" cy="35%" r="200" stroke="rgba(30,58,138,0.5)" strokeWidth="0.8" fill="none" />
-        <circle cx="18%" cy="70%" r="120" stroke="rgba(147,197,253,0.25)" strokeWidth="0.8" fill="none" />
+        <circle
+          cx="25%"
+          cy="35%"
+          r="200"
+          stroke="rgba(30,58,138,0.5)"
+          strokeWidth="0.8"
+          fill="none"
+        />
+        <circle
+          cx="18%"
+          cy="70%"
+          r="120"
+          stroke="rgba(147,197,253,0.25)"
+          strokeWidth="0.8"
+          fill="none"
+        />
         <circle cx="38%" cy="22%" r="5" fill="rgba(147,197,253,0.5)" />
         <circle cx="22%" cy="75%" r="3.5" fill="rgba(147,197,253,0.3)" />
         <line x1="0%" y1="100%" x2="55%" y2="0%" stroke="rgba(30,58,138,0.4)" strokeWidth="0.8" />
-        <path d="M -50 300 Q 200 80 550 380" stroke="rgba(147,197,253,0.15)" strokeWidth="0.8" fill="none" />
-        <rect x="4%" y="12%" width="36%" height="70%" rx="2" stroke="rgba(30,58,138,0.25)" strokeWidth="0.8" fill="none" />
-        <circle cx="55%" cy="80%" r="80" stroke="rgba(30,58,138,0.2)" strokeWidth="0.8" fill="none" />
+        <path
+          d="M -50 300 Q 200 80 550 380"
+          stroke="rgba(147,197,253,0.15)"
+          strokeWidth="0.8"
+          fill="none"
+        />
+        <rect
+          x="4%"
+          y="12%"
+          width="36%"
+          height="70%"
+          rx="2"
+          stroke="rgba(30,58,138,0.25)"
+          strokeWidth="0.8"
+          fill="none"
+        />
+        <circle
+          cx="55%"
+          cy="80%"
+          r="80"
+          stroke="rgba(30,58,138,0.2)"
+          strokeWidth="0.8"
+          fill="none"
+        />
       </svg>
 
       {/* Capa 2 — gradiente radial */}
@@ -103,14 +151,16 @@ export function LoginPage() {
         style={{
           position: "absolute",
           inset: 0,
-          background: "radial-gradient(ellipse at 15% 50%, rgba(30,58,138,0.35) 0%, transparent 55%)",
+          background:
+            "radial-gradient(ellipse at 15% 50%, rgba(30,58,138,0.35) 0%, transparent 55%)",
           pointerEvents: "none",
         }}
       />
 
       {/* Capa 3 — contenido */}
-      <div style={{ position: "relative", zIndex: 1, display: "flex", width: "100%", height: "100%" }}>
-
+      <div
+        style={{ position: "relative", zIndex: 1, display: "flex", width: "100%", height: "100%" }}
+      >
         {/* Lado izquierdo */}
         <div
           style={{
@@ -138,11 +188,25 @@ export function LoginPage() {
               }}
             >
               <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
-                <path d="M2 4L7 10L12 5" stroke="#93c5fd" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M4.5 4L7 7L9.5 4" stroke="rgba(147,197,253,0.4)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M2 4L7 10L12 5"
+                  stroke="#93c5fd"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M4.5 4L7 7L9.5 4"
+                  stroke="rgba(147,197,253,0.4)"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
-            <span style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)" }}>VAULT</span>
+            <span style={{ fontSize: 12, letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)" }}>
+              VAULT
+            </span>
           </div>
 
           {/* Contenido central */}
@@ -157,9 +221,18 @@ export function LoginPage() {
                 marginBottom: 16,
               }}
             >
-              Tu patrimonio,<br />siempre claro.
+              Tu patrimonio,
+              <br />
+              siempre claro.
             </h2>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 0, marginBottom: 36 }}>
+            <p
+              style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.3)",
+                marginTop: 0,
+                marginBottom: 36,
+              }}
+            >
               Where wealth becomes clear.
             </p>
 
@@ -186,7 +259,9 @@ export function LoginPage() {
           </div>
 
           {/* Footer */}
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>© 2026 Vault · Confidencial</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>
+            © 2026 Vault · Confidencial
+          </span>
         </div>
 
         {/* Lado derecho — card */}
@@ -204,14 +279,32 @@ export function LoginPage() {
         >
           {challengeSession ? (
             <>
-              <h1 style={{ fontSize: 20, fontWeight: 300, color: "white", marginTop: 0, marginBottom: 6 }}>
+              <h1
+                style={{
+                  fontSize: 20,
+                  fontWeight: 300,
+                  color: "white",
+                  marginTop: 0,
+                  marginBottom: 6,
+                }}
+              >
                 Verificación en dos pasos
               </h1>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 0, marginBottom: 28 }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.35)",
+                  marginTop: 0,
+                  marginBottom: 28,
+                }}
+              >
                 Ingresá el código de tu app.
               </p>
 
-              <form onSubmit={handleTotp} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <form
+                onSubmit={handleTotp}
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
                 <div>
                   <label style={labelStyle}>CÓDIGO</label>
                   <input
@@ -235,7 +328,11 @@ export function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ ...submitBtnStyle, opacity: isSubmitting ? 0.5 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}
+                  style={{
+                    ...submitBtnStyle,
+                    opacity: isSubmitting ? 0.5 : 1,
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                  }}
                 >
                   {isSubmitting ? "Verificando..." : "Verificar"}
                 </button>
@@ -243,14 +340,32 @@ export function LoginPage() {
             </>
           ) : (
             <>
-              <h1 style={{ fontSize: 20, fontWeight: 300, color: "white", marginTop: 0, marginBottom: 6 }}>
+              <h1
+                style={{
+                  fontSize: 20,
+                  fontWeight: 300,
+                  color: "white",
+                  marginTop: 0,
+                  marginBottom: 6,
+                }}
+              >
                 Bienvenido de nuevo
               </h1>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 0, marginBottom: 28 }}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.35)",
+                  marginTop: 0,
+                  marginBottom: 28,
+                }}
+              >
                 Ingresá tus credenciales.
               </p>
 
-              <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <form
+                onSubmit={handleLogin}
+                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+              >
                 <div>
                   <label style={labelStyle}>EMAIL</label>
                   <input
@@ -286,7 +401,11 @@ export function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  style={{ ...submitBtnStyle, opacity: isSubmitting ? 0.5 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}
+                  style={{
+                    ...submitBtnStyle,
+                    opacity: isSubmitting ? 0.5 : 1,
+                    cursor: isSubmitting ? "not-allowed" : "pointer",
+                  }}
                 >
                   {isSubmitting ? "Ingresando..." : "Ingresar"}
                 </button>
@@ -311,9 +430,21 @@ export function LoginPage() {
                 Crear cuenta
               </Link>
 
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", textAlign: "center", marginTop: 18, marginBottom: 0 }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: "rgba(255,255,255,0.2)",
+                  textAlign: "center",
+                  marginTop: 18,
+                  marginBottom: 0,
+                }}
+              >
                 ¿No confirmaste tu cuenta?{" "}
-                <Link to="/confirm" state={{ email }} style={{ color: "#93c5fd", textDecoration: "none" }}>
+                <Link
+                  to="/confirm"
+                  state={{ email }}
+                  style={{ color: "#93c5fd", textDecoration: "none" }}
+                >
                   Confirmala acá
                 </Link>
               </p>

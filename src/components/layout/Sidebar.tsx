@@ -32,7 +32,10 @@ export function Sidebar() {
     const keys: string[] = [];
     (accounts ?? []).forEach((account) => {
       const key = account.institution || "Sin entidad";
-      if (!seen.has(key)) { seen.add(key); keys.push(key); }
+      if (!seen.has(key)) {
+        seen.add(key);
+        keys.push(key);
+      }
     });
     return keys;
   }, [accounts]);
@@ -130,7 +133,10 @@ export function Sidebar() {
       </nav>
 
       {/* Footer con menú desplegable */}
-      <div ref={footerRef} className="relative border-t border-vault-border dark:border-[#30363d] p-4">
+      <div
+        ref={footerRef}
+        className="relative border-t border-vault-border dark:border-[#30363d] p-4"
+      >
         {/* Menú hacia arriba */}
         {userMenuOpen && (
           <div
@@ -162,12 +168,13 @@ export function Sidebar() {
 
               <button
                 type="button"
-                onClick={() => { toggleTheme(); setUserMenuOpen(false); }}
+                onClick={() => {
+                  toggleTheme();
+                  setUserMenuOpen(false);
+                }}
                 className={menuItemClass}
               >
-                <span className="w-4 text-center text-[13px]">
-                  {theme === "dark" ? "☀" : "☽"}
-                </span>
+                <span className="w-4 text-center text-[13px]">{theme === "dark" ? "☀" : "☽"}</span>
                 {theme === "dark" ? "Modo claro" : "Modo oscuro"}
               </button>
 
@@ -175,7 +182,10 @@ export function Sidebar() {
 
               <button
                 type="button"
-                onClick={() => { logout(); setUserMenuOpen(false); }}
+                onClick={() => {
+                  logout();
+                  setUserMenuOpen(false);
+                }}
                 className={`${menuItemClass} hover:text-vault-red`}
               >
                 <span className="w-4 text-center text-[13px]">→</span>

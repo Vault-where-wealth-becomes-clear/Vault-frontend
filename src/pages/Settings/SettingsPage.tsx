@@ -131,10 +131,7 @@ export function SettingsPage() {
           Vault no comparte ni vende tus datos. Los PDFs se eliminan del servidor una vez
           procesados.
         </p>
-        <a
-          href="#"
-          className="text-sm text-vault-accent transition-colors hover:underline"
-        >
+        <a href="#" className="text-sm text-vault-accent transition-colors hover:underline">
           Ver política de privacidad
         </a>
       </div>

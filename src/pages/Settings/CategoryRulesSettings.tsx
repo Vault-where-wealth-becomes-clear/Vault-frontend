@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { useCategoryRules, useCreateCategoryRule, useDeleteCategoryRule } from "@/api/categoryRules.api";
+import {
+  useCategoryRules,
+  useCreateCategoryRule,
+  useDeleteCategoryRule,
+} from "@/api/categoryRules.api";
 import { STANDARD_CATEGORIES } from "@/api/transactions.api";
 import { extractErrorMessage } from "@/utils/apiError";
 
@@ -38,7 +42,9 @@ export function CategoryRulesSettings() {
 
       <form onSubmit={handleSubmit} className="mb-4 flex items-end gap-2">
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Palabra clave</label>
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+            Palabra clave
+          </label>
           <input
             type="text"
             value={keyword}
@@ -48,8 +54,14 @@ export function CategoryRulesSettings() {
           />
         </div>
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Categoría</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="input-vault">
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+            Categoría
+          </label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="input-vault"
+          >
             <option value="" disabled>
               Elegí categoría
             </option>

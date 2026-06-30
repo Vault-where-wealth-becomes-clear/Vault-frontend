@@ -13,7 +13,14 @@ export function BreakdownChart({ data }: BreakdownChartProps) {
     <div className="flex items-center gap-4">
       <ResponsiveContainer width={120} height={120}>
         <PieChart>
-          <Pie data={data} dataKey="amount_ars" nameKey="category" innerRadius={36} outerRadius={56} paddingAngle={2}>
+          <Pie
+            data={data}
+            dataKey="amount_ars"
+            nameKey="category"
+            innerRadius={36}
+            outerRadius={56}
+            paddingAngle={2}
+          >
             {data.map((entry, index) => (
               <Cell key={entry.category} fill={COLORS[index % COLORS.length]} stroke="none" />
             ))}
@@ -38,7 +45,9 @@ export function BreakdownChart({ data }: BreakdownChartProps) {
                 className="h-2 w-2 flex-shrink-0 rounded-sm"
                 style={{ background: COLORS[index % COLORS.length] }}
               />
-              <span className="truncate text-vault-muted2 dark:text-[#8b949e]">{item.category}</span>
+              <span className="truncate text-vault-muted2 dark:text-[#8b949e]">
+                {item.category}
+              </span>
             </div>
             <span className="flex-shrink-0 tabular-nums text-vault-text dark:text-[#e6edf3]">
               {item.pct_of_total.toFixed(0)}%

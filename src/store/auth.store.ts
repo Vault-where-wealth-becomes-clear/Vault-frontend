@@ -14,7 +14,11 @@ interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
 
-  setSession: (params: { accessToken: string; refreshToken: string | null; user: AuthUser }) => void;
+  setSession: (params: {
+    accessToken: string;
+    refreshToken: string | null;
+    user: AuthUser;
+  }) => void;
   setAccessToken: (accessToken: string) => void;
   logout: () => void;
 }

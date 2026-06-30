@@ -76,7 +76,7 @@ function generateAccountName(
   iss: string,
   ref: string,
   curr: CurrencyType,
-  inst: string,
+  inst: string
 ): string {
   if (base === "credit_card") return [iss, ref].filter(Boolean).join(" · ");
   if (base === "checking") return ["CC", ref, curr].filter(Boolean).join(" · ");
@@ -99,9 +99,19 @@ function getMonthBounds() {
 }
 
 const MOVEMENT_CATEGORIES = [
-  "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
-  "Tecnología", "Entretenimiento", "Servicios", "Educación", "Viajes",
-  "Inversiones", "Ingreso", "Varios",
+  "Supermercado",
+  "Restaurantes",
+  "Transporte",
+  "Salud",
+  "Indumentaria",
+  "Tecnología",
+  "Entretenimiento",
+  "Servicios",
+  "Educación",
+  "Viajes",
+  "Inversiones",
+  "Ingreso",
+  "Varios",
 ];
 
 const STATUS_LABELS: Record<UploadStatus, string> = {
@@ -131,8 +141,8 @@ export function AccountsPage() {
   const entityParam = searchParams.get("entity");
 
   const [rightPanel, setRightPanel] = useState<RightPanel>("none");
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => (entityParam ? new Set([entityParam]) : new Set()),
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() =>
+    entityParam ? new Set([entityParam]) : new Set()
   );
 
   // New account form
@@ -224,7 +234,9 @@ export function AccountsPage() {
       const next = new Set(prev);
       if (next.has("all")) {
         next.delete("all");
-        allGroupKeys.forEach((k) => { if (k !== key) next.add(k); });
+        allGroupKeys.forEach((k) => {
+          if (k !== key) next.add(k);
+        });
       } else if (next.has(key)) {
         next.delete(key);
       } else {
@@ -250,7 +262,7 @@ export function AccountsPage() {
     event.preventDefault();
     setCreateError(null);
     try {
-      const institutionValue = baseType === "cash" ? "Efectivo" : (institution || undefined);
+      const institutionValue = baseType === "cash" ? "Efectivo" : institution || undefined;
       const newAccount = await createAccount.mutateAsync({
         name: generateAccountName(baseType, issuer, reference, currency, institutionValue ?? ""),
         account_type: resolveAccountType(baseType, currency),
@@ -406,8 +418,7 @@ export function AccountsPage() {
                         {groupKey}
                       </span>
                       <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-                        {groupAccounts.length}{" "}
-                        {groupAccounts.length === 1 ? "cuenta" : "cuentas"}
+                        {groupAccounts.length} {groupAccounts.length === 1 ? "cuenta" : "cuentas"}
                       </span>
                       <span
                         className="inline-block text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
@@ -441,7 +452,13 @@ export function AccountsPage() {
                                   {account.account_type === "cash" && (
                                     <span
                                       className="ml-1 dark:bg-[#1d2d50] dark:text-[#93c5fd]"
-                                      style={{ fontSize: 10, background: "#eff6ff", color: "#1e3a8a", borderRadius: 4, padding: "1px 6px" }}
+                                      style={{
+                                        fontSize: 10,
+                                        background: "#eff6ff",
+                                        color: "#1e3a8a",
+                                        borderRadius: 4,
+                                        padding: "1px 6px",
+                                      }}
                                     >
                                       {account.currency}
                                     </span>
@@ -491,7 +508,10 @@ export function AccountsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => { setRightPanel("none"); setSelectedAccount(null); }}
+                onClick={() => {
+                  setRightPanel("none");
+                  setSelectedAccount(null);
+                }}
                 className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
               >
                 ✕
@@ -508,106 +528,110 @@ export function AccountsPage() {
                   ＋ Registrar movimiento
                 </button>
               ) : (
-              <form onSubmit={handleManualMovement} className="flex flex-col gap-3">
-                {/* TIPO */}
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setManualType("ingreso")}
-                    className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${
-                      manualType === "ingreso"
-                        ? "bg-vault-accent text-white"
-                        : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"
-                    }`}
-                  >
-                    ↑ Ingreso
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setManualType("egreso")}
-                    className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${
-                      manualType === "egreso"
-                        ? "bg-vault-accent text-white"
-                        : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"
-                    }`}
-                  >
-                    ↓ Egreso
-                  </button>
-                </div>
-
-                {/* FECHA */}
-                <div>
-                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                    Fecha
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={manualDate}
-                    onChange={(e) => setManualDate(e.target.value)}
-                    className="input-vault"
-                  />
-                </div>
-
-                {/* DESCRIPCIÓN */}
-                <div>
-                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                    Descripción
-                  </label>
-                  <input
-                    type="text"
-                    value={manualDescription}
-                    onChange={(e) => setManualDescription(e.target.value)}
-                    placeholder="Ej: Supermercado Coto"
-                    className="input-vault"
-                  />
-                </div>
-
-                {/* CATEGORÍA */}
-                <div>
-                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                    Categoría
-                  </label>
-                  <select
-                    value={manualCategory}
-                    onChange={(e) => setManualCategory(e.target.value)}
-                    className="input-vault"
-                  >
-                    <option value="" disabled>Seleccioná una categoría</option>
-                    {MOVEMENT_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* MONTO */}
-                <div>
-                  <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                    Monto ({selectedAccount.currency})
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={manualAmount}
-                    onChange={(e) => setManualAmount(e.target.value)}
-                    className="input-vault"
-                  />
-                </div>
-
-                {manualSuccess ? (
-                  <div
-                    className="text-vault-green"
-                    style={{ fontSize: 13, textAlign: "center", padding: "12px 0" }}
-                  >
-                    ✓ Movimiento registrado
+                <form onSubmit={handleManualMovement} className="flex flex-col gap-3">
+                  {/* TIPO */}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setManualType("ingreso")}
+                      className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${
+                        manualType === "ingreso"
+                          ? "bg-vault-accent text-white"
+                          : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"
+                      }`}
+                    >
+                      ↑ Ingreso
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setManualType("egreso")}
+                      className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${
+                        manualType === "egreso"
+                          ? "bg-vault-accent text-white"
+                          : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"
+                      }`}
+                    >
+                      ↓ Egreso
+                    </button>
                   </div>
-                ) : (
-                  <button type="submit" className="btn-primary mt-2 w-full">
-                    Registrar movimiento
-                  </button>
-                )}
-              </form>
+
+                  {/* FECHA */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      Fecha
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={manualDate}
+                      onChange={(e) => setManualDate(e.target.value)}
+                      className="input-vault"
+                    />
+                  </div>
+
+                  {/* DESCRIPCIÓN */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      Descripción
+                    </label>
+                    <input
+                      type="text"
+                      value={manualDescription}
+                      onChange={(e) => setManualDescription(e.target.value)}
+                      placeholder="Ej: Supermercado Coto"
+                      className="input-vault"
+                    />
+                  </div>
+
+                  {/* CATEGORÍA */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      Categoría
+                    </label>
+                    <select
+                      value={manualCategory}
+                      onChange={(e) => setManualCategory(e.target.value)}
+                      className="input-vault"
+                    >
+                      <option value="" disabled>
+                        Seleccioná una categoría
+                      </option>
+                      {MOVEMENT_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* MONTO */}
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      Monto ({selectedAccount.currency})
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={manualAmount}
+                      onChange={(e) => setManualAmount(e.target.value)}
+                      className="input-vault"
+                    />
+                  </div>
+
+                  {manualSuccess ? (
+                    <div
+                      className="text-vault-green"
+                      style={{ fontSize: 13, textAlign: "center", padding: "12px 0" }}
+                    >
+                      ✓ Movimiento registrado
+                    </div>
+                  ) : (
+                    <button type="submit" className="btn-primary mt-2 w-full">
+                      Registrar movimiento
+                    </button>
+                  )}
+                </form>
               )}
             </div>
 
@@ -615,7 +639,10 @@ export function AccountsPage() {
             <div className="border-t border-vault-border pt-3 dark:border-[#30363d]">
               <button
                 type="button"
-                onClick={() => { setEditOpen(!editOpen); setConfirmDelete(false); }}
+                onClick={() => {
+                  setEditOpen(!editOpen);
+                  setConfirmDelete(false);
+                }}
                 className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
               >
                 Editar cuenta
@@ -657,7 +684,11 @@ export function AccountsPage() {
                       {editError}
                     </div>
                   )}
-                  <button type="submit" disabled={updateAccount.isPending} className="btn-primary mt-1">
+                  <button
+                    type="submit"
+                    disabled={updateAccount.isPending}
+                    className="btn-primary mt-1"
+                  >
                     {updateAccount.isPending ? "Guardando..." : "Guardar cambios"}
                   </button>
                   {!confirmDelete ? (
@@ -671,7 +702,8 @@ export function AccountsPage() {
                   ) : (
                     <div className="rounded-vault border border-vault-red/20 bg-vault-red/5 px-3.5 py-3">
                       <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">
-                        ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede deshacer.
+                        ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede
+                        deshacer.
                       </p>
                       <div className="flex gap-2">
                         <button
@@ -719,7 +751,10 @@ export function AccountsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => { setRightPanel("none"); setSelectedAccount(null); }}
+                onClick={() => {
+                  setRightPanel("none");
+                  setSelectedAccount(null);
+                }}
                 className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
               >
                 ✕
@@ -733,7 +768,9 @@ export function AccountsPage() {
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">Desde</label>
+                    <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
+                      Desde
+                    </label>
                     <input
                       type="date"
                       required
@@ -743,7 +780,9 @@ export function AccountsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">Hasta</label>
+                    <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
+                      Hasta
+                    </label>
                     <input
                       type="date"
                       required
@@ -784,7 +823,10 @@ export function AccountsPage() {
                   </div>
                 ) : (
                   <div
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={(e) => {
                       e.preventDefault();
@@ -799,7 +841,9 @@ export function AccountsPage() {
                     }`}
                   >
                     <span className="text-xl text-vault-muted2 dark:text-[#8b949e]">↑</span>
-                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">Arrastrá tu PDF o XLSX acá</p>
+                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                      Arrastrá tu PDF o XLSX acá
+                    </p>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -847,13 +891,18 @@ export function AccountsPage() {
                   {activeStatus.pending_mep && (
                     <p className="mt-2 text-xs text-vault-yellow">
                       Falta el TC MEP —{" "}
-                      <Link to="/settings" className="underline">declaralo en Configuración</Link>
+                      <Link to="/settings" className="underline">
+                        declaralo en Configuración
+                      </Link>
                     </p>
                   )}
                 </div>
                 <button
                   type="button"
-                  onClick={() => { setRightPanel("none"); setSelectedAccount(null); }}
+                  onClick={() => {
+                    setRightPanel("none");
+                    setSelectedAccount(null);
+                  }}
                   className="text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
                 >
                   ← Volver a mis cuentas
@@ -865,7 +914,10 @@ export function AccountsPage() {
             <div className="border-t border-vault-border pt-3 dark:border-[#30363d]">
               <button
                 type="button"
-                onClick={() => { setEditOpen(!editOpen); setConfirmDelete(false); }}
+                onClick={() => {
+                  setEditOpen(!editOpen);
+                  setConfirmDelete(false);
+                }}
                 className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
               >
                 Editar cuenta
@@ -907,7 +959,11 @@ export function AccountsPage() {
                       {editError}
                     </div>
                   )}
-                  <button type="submit" disabled={updateAccount.isPending} className="btn-primary mt-1">
+                  <button
+                    type="submit"
+                    disabled={updateAccount.isPending}
+                    className="btn-primary mt-1"
+                  >
                     {updateAccount.isPending ? "Guardando..." : "Guardar cambios"}
                   </button>
                   {!confirmDelete ? (
@@ -921,7 +977,8 @@ export function AccountsPage() {
                   ) : (
                     <div className="rounded-vault border border-vault-red/20 bg-vault-red/5 px-3.5 py-3">
                       <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">
-                        ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede deshacer.
+                        ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede
+                        deshacer.
                       </p>
                       <div className="flex gap-2">
                         <button
@@ -1091,11 +1148,7 @@ export function AccountsPage() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={createAccount.isPending}
-                className="btn-primary mt-1"
-              >
+              <button type="submit" disabled={createAccount.isPending} className="btn-primary mt-1">
                 {createAccount.isPending ? "Creando..." : "Crear cuenta"}
               </button>
             </form>

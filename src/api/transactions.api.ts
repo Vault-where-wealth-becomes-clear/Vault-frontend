@@ -79,7 +79,11 @@ interface CorrectTransactionParams {
 export function useCorrectTransaction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ transactionId, category, rememberRule }: CorrectTransactionParams): Promise<Transaction> => {
+    mutationFn: async ({
+      transactionId,
+      category,
+      rememberRule,
+    }: CorrectTransactionParams): Promise<Transaction> => {
       const { data } = await apiClient.patch<Transaction>(`/transactions/${transactionId}`, {
         category,
         remember_rule: rememberRule,

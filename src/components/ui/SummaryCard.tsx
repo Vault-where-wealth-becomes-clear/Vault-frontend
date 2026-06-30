@@ -12,7 +12,13 @@ const HINT_COLORS: Record<NonNullable<SummaryCardProps["hintColor"]>, string> = 
   muted: "text-vault-muted2 dark:text-[#8b949e]",
 };
 
-export function SummaryCard({ label, value, hint, hintColor = "muted", className = "" }: SummaryCardProps) {
+export function SummaryCard({
+  label,
+  value,
+  hint,
+  hintColor = "muted",
+  className = "",
+}: SummaryCardProps) {
   return (
     <div className={`card-vault ${className}`}>
       <p className="section-label mb-3">{label}</p>

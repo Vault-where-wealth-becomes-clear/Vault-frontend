@@ -73,7 +73,9 @@ export function ModuleSelector({ selected, onChange }: ModuleSelectorProps) {
   const inlineNoticeFor = (moduleId: SkillModule): string | null => {
     if (!selected.includes(moduleId)) return null;
     const dependsOn = MODULES.find((m) => m.id === moduleId)?.dependsOn ?? [];
-    const autoIncluded = dependsOn.filter((dep) => dep !== "flujo_mensual" && selected.includes(dep));
+    const autoIncluded = dependsOn.filter(
+      (dep) => dep !== "flujo_mensual" && selected.includes(dep)
+    );
     if (autoIncluded.length === 0) return null;
     const labels = autoIncluded.map((dep) => MODULES.find((m) => m.id === dep)?.label).join(", ");
     return `Esto también va a calcular ${labels}, que no habías seleccionado, porque lo necesita.`;
@@ -100,7 +102,9 @@ export function ModuleSelector({ selected, onChange }: ModuleSelectorProps) {
               />
               <span>
                 <span className="font-medium">{module.label}</span>
-                <span className="block text-xs text-vault-muted2 dark:text-[#8b949e]">{module.desc}</span>
+                <span className="block text-xs text-vault-muted2 dark:text-[#8b949e]">
+                  {module.desc}
+                </span>
               </span>
             </label>
             {notice && <p className="mt-1 px-3 text-xs text-vault-accent">{notice}</p>}

@@ -68,7 +68,10 @@ export function useCreateAccount() {
 export function useUpdateAccount() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...body }: Partial<AccountCreate> & { id: string }): Promise<Account> => {
+    mutationFn: async ({
+      id,
+      ...body
+    }: Partial<AccountCreate> & { id: string }): Promise<Account> => {
       const { data } = await apiClient.patch<Account>(`/accounts/${id}`, body);
       return data;
     },

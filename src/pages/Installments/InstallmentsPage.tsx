@@ -3,9 +3,18 @@ import { Link } from "react-router-dom";
 import { useInstallments } from "@/api/installments.api";
 
 const DEFAULT_CATEGORIES = [
-  "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
-  "Tecnología", "Entretenimiento", "Servicios", "Educación", "Viajes",
-  "Inversiones", "Varios",
+  "Supermercado",
+  "Restaurantes",
+  "Transporte",
+  "Salud",
+  "Indumentaria",
+  "Tecnología",
+  "Entretenimiento",
+  "Servicios",
+  "Educación",
+  "Viajes",
+  "Inversiones",
+  "Varios",
 ];
 
 const CATEGORY_EMOJIS: Record<string, string> = {
@@ -45,7 +54,10 @@ export function InstallmentsPage() {
 
   const addCategory = () => {
     const trimmed = newCategory.trim();
-    if (!trimmed) { setAddingCategory(false); return; }
+    if (!trimmed) {
+      setAddingCategory(false);
+      return;
+    }
     const all = [...DEFAULT_CATEGORIES, ...customCategories];
     if (!all.map((c) => c.toLowerCase()).includes(trimmed.toLowerCase())) {
       const updated = [...customCategories, trimmed];
@@ -145,8 +157,14 @@ export function InstallmentsPage() {
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") { e.preventDefault(); addCategory(); }
-                  if (e.key === "Escape") { setAddingCategory(false); setNewCategory(""); }
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCategory();
+                  }
+                  if (e.key === "Escape") {
+                    setAddingCategory(false);
+                    setNewCategory("");
+                  }
                 }}
                 onBlur={addCategory}
                 placeholder="Nombre..."
@@ -160,7 +178,9 @@ export function InstallmentsPage() {
               onClick={() => setAddingCategory(true)}
               className="flex flex-col gap-1.5 rounded-xl border-2 border-dashed border-vault-border2 p-3 transition-colors hover:border-vault-accent/40 dark:border-[#484f58]"
             >
-              <span className="text-vault-muted2 dark:text-[#8b949e]" style={{ fontSize: 20 }}>+</span>
+              <span className="text-vault-muted2 dark:text-[#8b949e]" style={{ fontSize: 20 }}>
+                +
+              </span>
               <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">Nueva</span>
             </button>
           )}

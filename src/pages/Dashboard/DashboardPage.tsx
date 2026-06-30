@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useDashboard, useDashboardBreakdown, useDashboardEvolution, useFullDashboard } from "@/api/dashboard.api";
+import {
+  useDashboard,
+  useDashboardBreakdown,
+  useDashboardEvolution,
+  useFullDashboard,
+} from "@/api/dashboard.api";
 import { useExportXlsx } from "@/api/exports.api";
 import { useExchangeRates } from "@/api/exchangeRates.api";
 import { useAccounts } from "@/api/accounts.api";
@@ -11,10 +16,26 @@ import { extractErrorMessage } from "@/utils/apiError";
 import { formatCurrency, formatPercent } from "@/utils/formatCurrency";
 import { formatPeriod } from "@/utils/formatDate";
 
-const ADVANCED_SECTIONS: { key: "cartera" | "proyeccion" | "compromisos"; label: string; cta: string }[] = [
-  { key: "cartera", label: "Cartera de inversiones", cta: "Pedí este análisis la próxima vez que subas un extracto de broker" },
-  { key: "proyeccion", label: "Proyección a 3 meses", cta: "Pedí este análisis la próxima vez que subas un extracto" },
-  { key: "compromisos", label: "Cuotas pendientes", cta: "Pedí este análisis la próxima vez que subas un extracto" },
+const ADVANCED_SECTIONS: {
+  key: "cartera" | "proyeccion" | "compromisos";
+  label: string;
+  cta: string;
+}[] = [
+  {
+    key: "cartera",
+    label: "Cartera de inversiones",
+    cta: "Pedí este análisis la próxima vez que subas un extracto de broker",
+  },
+  {
+    key: "proyeccion",
+    label: "Proyección a 3 meses",
+    cta: "Pedí este análisis la próxima vez que subas un extracto",
+  },
+  {
+    key: "compromisos",
+    label: "Cuotas pendientes",
+    cta: "Pedí este análisis la próxima vez que subas un extracto",
+  },
 ];
 
 export function DashboardPage() {
@@ -62,9 +83,14 @@ export function DashboardPage() {
   const insights = [...(summary.insights ?? []), ...(fullDashboard?.insights ?? [])];
 
   const steps = [
-    { n: 1, active: true,  title: "Creá una cuenta",    desc: "Agregá tu billetera" },
-    { n: 2, active: false, title: "Subí tu extracto",   desc: "PDF o XLSX de tu resumen mensual" },
-    { n: 3, active: false, title: "Vault hace el resto", desc: "La IA categoriza y actualiza tu tablero" },
+    { n: 1, active: true, title: "Creá una cuenta", desc: "Agregá tu billetera" },
+    { n: 2, active: false, title: "Subí tu extracto", desc: "PDF o XLSX de tu resumen mensual" },
+    {
+      n: 3,
+      active: false,
+      title: "Vault hace el resto",
+      desc: "La IA categoriza y actualiza tu tablero",
+    },
   ];
 
   return (
@@ -72,7 +98,9 @@ export function DashboardPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="page-title">{formatPeriod(summary.period)}</h1>
-          <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">Resumen de tu patrimonio y movimientos.</p>
+          <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">
+            Resumen de tu patrimonio y movimientos.
+          </p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">
@@ -116,15 +144,31 @@ export function DashboardPage() {
               Agregá tu primera cuenta para empezar a ver tu patrimonio real.
             </p>
 
-            <div style={{ display: "flex", justifyContent: "center", gap: 0, alignItems: "flex-start" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 0,
+                alignItems: "flex-start",
+              }}
+            >
               {steps.map((step, i) => (
                 <>
                   <div
                     key={step.n}
-                    style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 12px" }}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "0 12px",
+                    }}
                   >
                     <div
-                      className={step.active ? "" : "border border-vault-border dark:border-[#30363d]"}
+                      className={
+                        step.active ? "" : "border border-vault-border dark:border-[#30363d]"
+                      }
                       style={{
                         width: 40,
                         height: 40,
@@ -139,7 +183,11 @@ export function DashboardPage() {
                         flexShrink: 0,
                       }}
                     >
-                      <span className={step.active ? "text-white" : "text-vault-muted2 dark:text-[#8b949e]"}>
+                      <span
+                        className={
+                          step.active ? "text-white" : "text-vault-muted2 dark:text-[#8b949e]"
+                        }
+                      >
                         {step.n}
                       </span>
                     </div>

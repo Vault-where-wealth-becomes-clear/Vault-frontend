@@ -46,7 +46,12 @@ apiClient.interceptors.response.use(
     const original = error.config as RetryableConfig | undefined;
     const status = error.response?.status;
 
-    if (status === 401 && original && !original._retry && useAuthStore.getState().refreshTokenValue) {
+    if (
+      status === 401 &&
+      original &&
+      !original._retry &&
+      useAuthStore.getState().refreshTokenValue
+    ) {
       original._retry = true;
       try {
         if (!refreshPromise) {

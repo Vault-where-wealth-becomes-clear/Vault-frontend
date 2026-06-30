@@ -98,7 +98,9 @@ export function UploadPage() {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Cuenta</label>
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  Cuenta
+                </label>
                 <select
                   required
                   value={accountId}
@@ -118,7 +120,9 @@ export function UploadPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Desde</label>
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    Desde
+                  </label>
                   <input
                     type="date"
                     required
@@ -128,7 +132,9 @@ export function UploadPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Hasta</label>
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    Hasta
+                  </label>
                   <input
                     type="date"
                     required
@@ -140,7 +146,9 @@ export function UploadPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Archivo</label>
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  Archivo
+                </label>
                 <input
                   type="file"
                   required
@@ -195,7 +203,9 @@ export function UploadPage() {
         <div className="card-vault">
           <h2 className="mb-3 section-label">Historial</h2>
           {!uploads || uploads.length === 0 ? (
-            <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Todavía no subiste ningún extracto.</p>
+            <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+              Todavía no subiste ningún extracto.
+            </p>
           ) : (
             <ul className="flex flex-col gap-2">
               {uploads.map((upload) => (
@@ -208,7 +218,10 @@ export function UploadPage() {
                     {upload.pending_mep && <span title="Falta TC MEP">⚠</span>}
                   </span>
                   {upload.status === "review" ? (
-                    <Link to={`/uploads/${upload.id}/review`} className="font-medium text-vault-yellow hover:underline">
+                    <Link
+                      to={`/uploads/${upload.id}/review`}
+                      className="font-medium text-vault-yellow hover:underline"
+                    >
                       Revisar →
                     </Link>
                   ) : (

@@ -1,5 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { useExchangeRates, useRecalculatePeriod, useSetExchangeRate } from "@/api/exchangeRates.api";
+import {
+  useExchangeRates,
+  useRecalculatePeriod,
+  useSetExchangeRate,
+} from "@/api/exchangeRates.api";
 import { extractErrorMessage } from "@/utils/apiError";
 import { formatPeriod, getCurrentPeriod } from "@/utils/formatDate";
 
@@ -28,8 +32,11 @@ export function ExchangeRateSettings() {
       const venta = Number(json.venta);
       if (!venta || isNaN(venta)) throw new Error("Valor inválido");
       const fetchedAt = new Date().toLocaleString("es-AR", {
-        day: "2-digit", month: "2-digit", year: "numeric",
-        hour: "2-digit", minute: "2-digit",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
       setAutoResult({ value: venta, fetchedAt });
       setMepRate(String(venta));
@@ -79,7 +86,9 @@ export function ExchangeRateSettings() {
         </button>
         {autoResult && (
           <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-            <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">${autoResult.value.toFixed(2)}</span>
+            <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+              ${autoResult.value.toFixed(2)}
+            </span>
             {" · "}
             {autoResult.fetchedAt}
           </span>
@@ -94,7 +103,9 @@ export function ExchangeRateSettings() {
 
       <form onSubmit={handleSubmit} className="mb-4 flex items-end gap-2">
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Período</label>
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+            Período
+          </label>
           <input
             type="date"
             required
@@ -104,7 +115,9 @@ export function ExchangeRateSettings() {
           />
         </div>
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">TC MEP</label>
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+            TC MEP
+          </label>
           <input
             type="number"
             step="0.01"
@@ -115,7 +128,11 @@ export function ExchangeRateSettings() {
             className="input-vault"
           />
         </div>
-        <button type="submit" disabled={setRate.isPending || recalculate.isPending} className="btn-primary">
+        <button
+          type="submit"
+          disabled={setRate.isPending || recalculate.isPending}
+          className="btn-primary"
+        >
           Guardar
         </button>
       </form>
@@ -134,13 +151,19 @@ export function ExchangeRateSettings() {
       {isLoading ? (
         <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</p>
       ) : !rates || rates.length === 0 ? (
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Todavía no declaraste ningún TC.</p>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          Todavía no declaraste ningún TC.
+        </p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {rates.map((rate) => (
             <li key={rate.id} className="flex items-center justify-between text-xs">
-              <span className="capitalize text-vault-muted2 dark:text-[#8b949e]">{formatPeriod(rate.period_month)}</span>
-              <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">${rate.mep_rate.toFixed(2)}</span>
+              <span className="capitalize text-vault-muted2 dark:text-[#8b949e]">
+                {formatPeriod(rate.period_month)}
+              </span>
+              <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                ${rate.mep_rate.toFixed(2)}
+              </span>
             </li>
           ))}
         </ul>

@@ -14,8 +14,7 @@ export interface ChallengeResponse {
 }
 
 export type LoginResult =
-  | { kind: "tokens"; tokens: TokenResponse }
-  | { kind: "challenge"; challenge: ChallengeResponse };
+  { kind: "tokens"; tokens: TokenResponse } | { kind: "challenge"; challenge: ChallengeResponse };
 
 function isChallenge(data: TokenResponse | ChallengeResponse): data is ChallengeResponse {
   return "challenge_name" in data;

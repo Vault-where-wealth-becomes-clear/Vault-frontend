@@ -56,8 +56,7 @@ export function ProfilePage() {
         <h2 className="mb-3 section-label">Mi cuenta</h2>
         <div className="flex flex-col gap-3">
           <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
-            Email:{" "}
-            <span className="text-vault-text dark:text-[#e6edf3]">{user?.email}</span>
+            Email: <span className="text-vault-text dark:text-[#e6edf3]">{user?.email}</span>
           </p>
           <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
             Plan:{" "}
@@ -183,9 +182,7 @@ export function ProfilePage() {
         className="card-vault max-w-md border-2 border-vault-red/40 bg-vault-red/5 dark:bg-vault-red/10"
         style={{ marginTop: "32px" }}
       >
-        <h2 className="mb-2 section-label text-vault-red">
-          ⚠ Zona de riesgo
-        </h2>
+        <h2 className="mb-2 section-label text-vault-red">⚠ Zona de riesgo</h2>
         <p className="mb-3 text-sm text-vault-muted2 dark:text-[#8b949e]">
           Esta acción elimina permanentemente tu cuenta, todas tus cuentas financieras, movimientos
           históricos y archivos subidos. No existe forma de recuperar estos datos.

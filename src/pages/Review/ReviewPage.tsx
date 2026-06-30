@@ -79,7 +79,11 @@ export function ReviewPage() {
           <p className="mb-4 text-sm text-vault-muted2 dark:text-[#8b949e]">
             No quedan transacciones pendientes de revisión para este extracto.
           </p>
-          <button onClick={handleConfirm} disabled={confirmReview.isPending} className="btn-primary">
+          <button
+            onClick={handleConfirm}
+            disabled={confirmReview.isPending}
+            className="btn-primary"
+          >
             {confirmReview.isPending ? "Confirmando..." : "Confirmar y finalizar"}
           </button>
         </div>
@@ -91,17 +95,20 @@ export function ReviewPage() {
               className="card-vault flex flex-wrap items-center justify-between gap-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-vault-text dark:text-[#e6edf3]">{txn.description}</p>
+                <p className="text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                  {txn.description}
+                </p>
                 <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-                  {formatDate(txn.date)} ·{" "}
-                  {formatCurrency(txn.amount_ars, "ARS")}
+                  {formatDate(txn.date)} · {formatCurrency(txn.amount_ars, "ARS")}
                   {txn.confidence !== null && ` · confianza ${(txn.confidence * 100).toFixed(0)}%`}
                 </p>
               </div>
 
               <select
                 value={categoryByTxn[txn.id] ?? ""}
-                onChange={(e) => setCategoryByTxn((prev) => ({ ...prev, [txn.id]: e.target.value }))}
+                onChange={(e) =>
+                  setCategoryByTxn((prev) => ({ ...prev, [txn.id]: e.target.value }))
+                }
                 className="input-vault w-48"
               >
                 <option value="" disabled>

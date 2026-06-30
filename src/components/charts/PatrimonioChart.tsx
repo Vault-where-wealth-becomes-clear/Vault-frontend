@@ -15,7 +15,12 @@ export function PatrimonioChart({ data }: PatrimonioChartProps) {
             <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <XAxis dataKey="month" tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+        <XAxis
+          dataKey="month"
+          tick={{ fill: "#94a3b8", fontSize: 10 }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis hide />
         <Tooltip
           contentStyle={{

@@ -63,7 +63,9 @@ export function ConfirmPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Email</label>
+            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              Email
+            </label>
             <input
               type="email"
               required
@@ -75,7 +77,9 @@ export function ConfirmPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Código</label>
+            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              Código
+            </label>
             <input
               type="text"
               inputMode="numeric"
