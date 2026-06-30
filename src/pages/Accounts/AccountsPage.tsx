@@ -141,8 +141,11 @@ export function AccountsPage() {
 
   const [searchParams] = useSearchParams();
   const entityParam = searchParams.get("entity");
+  const newParam = searchParams.get("new");
 
-  const [rightPanel, setRightPanel] = useState<RightPanel>("none");
+  const [rightPanel, setRightPanel] = useState<RightPanel>(() =>
+    newParam === "true" ? "new-account" : "none"
+  );
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() =>
     entityParam ? new Set([entityParam]) : new Set()
   );
@@ -198,6 +201,20 @@ export function AccountsPage() {
   }, [accounts]);
 
   const allGroupKeys = useMemo(() => Array.from(groupedAccounts.keys()), [groupedAccounts]);
+
+  useEffect(() => {
+    if (newParam === "true") {
+      setRightPanel("new-account");
+      setSelectedAccount(null);
+      setCreateError(null);
+      setBaseType("checking");
+      setInstitution("");
+      setIssuer("");
+      setReference("");
+      setBalance("0");
+      setNotes("");
+    }
+  }, [newParam]);
 
   useEffect(() => {
     if (!entityParam) return;
