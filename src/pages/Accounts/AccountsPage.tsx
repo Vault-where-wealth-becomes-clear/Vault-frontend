@@ -203,6 +203,20 @@ export function AccountsPage() {
   const allGroupKeys = useMemo(() => Array.from(groupedAccounts.keys()), [groupedAccounts]);
 
   useEffect(() => {
+    if (newParam === "true") {
+      setRightPanel("new-account");
+      setSelectedAccount(null);
+      setCreateError(null);
+      setBaseType("checking");
+      setInstitution("");
+      setIssuer("");
+      setReference("");
+      setBalance("0");
+      setNotes("");
+    }
+  }, [newParam]);
+
+  useEffect(() => {
     if (!entityParam) return;
     setExpandedGroups(new Set([entityParam]));
   }, [entityParam]);
