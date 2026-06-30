@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
-import { logout } from "@/api/auth.api";
+import { changePassword, logout } from "@/api/auth.api";
 import { useDeleteAccount } from "@/api/users.api";
 import { extractErrorMessage } from "@/utils/apiError";
 import { PLAN_LABELS } from "@/utils/planLabels";
@@ -18,6 +18,12 @@ export function ProfilePage() {
   // Contraseña
   const [showPassword, setShowPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Reglas de categorización
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -40,6 +46,35 @@ export function ProfilePage() {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleChangePassword = async (e: FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Las contraseñas nuevas no coinciden.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("La nueva contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      await changePassword(oldPassword, newPassword);
+      setPasswordSuccess(true);
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => {
+        setChangingPassword(false);
+        setPasswordSuccess(false);
+      }, 2000);
+    } catch (err) {
+      setPasswordError(extractErrorMessage(err));
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   return (
@@ -87,51 +122,70 @@ export function ProfilePage() {
             {!changingPassword ? (
               <button
                 type="button"
-                onClick={() => setChangingPassword(true)}
+                onClick={() => {
+                  setChangingPassword(true);
+                  setPasswordError(null);
+                  setPasswordSuccess(false);
+                }}
                 className="mt-2 text-xs text-vault-accent transition-colors hover:underline"
               >
                 Cambiar contraseña
               </button>
             ) : (
-              <div className="mt-3 flex flex-col gap-2 rounded-lg border border-vault-border p-3 dark:border-[#30363d]">
+              <form
+                onSubmit={handleChangePassword}
+                className="mt-3 flex flex-col gap-2 rounded-lg border border-vault-border p-3 dark:border-[#30363d]"
+              >
                 <input
                   type="password"
                   placeholder="Contraseña actual"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
                   className="input-vault"
                   autoComplete="current-password"
+                  required
                 />
                 <input
                   type="password"
-                  placeholder="Nueva contraseña"
+                  placeholder="Nueva contraseña (mín. 8 caracteres)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
                   className="input-vault"
                   autoComplete="new-password"
+                  required
                 />
                 <input
                   type="password"
                   placeholder="Confirmar nueva contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="input-vault"
                   autoComplete="new-password"
+                  required
                 />
+                {passwordError && <p className="text-xs text-vault-red">{passwordError}</p>}
+                {passwordSuccess && (
+                  <p className="text-xs text-vault-green">✓ Contraseña actualizada</p>
+                )}
                 <div className="flex items-center gap-2 pt-1">
-                  <button
-                    type="button"
-                    disabled
-                    className="btn-primary cursor-not-allowed opacity-40"
-                  >
-                    Guardar
+                  <button type="submit" disabled={passwordLoading} className="btn-primary">
+                    {passwordLoading ? "Guardando..." : "Guardar"}
                   </button>
-                  <span className="rounded-full bg-vault-s2 px-2.5 py-0.5 text-[10px] font-medium text-vault-muted2 dark:bg-[#21262d] dark:text-[#8b949e]">
-                    Próximamente
-                  </span>
                   <button
                     type="button"
-                    onClick={() => setChangingPassword(false)}
+                    onClick={() => {
+                      setChangingPassword(false);
+                      setPasswordError(null);
+                      setOldPassword("");
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
                     className="ml-auto text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
                   >
                     Cancelar
                   </button>
                 </div>
-              </div>
+              </form>
             )}
           </div>
         </div>

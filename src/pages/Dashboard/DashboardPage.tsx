@@ -7,7 +7,7 @@ import {
   useFullDashboard,
 } from "@/api/dashboard.api";
 import { useExportXlsx } from "@/api/exports.api";
-import { useExchangeRates } from "@/api/exchangeRates.api";
+import { useExchangeRates, useSetExchangeRate } from "@/api/exchangeRates.api";
 import { useAccounts } from "@/api/accounts.api";
 import { PatrimonioChart } from "@/components/charts/PatrimonioChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
@@ -46,10 +46,15 @@ export function DashboardPage() {
   const { data: exchangeRates } = useExchangeRates();
   const { data: accounts } = useAccounts();
   const exportXlsx = useExportXlsx();
+  const setRate = useSetExchangeRate();
+
   const [exportError, setExportError] = useState<string | null>(null);
   const [currencyDisplay, setCurrencyDisplay] = useState<"USD" | "ARS">(() => {
     return (localStorage.getItem("vault_currency_display") as "USD" | "ARS") ?? "USD";
   });
+  const [mepFetching, setMepFetching] = useState(false);
+  const [liveMep, setLiveMep] = useState<number | null>(null);
+  const [mepSaving, setMepSaving] = useState(false);
 
   const toggleCurrency = (currency: "USD" | "ARS") => {
     setCurrencyDisplay(currency);
@@ -63,6 +68,34 @@ export function DashboardPage() {
       window.open(url, "_blank");
     } catch (err) {
       setExportError(extractErrorMessage(err));
+    }
+  };
+
+  const handleFetchLiveMep = async () => {
+    setMepFetching(true);
+    setLiveMep(null);
+    try {
+      const res = await fetch("https://dolarapi.com/v1/dolares/mep");
+      if (!res.ok) throw new Error("HTTP");
+      const json = await res.json();
+      const venta = Number(json.venta);
+      if (!venta || isNaN(venta)) throw new Error("invalid");
+      setLiveMep(venta);
+    } catch {
+      // silently fail — leave liveMep null
+    } finally {
+      setMepFetching(false);
+    }
+  };
+
+  const handleSaveLiveMep = async () => {
+    if (!liveMep || !summary) return;
+    setMepSaving(true);
+    try {
+      await setRate.mutateAsync({ periodMonth: summary.period, mepRate: liveMep });
+      setLiveMep(null);
+    } finally {
+      setMepSaving(false);
     }
   };
 
@@ -214,21 +247,41 @@ export function DashboardPage() {
             <Link to="/accounts" className="btn-primary">
               Agregar mi primera cuenta
             </Link>
-            <a href="#" className="btn-ghost">
-              Ver cómo funciona
-            </a>
           </div>
         </div>
       ) : (
         <>
           <div className="mb-5 grid grid-cols-4 gap-4">
             {currencyDisplay === "ARS" && !mepForPeriod ? (
-              <div className="col-span-4 flex items-center gap-1.5 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#161b22] px-4 py-3 text-sm text-vault-muted2 dark:text-[#8b949e] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-                <span>Sin TC MEP para este período —</span>
-                <Link to="/settings" className="text-vault-accent hover:underline">
-                  configuralo en Configuración
+              <div className="col-span-4 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#161b22] px-4 py-3 text-sm text-vault-muted2 dark:text-[#8b949e] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                <span>Sin TC MEP para este período.</span>
+                {liveMep ? (
+                  <>
+                    <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+                      TC MEP: ${liveMep.toFixed(2)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSaveLiveMep}
+                      disabled={mepSaving}
+                      className="rounded border border-vault-accent/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent hover:bg-vault-accent/20"
+                    >
+                      {mepSaving ? "Guardando..." : "Guardar y usar"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleFetchLiveMep}
+                    disabled={mepFetching}
+                    className="rounded border border-vault-accent/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent hover:bg-vault-accent/20"
+                  >
+                    {mepFetching ? "Obteniendo..." : "Obtener TC MEP actual"}
+                  </button>
+                )}
+                <Link to="/settings" className="ml-auto text-xs text-vault-accent hover:underline">
+                  Configurar manualmente
                 </Link>
-                <span>para ver valores en ARS.</span>
               </div>
             ) : (
               <SummaryCard
