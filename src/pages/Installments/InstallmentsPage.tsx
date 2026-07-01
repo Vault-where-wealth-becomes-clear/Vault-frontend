@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useDashboardBreakdown } from "@/api/dashboard.api";
 import { useTransactions } from "@/api/transactions.api";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { getCategoryColor } from "@/utils/categoryColors";
 
 const DEFAULT_CATEGORIES = [
   "Supermercado",
@@ -189,8 +190,11 @@ export function InstallmentsPage() {
                   </span>
                   <div className="flex-1 overflow-hidden rounded-full bg-vault-border dark:bg-[#30363d]">
                     <div
-                      className="h-2 rounded-full bg-vault-accent"
-                      style={{ width: `${Math.min(item.pct_of_total, 100)}%` }}
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${Math.min(item.pct_of_total, 100)}%`,
+                        backgroundColor: getCategoryColor(item.category),
+                      }}
                     />
                   </div>
                   <span className="w-20 text-right text-xs tabular-nums text-vault-muted2 dark:text-[#8b949e]">
@@ -220,41 +224,55 @@ export function InstallmentsPage() {
         <div
           style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8 }}
         >
-          {visibleDefaults.map((cat) => (
-            <div
-              key={cat}
-              className="group relative flex flex-col gap-1.5 rounded-xl border border-vault-border p-3 dark:border-[#30363d]"
-            >
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteCat(cat)}
-                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
-                title="Eliminar"
+          {visibleDefaults.map((cat) => {
+            const color = getCategoryColor(cat);
+            return (
+              <div
+                key={cat}
+                className="group relative flex flex-col gap-1.5 rounded-xl border p-3"
+                style={{
+                  borderColor: `${color}50`,
+                  backgroundColor: `${color}12`,
+                }}
               >
-                ×
-              </button>
-              <span style={{ fontSize: 20 }}>{CATEGORY_EMOJIS[cat] ?? "📦"}</span>
-              <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat}</span>
-            </div>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteCat(cat)}
+                  className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                  title="Eliminar"
+                >
+                  ×
+                </button>
+                <span style={{ fontSize: 20 }}>{CATEGORY_EMOJIS[cat] ?? "📦"}</span>
+                <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat}</span>
+              </div>
+            );
+          })}
 
-          {customCategories.map((cat) => (
-            <div
-              key={cat.name}
-              className="group relative flex flex-col gap-1.5 rounded-xl border border-vault-accent/30 p-3"
-            >
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteCat(cat.name)}
-                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
-                title="Eliminar"
+          {customCategories.map((cat) => {
+            const color = getCategoryColor(cat.name);
+            return (
+              <div
+                key={cat.name}
+                className="group relative flex flex-col gap-1.5 rounded-xl border p-3"
+                style={{
+                  borderColor: `${color}50`,
+                  backgroundColor: `${color}12`,
+                }}
               >
-                ×
-              </button>
-              <span style={{ fontSize: 20 }}>{cat.emoji}</span>
-              <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat.name}</span>
-            </div>
-          ))}
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteCat(cat.name)}
+                  className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                  title="Eliminar"
+                >
+                  ×
+                </button>
+                <span style={{ fontSize: 20 }}>{cat.emoji}</span>
+                <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat.name}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

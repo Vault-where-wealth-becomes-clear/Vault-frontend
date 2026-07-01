@@ -1,20 +1,29 @@
 export const CATEGORY_COLORS: Record<string, string> = {
-  Supermercado:    "#22c55e",
-  Restaurantes:    "#f97316",
-  Delivery:        "#eab308",
-  Combustible:     "#0ea5e9",
-  Transporte:      "#6366f1",
-  Salud:           "#ec4899",
-  Educación:       "#8b5cf6",
-  Entretenimiento: "#f59e0b",
-  Ropa:            "#a78bfa",
-  Electrónica:     "#06b6d4",
-  Servicios:       "#64748b",
-  Suscripciones:   "#c084fc",
-  Transferencias:  "#34d399",
-  Inversiones:     "#84cc16",
-  Impuestos:       "#fbbf24",
-  Varios:          "#94a3b8",
+  // User-specified
+  Supermercado:    "#4CAF50",
+  Restaurantes:    "#FF9800",
+  Transporte:      "#2196F3",
+  Ropa:            "#E91E63",
+  Entretenimiento: "#9C27B0",
+  Impuestos:       "#F44336",
+  Servicios:       "#00BCD4",
+  Viajes:          "#FF5722",
+  "Sin categoría": "#9E9E9E",
+
+  // Completados
+  Delivery:        "#FFCA28",
+  Combustible:     "#29B6F6",
+  Salud:           "#EC407A",
+  Educación:       "#5C6BC0",
+  Electrónica:     "#26A69A",
+  Suscripciones:   "#7E57C2",
+  Transferencias:  "#66BB6A",
+  Inversiones:     "#D4E157",
+  Varios:          "#78909C",
+
+  // Aliases usados en InstallmentsPage
+  Indumentaria:    "#E91E63",
+  Tecnología:      "#26A69A",
 };
 
 const FALLBACK_PALETTE = [
