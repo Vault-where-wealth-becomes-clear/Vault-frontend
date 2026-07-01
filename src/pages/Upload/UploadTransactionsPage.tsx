@@ -409,6 +409,28 @@ export function UploadTransactionsPage() {
               </tr>
             </thead>
             <tbody>
+              {(() => {
+                const openingBalance = isUsd
+                  ? (upload?.opening_balance_usd ?? 0)
+                  : (upload?.opening_balance_ars ?? 0);
+                return openingBalance !== 0 ? (
+                  <tr className="border-b border-vault-border/50 dark:border-[#30363d]/50 bg-vault-s2/50 dark:bg-[#21262d]/40">
+                    <td className="whitespace-nowrap px-4 py-2 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                      —
+                    </td>
+                    <td className="px-4 py-2 text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                      Saldo anterior
+                    </td>
+                    <td /><td />
+                    <td className={`whitespace-nowrap px-4 py-2 text-right tabular-nums text-xs font-semibold ${
+                      openingBalance >= 0 ? "text-vault-green" : "text-vault-red"
+                    }`}>
+                      {formatCurrency(Math.abs(openingBalance), currency)}
+                    </td>
+                    <td />
+                  </tr>
+                ) : null;
+              })()}
               {libroRows.map(({ txn, amount, saldo }, i) => {
                 const currentCategory = edits[txn.id] ?? txn.category ?? "";
                 const isEdited = txn.id in edits;

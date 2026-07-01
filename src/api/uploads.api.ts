@@ -14,6 +14,8 @@ export interface Upload {
   error_message: string | null;
   requested_modules: SkillModule[];
   pending_mep: boolean;
+  opening_balance_ars: number;
+  opening_balance_usd: number;
   uploaded_at: string;
   processed_at: string | null;
 }
