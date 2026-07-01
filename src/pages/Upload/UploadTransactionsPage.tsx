@@ -13,6 +13,25 @@ import { extractErrorMessage } from "@/utils/apiError";
 
 const CREDIT_CARD_TYPES = new Set(["credit_card_ars", "credit_card_usd"]);
 
+const CATEGORY_BG: Record<string, string> = {
+  Supermercado:    "#dcfce7",
+  Restaurantes:    "#ffedd5",
+  Delivery:        "#fef3c7",
+  Combustible:     "#e0f2fe",
+  Transporte:      "#dbeafe",
+  Salud:           "#fce7f3",
+  Educación:       "#e0e7ff",
+  Entretenimiento: "#fef9c3",
+  Ropa:            "#ede9fe",
+  Electrónica:     "#cffafe",
+  Servicios:       "#f1f5f9",
+  Suscripciones:   "#f3e8ff",
+  Transferencias:  "#f0fdf4",
+  Inversiones:     "#ecfccb",
+  Impuestos:       "#fef08a",
+  Varios:          "#f5f5f4",
+};
+
 function loadAllCategories(): string[] {
   try {
     const raw = localStorage.getItem("vault_custom_categories_v2");
@@ -59,6 +78,27 @@ export function UploadTransactionsPage() {
   });
 
   const changedCount = Object.keys(edits).length;
+
+  // Credit card summary (ARS and USD totals, split by Impuestos)
+  const ccSummary = useMemo(() => {
+    if (!isCreditCard || !transactions) return null;
+    let arsConsumos = 0;
+    let usdConsumos = 0;
+    let arsImpuestos = 0;
+    let usdImpuestos = 0;
+    for (const txn of transactions) {
+      const cat = (edits[txn.id] ?? txn.category ?? "").toLowerCase();
+      const isImpuesto = cat === "impuestos";
+      if (txn.currency === "USD" && txn.amount_usd != null) {
+        if (isImpuesto) usdImpuestos += Math.abs(txn.amount_usd);
+        else usdConsumos += Math.abs(txn.amount_usd);
+      } else {
+        if (isImpuesto) arsImpuestos += Math.abs(txn.amount_ars);
+        else arsConsumos += Math.abs(txn.amount_ars);
+      }
+    }
+    return { arsConsumos, usdConsumos, arsImpuestos, usdImpuestos };
+  }, [isCreditCard, transactions, edits]);
 
   // For libro diario: sort ASC and compute running saldo
   const libroRows = useMemo(() => {
@@ -180,6 +220,46 @@ export function UploadTransactionsPage() {
         </div>
       )}
 
+      {ccSummary && (
+        <div className="mb-4 grid grid-cols-3 gap-3">
+          <div className="rounded-vault border border-vault-border bg-white px-4 py-3 dark:border-[#30363d] dark:bg-[#161b22]">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+              Consumos ARS
+            </p>
+            <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+              {formatCurrency(ccSummary.arsConsumos, "ARS")}
+            </p>
+          </div>
+          {ccSummary.usdConsumos > 0 && (
+            <div className="rounded-vault border border-vault-border bg-white px-4 py-3 dark:border-[#30363d] dark:bg-[#161b22]">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                Consumos USD
+              </p>
+              <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+                {formatCurrency(ccSummary.usdConsumos, "USD")}
+              </p>
+            </div>
+          )}
+          {(ccSummary.arsImpuestos > 0 || ccSummary.usdImpuestos > 0) && (
+            <div className="rounded-vault border border-vault-yellow/30 bg-vault-yellow/5 px-4 py-3 dark:border-vault-yellow/20">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-yellow/80">
+                Impuestos y percepciones
+              </p>
+              {ccSummary.arsImpuestos > 0 && (
+                <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+                  {formatCurrency(ccSummary.arsImpuestos, "ARS")}
+                </p>
+              )}
+              {ccSummary.usdImpuestos > 0 && (
+                <p className="text-sm tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                  {formatCurrency(ccSummary.usdImpuestos, "USD")}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="card-vault overflow-hidden p-0">
         {!transactions || transactions.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-sm text-vault-muted2 dark:text-[#8b949e]">
@@ -218,7 +298,9 @@ export function UploadTransactionsPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                       <span className="text-vault-text dark:text-[#e6edf3]">
-                        {formatCurrency(Math.abs(txn.amount_ars), "ARS")}
+                        {txn.currency === "USD" && txn.amount_usd != null
+                          ? formatCurrency(Math.abs(txn.amount_usd), "USD")
+                          : formatCurrency(Math.abs(txn.amount_ars), "ARS")}
                       </span>
                     </td>
                     <td className="px-4 py-2">
@@ -229,7 +311,9 @@ export function UploadTransactionsPage() {
                       >
                         <option value="">Sin categoría</option>
                         {allCategories.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
+                          <option key={cat} value={cat} style={{ backgroundColor: CATEGORY_BG[cat] ?? "#f8fafc" }}>
+                            {cat}
+                          </option>
                         ))}
                       </select>
                     </td>
@@ -289,7 +373,9 @@ export function UploadTransactionsPage() {
                       >
                         <option value="">Sin categoría</option>
                         {allCategories.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
+                          <option key={cat} value={cat} style={{ backgroundColor: CATEGORY_BG[cat] ?? "#f8fafc" }}>
+                            {cat}
+                          </option>
                         ))}
                       </select>
                     </td>
