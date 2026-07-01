@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useInstallments } from "@/api/installments.api";
 import { useDashboardBreakdown } from "@/api/dashboard.api";
+import { useTransactions } from "@/api/transactions.api";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 const DEFAULT_CATEGORIES = [
@@ -34,52 +34,112 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   Varios: "📦",
 };
 
-function loadCustomCategories(): string[] {
+const EMOJI_OPTIONS = [
+  "📦","🛒","🍽️","🚗","❤️","👕","💻","🎬","🏠","📚",
+  "✈️","📈","🎁","💰","🏋️","🎮","🎵","🎨","🏖️","🐾",
+  "🧾","🔧","🌮","🍕","🎂","🛍️","🚌","🏥","🍺","💊",
+  "🐶","🌱","⚽","📱","🎓","🏦","🔑","🎪","🌟","🍀",
+];
+
+interface CustomCategory {
+  name: string;
+  emoji: string;
+}
+
+function loadCustomCategories(): CustomCategory[] {
   try {
-    return JSON.parse(localStorage.getItem("vault_custom_categories") ?? "[]");
+    const raw = localStorage.getItem("vault_custom_categories_v2");
+    if (raw) return JSON.parse(raw);
+    // migrate from old format (plain string array)
+    const old = localStorage.getItem("vault_custom_categories");
+    if (old) {
+      const names: string[] = JSON.parse(old);
+      return names.map((name) => ({ name, emoji: "✨" }));
+    }
+    return [];
   } catch {
     return [];
   }
 }
 
+function saveCustomCategories(cats: CustomCategory[]) {
+  localStorage.setItem("vault_custom_categories_v2", JSON.stringify(cats));
+  window.dispatchEvent(new Event("storage"));
+}
+
+function loadHiddenDefaults(): string[] {
+  try {
+    const raw = localStorage.getItem("vault_hidden_default_categories");
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHiddenDefaults(hidden: string[]) {
+  localStorage.setItem("vault_hidden_default_categories", JSON.stringify(hidden));
+  window.dispatchEvent(new Event("storage"));
+}
+
 export function InstallmentsPage() {
-  const { data: installments } = useInstallments();
   const { data: breakdown } = useDashboardBreakdown();
+  const { data: transactions } = useTransactions();
 
-  const hasBreakdown = breakdown && breakdown.length > 0;
+  const hasBreakdown = !!(breakdown && breakdown.length > 0);
+  const hasTransactions = !!(transactions && transactions.length > 0);
 
-  const [customCategories, setCustomCategories] = useState<string[]>(loadCustomCategories);
-  const [addingCategory, setAddingCategory] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
-  const addInputRef = useRef<HTMLInputElement>(null);
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>(loadCustomCategories);
+  const [hiddenDefaults, setHiddenDefaults] = useState<string[]>(loadHiddenDefaults);
+
+  const visibleDefaults = DEFAULT_CATEGORIES.filter((c) => !hiddenDefaults.includes(c));
+
+  // Delete modal
+  const [confirmDeleteCat, setConfirmDeleteCat] = useState<string | null>(null);
+  const deleteImpact = transactions?.filter((t) => t.category === confirmDeleteCat).length ?? 0;
+
+  // Create modal
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatEmoji, setNewCatEmoji] = useState("📦");
+  const createNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (addingCategory) addInputRef.current?.focus();
-  }, [addingCategory]);
+    if (createModalOpen) setTimeout(() => createNameRef.current?.focus(), 50);
+  }, [createModalOpen]);
 
-  const addCategory = () => {
-    const trimmed = newCategory.trim();
-    if (!trimmed) {
-      setAddingCategory(false);
+  const allCategoryNames = [
+    ...visibleDefaults,
+    ...customCategories.map((c) => c.name),
+  ];
+
+  const handleDeleteConfirm = () => {
+    if (!confirmDeleteCat) return;
+    if (DEFAULT_CATEGORIES.includes(confirmDeleteCat)) {
+      const updated = [...hiddenDefaults, confirmDeleteCat];
+      setHiddenDefaults(updated);
+      saveHiddenDefaults(updated);
+    } else {
+      const updated = customCategories.filter((c) => c.name !== confirmDeleteCat);
+      setCustomCategories(updated);
+      saveCustomCategories(updated);
+    }
+    setConfirmDeleteCat(null);
+  };
+
+  const handleCreateCategory = () => {
+    const trimmed = newCatName.trim();
+    if (!trimmed) return;
+    if (allCategoryNames.map((n) => n.toLowerCase()).includes(trimmed.toLowerCase())) {
+      setCreateModalOpen(false);
       return;
     }
-    const all = [...DEFAULT_CATEGORIES, ...customCategories];
-    if (!all.map((c) => c.toLowerCase()).includes(trimmed.toLowerCase())) {
-      const updated = [...customCategories, trimmed];
-      setCustomCategories(updated);
-      localStorage.setItem("vault_custom_categories", JSON.stringify(updated));
-    }
-    setNewCategory("");
-    setAddingCategory(false);
-  };
-
-  const removeCategory = (cat: string) => {
-    const updated = customCategories.filter((c) => c !== cat);
+    const updated = [...customCategories, { name: trimmed, emoji: newCatEmoji }];
     setCustomCategories(updated);
-    localStorage.setItem("vault_custom_categories", JSON.stringify(updated));
+    saveCustomCategories(updated);
+    setCreateModalOpen(false);
+    setNewCatName("");
+    setNewCatEmoji("📦");
   };
-
-  const isEmpty = !installments || installments.length === 0;
 
   return (
     <div className="p-7">
@@ -90,18 +150,12 @@ export function InstallmentsPage() {
         </p>
       </div>
 
-      {isEmpty && (
+      {!hasTransactions && (
         <div className="card-vault mb-5 flex flex-col items-center py-10 text-center">
-          <span
-            className="text-vault-muted2 dark:text-[#8b949e]"
-            style={{ fontSize: 32, marginBottom: 12 }}
-          >
+          <span className="text-vault-muted2 dark:text-[#8b949e]" style={{ fontSize: 32, marginBottom: 12 }}>
             ◷
           </span>
-          <p
-            className="text-vault-text dark:text-[#e6edf3]"
-            style={{ fontSize: 16, fontWeight: 300, marginBottom: 8 }}
-          >
+          <p className="text-vault-text dark:text-[#e6edf3]" style={{ fontSize: 16, fontWeight: 300, marginBottom: 8 }}>
             No hay movimientos registrados
           </p>
           <p className="mb-6 max-w-xs text-sm text-vault-muted2 dark:text-[#8b949e]">
@@ -118,84 +172,11 @@ export function InstallmentsPage() {
         </div>
       )}
 
-      <div className="card-vault mb-5">
-        <h2 className="mb-4 section-label">Mis categorías</h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-            gap: 8,
-          }}
-        >
-          {DEFAULT_CATEGORIES.map((cat) => (
-            <div
-              key={cat}
-              className="flex flex-col gap-1.5 rounded-xl border border-vault-border p-3 dark:border-[#30363d]"
-            >
-              <span style={{ fontSize: 20 }}>{CATEGORY_EMOJIS[cat] ?? "📦"}</span>
-              <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat}</span>
-            </div>
-          ))}
-
-          {customCategories.map((cat) => (
-            <div
-              key={cat}
-              className="relative flex flex-col gap-1.5 rounded-xl border border-vault-accent/30 p-3"
-            >
-              <button
-                type="button"
-                onClick={() => removeCategory(cat)}
-                className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full text-[10px] text-vault-muted2 transition-colors hover:bg-vault-red/10 hover:text-vault-red dark:text-[#8b949e]"
-              >
-                ×
-              </button>
-              <span style={{ fontSize: 20 }}>✨</span>
-              <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat}</span>
-            </div>
-          ))}
-
-          {addingCategory ? (
-            <div className="flex flex-col gap-1.5 rounded-xl border-2 border-dashed border-vault-accent/40 p-3">
-              <input
-                ref={addInputRef}
-                type="text"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addCategory();
-                  }
-                  if (e.key === "Escape") {
-                    setAddingCategory(false);
-                    setNewCategory("");
-                  }
-                }}
-                onBlur={addCategory}
-                placeholder="Nombre..."
-                className="w-full rounded border border-vault-border bg-transparent text-xs text-vault-text outline-none placeholder:text-vault-muted2 dark:border-[#30363d] dark:text-[#e6edf3]"
-                style={{ padding: "2px 4px" }}
-              />
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAddingCategory(true)}
-              className="flex flex-col gap-1.5 rounded-xl border-2 border-dashed border-vault-border2 p-3 transition-colors hover:border-vault-accent/40 dark:border-[#484f58]"
-            >
-              <span className="text-vault-muted2 dark:text-[#8b949e]" style={{ fontSize: 20 }}>
-                +
-              </span>
-              <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">Nueva</span>
-            </button>
-          )}
-        </div>
-      </div>
       {hasBreakdown && (
-        <div className="card-vault">
+        <div className="card-vault mb-5">
           <h2 className="mb-4 section-label">Resumen por categoría</h2>
           <p className="mb-4 text-xs text-vault-muted2 dark:text-[#8b949e]">
-            Gastos del mes actual agrupados por categoría.
+            Gastos del período actual agrupados por categoría.
           </p>
           <ul className="flex flex-col gap-2">
             {breakdown
@@ -221,6 +202,181 @@ export function InstallmentsPage() {
                 </li>
               ))}
           </ul>
+        </div>
+      )}
+
+      {/* Mis categorías */}
+      <div className="card-vault">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="section-label">Mis categorías</h2>
+          <button
+            type="button"
+            onClick={() => setCreateModalOpen(true)}
+            className="rounded-vault border border-vault-accent/40 bg-vault-accent/10 px-3 py-1 text-xs font-medium text-vault-accent hover:bg-vault-accent/20"
+          >
+            + Nueva categoría
+          </button>
+        </div>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8 }}
+        >
+          {visibleDefaults.map((cat) => (
+            <div
+              key={cat}
+              className="group relative flex flex-col gap-1.5 rounded-xl border border-vault-border p-3 dark:border-[#30363d]"
+            >
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteCat(cat)}
+                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                title="Eliminar"
+              >
+                ×
+              </button>
+              <span style={{ fontSize: 20 }}>{CATEGORY_EMOJIS[cat] ?? "📦"}</span>
+              <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat}</span>
+            </div>
+          ))}
+
+          {customCategories.map((cat) => (
+            <div
+              key={cat.name}
+              className="group relative flex flex-col gap-1.5 rounded-xl border border-vault-accent/30 p-3"
+            >
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteCat(cat.name)}
+                className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                title="Eliminar"
+              >
+                ×
+              </button>
+              <span style={{ fontSize: 20 }}>{cat.emoji}</span>
+              <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Modal: confirmar eliminación */}
+      {confirmDeleteCat && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setConfirmDeleteCat(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+              Eliminar "{confirmDeleteCat}"
+            </h3>
+            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+              {deleteImpact > 0 ? (
+                <>
+                  <span className="font-medium text-vault-yellow">{deleteImpact} transacción{deleteImpact !== 1 ? "es" : ""}</span>{" "}
+                  quedar{deleteImpact !== 1 ? "án" : "á"} sin categoría.
+                </>
+              ) : (
+                "No hay transacciones con esta categoría."
+              )}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteCat(null)}
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                className="flex-1 rounded-vault border border-vault-red/30 bg-vault-red/10 py-2 text-sm font-medium text-vault-red hover:bg-vault-red/20"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: crear categoría */}
+      {createModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setCreateModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-4 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+              Nueva categoría
+            </h3>
+
+            <div className="mb-4">
+              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                Nombre
+              </label>
+              <input
+                ref={createNameRef}
+                type="text"
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateCategory();
+                  if (e.key === "Escape") setCreateModalOpen(false);
+                }}
+                placeholder="Ej: Mascotas"
+                className="input-vault"
+                maxLength={30}
+              />
+            </div>
+
+            <div className="mb-5">
+              <label className="mb-2 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                Ícono —{" "}
+                <span className="text-base">{newCatEmoji}</span>
+              </label>
+              <div
+                style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 4 }}
+              >
+                {EMOJI_OPTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setNewCatEmoji(emoji)}
+                    className={`flex items-center justify-center rounded-lg py-1 text-base transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
+                      newCatEmoji === emoji
+                        ? "bg-vault-accent/10 ring-1 ring-vault-accent/40"
+                        : ""
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateCategory}
+                disabled={!newCatName.trim()}
+                className="flex-1 rounded-vault bg-vault-accent py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+              >
+                Crear
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

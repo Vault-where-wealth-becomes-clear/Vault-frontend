@@ -12,6 +12,7 @@ import { SettingsPage } from "@/pages/Settings/SettingsPage";
 import { ProfilePage } from "@/pages/Profile/ProfilePage";
 import { InstallmentsPage } from "@/pages/Installments/InstallmentsPage";
 import { ReviewPage } from "@/pages/Review/ReviewPage";
+import { UploadTransactionsPage } from "@/pages/Upload/UploadTransactionsPage";
 import { refreshSessionFromStorage } from "@/api/client";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -67,6 +68,7 @@ export function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="upload" element={<UploadPage />} />
         <Route path="uploads/:uploadId/review" element={<ReviewPage />} />
+        <Route path="uploads/:uploadId/transactions" element={<UploadTransactionsPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="installments" element={<InstallmentsPage />} />
         <Route path="settings" element={<SettingsPage />} />

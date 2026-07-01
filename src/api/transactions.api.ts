@@ -59,6 +59,19 @@ export function useTransactions(filters: TransactionFilters = {}) {
   });
 }
 
+export function useUploadTransactions(uploadId: string | null) {
+  return useQuery({
+    queryKey: ["transactions", "upload", uploadId],
+    enabled: !!uploadId,
+    queryFn: async (): Promise<Transaction[]> => {
+      const { data } = await apiClient.get<Transaction[]>("/transactions", {
+        params: { upload_id: uploadId },
+      });
+      return data;
+    },
+  });
+}
+
 export function useReviewQueue(uploadId: string | null) {
   return useQuery({
     queryKey: ["review-queue", uploadId],

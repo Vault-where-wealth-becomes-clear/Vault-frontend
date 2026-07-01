@@ -44,6 +44,32 @@ export function useUploads() {
   });
 }
 
+export function useAccountUploads(accountId: string | null) {
+  return useQuery({
+    queryKey: ["uploads", "account", accountId],
+    enabled: !!accountId,
+    queryFn: async (): Promise<Upload[]> => {
+      const { data } = await apiClient.get<Upload[]>("/uploads", {
+        params: { account_id: accountId },
+      });
+      return data;
+    },
+  });
+}
+
+export function useDeleteUpload() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (uploadId: string): Promise<void> => {
+      await apiClient.delete(`/uploads/${uploadId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["uploads"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    },
+  });
+}
+
 export function useUploadStatus(uploadId: string | null) {
   return useQuery({
     queryKey: ["upload-status", uploadId],

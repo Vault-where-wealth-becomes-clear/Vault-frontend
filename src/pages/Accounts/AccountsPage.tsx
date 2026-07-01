@@ -10,7 +10,7 @@ import {
   type AccountType,
   type CurrencyType,
 } from "@/api/accounts.api";
-import { useSubmitUpload, useUploadStatus, type UploadStatus } from "@/api/uploads.api";
+import { useSubmitUpload, useUploadStatus, useAccountUploads, useDeleteUpload, type UploadStatus } from "@/api/uploads.api";
 import { useCreateManualTransaction } from "@/api/transactions.api";
 import type { SkillModule } from "@/components/upload/ModuleSelector";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -137,6 +137,7 @@ export function AccountsPage() {
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
   const submitUpload = useSubmitUpload();
+  const deleteUpload = useDeleteUpload();
   const createManualTransaction = useCreateManualTransaction();
 
   const [searchParams] = useSearchParams();
@@ -166,12 +167,27 @@ export function AccountsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [showUploadForm, setShowUploadForm] = useState(false);
   const [periodStart, setPeriodStart] = useState(() => getMonthBounds().start);
   const [periodEnd, setPeriodEnd] = useState(() => getMonthBounds().end);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
   const { data: activeStatus } = useUploadStatus(activeUploadId);
+  const { data: accountUploads } = useAccountUploads(selectedAccount?.id ?? null);
+
+  // Delete upload modal
+  const [deleteUploadId, setDeleteUploadId] = useState<string | null>(null);
+  const deleteUploadEntry = accountUploads?.find((u) => u.id === deleteUploadId);
+  const deleteUploadLabel = deleteUploadEntry
+    ? (() => {
+        const [year, month] = deleteUploadEntry.period_month.split("-");
+        return new Date(Number(year), Number(month) - 1, 1).toLocaleDateString("es-AR", {
+          month: "long",
+          year: "numeric",
+        });
+      })()
+    : "";
 
   // Edit section
   const [editOpen, setEditOpen] = useState(false);
@@ -318,6 +334,7 @@ export function AccountsPage() {
   const handleAccountClick = (account: Account) => {
     setSelectedAccount(account);
     setRightPanel("upload");
+    setShowUploadForm(false);
     const bounds = getMonthBounds();
     setPeriodStart(bounds.start);
     setPeriodEnd(bounds.end);
@@ -793,6 +810,7 @@ export function AccountsPage() {
         {/* Right panel: upload — non-cash */}
         {rightPanel === "upload" && selectedAccount && selectedAccount.account_type !== "cash" && (
           <div className="card-vault flex flex-col gap-4">
+            {/* Header */}
             <div className="flex items-start justify-between">
               <div>
                 <p
@@ -817,156 +835,243 @@ export function AccountsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleUploadSubmit} className="flex flex-col gap-3">
-              <div>
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                  Período
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
-                      Desde
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={periodStart}
-                      onChange={(e) => setPeriodStart(e.target.value)}
-                      className="input-vault"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
-                      Hasta
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={periodEnd}
-                      onChange={(e) => setPeriodEnd(e.target.value)}
-                      className="input-vault"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                  Archivo
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.xlsx"
-                  className="hidden"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-                />
-                {uploadFile ? (
-                  <div className="flex items-center justify-between rounded-lg border border-vault-green/30 bg-vault-green/5 px-3.5 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-vault-green">✓</span>
-                      <span className="max-w-[140px] truncate text-xs text-vault-text dark:text-[#e6edf3]">
-                        {uploadFile.name}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setUploadFile(null)}
-                      className="ml-2 text-xs text-vault-muted2 transition-colors hover:text-vault-red dark:text-[#8b949e]"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDragging(false);
-                      const file = e.dataTransfer.files?.[0];
-                      if (file) setUploadFile(file);
-                    }}
-                    className={`flex flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-6 text-center transition-colors ${
-                      isDragging
-                        ? "border-vault-accent bg-vault-accent/5"
-                        : "border-vault-border2 dark:border-[#484f58]"
-                    }`}
-                  >
-                    <span className="text-xl text-vault-muted2 dark:text-[#8b949e]">↑</span>
-                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-                      Arrastrá tu PDF o XLSX acá
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 transition-colors hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]"
-                    >
-                      Seleccionar archivo
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {uploadError && (
-                <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
-                  {uploadError}
-                </div>
-              )}
-
+            {/* Subir extracto — colapsable */}
+            <div>
               <button
-                type="submit"
-                disabled={submitUpload.isPending || !uploadFile}
-                className="btn-primary mt-1 w-full"
+                type="button"
+                onClick={() => {
+                  setShowUploadForm((v) => !v);
+                  setUploadFile(null);
+                  setUploadError(null);
+                }}
+                className="btn-primary w-full"
               >
-                {submitUpload.isPending ? "Subiendo..." : "Subir extracto"}
+                {showUploadForm ? "Cancelar" : "+ Subir extracto"}
               </button>
-            </form>
 
-            {activeStatus && (
-              <>
-                <div className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm dark:bg-[#21262d]">
-                  Estado:{" "}
-                  <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
-                    {STATUS_LABELS[activeStatus.status]}
-                  </span>
-                  {activeStatus.error_message && (
-                    <p className="mt-1 text-xs text-vault-red">{activeStatus.error_message}</p>
-                  )}
-                  {activeStatus.status === "review" && (
-                    <Link
-                      to={`/uploads/${activeStatus.upload_id}/review`}
-                      className="mt-2 inline-block text-xs font-medium text-vault-accent hover:underline"
-                    >
-                      Revisar transacciones →
-                    </Link>
-                  )}
-                  {activeStatus.pending_mep && (
-                    <p className="mt-2 text-xs text-vault-yellow">
-                      Falta el TC MEP —{" "}
-                      <Link to="/settings" className="underline">
-                        declaralo en Configuración
-                      </Link>
+              {showUploadForm && (
+                <form onSubmit={handleUploadSubmit} className="mt-3 flex flex-col gap-3">
+                  <div>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      Período
                     </p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRightPanel("none");
-                    setSelectedAccount(null);
-                  }}
-                  className="text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
-                >
-                  ← Volver a mis cuentas
-                </button>
-              </>
-            )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
+                          Desde
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={periodStart}
+                          onChange={(e) => setPeriodStart(e.target.value)}
+                          className="input-vault"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
+                          Hasta
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={periodEnd}
+                          onChange={(e) => setPeriodEnd(e.target.value)}
+                          className="input-vault"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Edit section */}
+                  <div>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      Archivo
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.xlsx"
+                      className="hidden"
+                      onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                    />
+                    {uploadFile ? (
+                      <div className="flex items-center justify-between rounded-lg border border-vault-green/30 bg-vault-green/5 px-3.5 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-vault-green">✓</span>
+                          <span className="max-w-[140px] truncate text-xs text-vault-text dark:text-[#e6edf3]">
+                            {uploadFile.name}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setUploadFile(null)}
+                          className="ml-2 text-xs text-vault-muted2 transition-colors hover:text-vault-red dark:text-[#8b949e]"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDragging(true);
+                        }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDragging(false);
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) setUploadFile(file);
+                        }}
+                        className={`flex flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-6 text-center transition-colors ${
+                          isDragging
+                            ? "border-vault-accent bg-vault-accent/5"
+                            : "border-vault-border2 dark:border-[#484f58]"
+                        }`}
+                      >
+                        <span className="text-xl text-vault-muted2 dark:text-[#8b949e]">↑</span>
+                        <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                          Arrastrá tu PDF o XLSX acá
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 transition-colors hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]"
+                        >
+                          Seleccionar archivo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {uploadError && (
+                    <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
+                      {uploadError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={submitUpload.isPending || !uploadFile}
+                    className="btn-primary mt-1 w-full"
+                  >
+                    {submitUpload.isPending ? "Subiendo..." : "Subir extracto"}
+                  </button>
+
+                  {activeStatus && (
+                    <div className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm dark:bg-[#21262d]">
+                      Estado:{" "}
+                      <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
+                        {STATUS_LABELS[activeStatus.status]}
+                      </span>
+                      {activeStatus.error_message && (
+                        <p className="mt-1 text-xs text-vault-red">{activeStatus.error_message}</p>
+                      )}
+                      {activeStatus.status === "review" && (
+                        <Link
+                          to={`/uploads/${activeStatus.upload_id}/review`}
+                          className="mt-2 inline-block text-xs font-medium text-vault-accent hover:underline"
+                        >
+                          Revisar transacciones →
+                        </Link>
+                      )}
+                      {activeStatus.pending_mep && (
+                        <p className="mt-2 text-xs text-vault-yellow">
+                          Falta el TC MEP —{" "}
+                          <Link to="/settings" className="underline">
+                            declaralo en Configuración
+                          </Link>
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </form>
+              )}
+            </div>
+
+            {/* Períodos cargados */}
+            <div className="border-t border-vault-border pt-3 dark:border-[#30363d]">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                Períodos cargados
+              </p>
+              {!accountUploads || accountUploads.length === 0 ? (
+                <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                  Todavía no hay extractos subidos.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1.5">
+                  {accountUploads.map((u) => {
+                    const [year, month] = u.period_month.split("-");
+                    const label = new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(
+                      "es-AR",
+                      { month: "long", year: "numeric" }
+                    );
+                    const statusLabel =
+                      u.status === "done"
+                        ? "Completado"
+                        : u.status === "review"
+                          ? "Revisar"
+                          : u.status === "processing"
+                            ? "Procesando"
+                            : u.status === "error"
+                              ? "Error"
+                              : "Pendiente";
+                    const statusColor =
+                      u.status === "done"
+                        ? "text-vault-green"
+                        : u.status === "review"
+                          ? "text-vault-yellow"
+                          : u.status === "error"
+                            ? "text-vault-red"
+                            : u.status === "processing"
+                              ? "text-vault-accent"
+                              : "text-vault-muted2 dark:text-[#8b949e]";
+                    return (
+                      <li
+                        key={u.id}
+                        className="flex items-center justify-between rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 dark:bg-[#21262d]"
+                      >
+                        <div>
+                          <p className="text-xs font-medium capitalize text-vault-text dark:text-[#e6edf3]">
+                            {label}
+                          </p>
+                          <p className={`text-[11px] ${statusColor}`}>{statusLabel}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {(u.status === "review" || u.status === "done") && (
+                            <Link
+                              to={`/uploads/${u.id}/transactions`}
+                              className={
+                                u.status === "review"
+                                  ? "rounded border border-vault-yellow/40 bg-vault-yellow/10 px-2.5 py-0.5 text-[11px] font-medium text-vault-yellow hover:bg-vault-yellow/20"
+                                  : "rounded border border-vault-border px-2.5 py-0.5 text-[11px] text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#30363d] dark:text-[#8b949e]"
+                              }
+                            >
+                              Ver
+                            </Link>
+                          )}
+                          {(u.status === "done" || u.status === "review" || u.status === "error") && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteUploadId(u.id);
+                              }}
+                              className="flex h-5 w-5 items-center justify-center rounded text-[13px] text-vault-muted2 hover:bg-vault-red/10 hover:text-vault-red dark:text-[#8b949e]"
+                              title="Eliminar extracto"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Editar cuenta */}
             <div className="border-t border-vault-border pt-3 dark:border-[#30363d]">
               <button
                 type="button"
@@ -1211,6 +1316,51 @@ export function AccountsPage() {
           </div>
         )}
       </div>
+
+      {/* Modal: confirmar eliminación de extracto */}
+      {deleteUploadId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setDeleteUploadId(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+              Eliminar extracto
+            </h3>
+            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+              Vas a eliminar el extracto de{" "}
+              <span className="font-medium capitalize text-vault-text dark:text-[#e6edf3]">
+                {deleteUploadLabel}
+              </span>
+              . Esto borrará todas las transacciones asociadas. ¿Confirmar?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteUploadId(null)}
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleteUpload.isPending}
+                onClick={async () => {
+                  if (!deleteUploadId) return;
+                  await deleteUpload.mutateAsync(deleteUploadId);
+                  setDeleteUploadId(null);
+                }}
+                className="flex-1 rounded-vault border border-vault-red/30 bg-vault-red/10 py-2 text-sm font-medium text-vault-red hover:bg-vault-red/20 disabled:opacity-40"
+              >
+                {deleteUpload.isPending ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -38,11 +38,19 @@ const ADVANCED_SECTIONS: {
   },
 ];
 
+function addMonths(period: string, delta: number): string {
+  const [year, month] = period.split("-").map(Number);
+  const d = new Date(year, month - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export function DashboardPage() {
-  const { data: summary, isLoading: isLoadingSummary } = useDashboard();
-  const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown();
+  const [period, setPeriod] = useState<string | undefined>(undefined);
+
+  const { data: summary, isLoading: isLoadingSummary } = useDashboard(period);
+  const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown(period);
   const { data: evolution, isLoading: isLoadingEvolution } = useDashboardEvolution();
-  const { data: fullDashboard } = useFullDashboard();
+  const { data: fullDashboard } = useFullDashboard(period);
   const { data: exchangeRates } = useExchangeRates();
   const { data: accounts } = useAccounts();
   const exportXlsx = useExportXlsx();
@@ -130,7 +138,26 @@ export function DashboardPage() {
     <div className="p-7">
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="page-title">{formatPeriod(summary.period)}</h1>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPeriod(addMonths(summary.period, -1))}
+              className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:text-[#8b949e]"
+              aria-label="Mes anterior"
+            >
+              ‹
+            </button>
+            <h1 className="page-title">{formatPeriod(summary.period)}</h1>
+            <button
+              type="button"
+              onClick={() => setPeriod(addMonths(summary.period, 1))}
+              disabled={summary.period >= addMonths(new Date().toISOString().slice(0, 7), 0)}
+              className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent hover:text-vault-accent disabled:opacity-30 dark:text-[#8b949e]"
+              aria-label="Mes siguiente"
+            >
+              ›
+            </button>
+          </div>
           <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">
             Resumen de tu patrimonio y movimientos.
           </p>
