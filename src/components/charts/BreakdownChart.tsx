@@ -1,8 +1,7 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { BreakdownItem } from "@/api/dashboard.api";
 import { formatCurrency } from "@/utils/formatCurrency";
-
-const COLORS = ["#2563eb", "#7c3aed", "#16a34a", "#ea580c", "#d97706", "#6b7280"];
+import { getCategoryColor } from "@/utils/categoryColors";
 
 interface BreakdownChartProps {
   data: BreakdownItem[];
@@ -22,7 +21,11 @@ export function BreakdownChart({ data }: BreakdownChartProps) {
             paddingAngle={2}
           >
             {data.map((entry, index) => (
-              <Cell key={entry.category} fill={COLORS[index % COLORS.length]} stroke="none" />
+              <Cell
+                key={entry.category}
+                fill={getCategoryColor(entry.category, index)}
+                stroke="none"
+              />
             ))}
           </Pie>
           <Tooltip
@@ -43,7 +46,7 @@ export function BreakdownChart({ data }: BreakdownChartProps) {
             <div className="flex min-w-0 items-center gap-2">
               <span
                 className="h-2 w-2 flex-shrink-0 rounded-sm"
-                style={{ background: COLORS[index % COLORS.length] }}
+                style={{ background: getCategoryColor(item.category, index) }}
               />
               <span className="truncate text-vault-muted2 dark:text-[#8b949e]">
                 {item.category}

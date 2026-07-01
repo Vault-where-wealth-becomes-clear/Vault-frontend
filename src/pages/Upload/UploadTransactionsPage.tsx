@@ -266,13 +266,14 @@ export function UploadTransactionsPage() {
             No hay transacciones para este extracto.
           </div>
         ) : isCreditCard ? (
-          /* ── Formato tarjeta: Fecha | Descripción | Monto | Categoría ── */
+          /* ── Formato tarjeta: Fecha | Descripción | Monto | Moneda | Categoría ── */
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-vault-border dark:border-[#30363d]">
                 <th className={thClass}>Fecha</th>
                 <th className={thClass}>Descripción</th>
                 <th className={thClassRight}>Monto</th>
+                <th className={thClass}>Moneda</th>
                 <th className={thClass}>Categoría</th>
               </tr>
             </thead>
@@ -301,6 +302,17 @@ export function UploadTransactionsPage() {
                         {txn.currency === "USD" && txn.amount_usd != null
                           ? formatCurrency(Math.abs(txn.amount_usd), "USD")
                           : formatCurrency(Math.abs(txn.amount_ars), "ARS")}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-2.5">
+                      <span
+                        className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+                          txn.currency === "USD"
+                            ? "bg-vault-accent/10 text-vault-accent"
+                            : "bg-vault-s2 text-vault-muted2 dark:bg-[#21262d] dark:text-[#8b949e]"
+                        }`}
+                      >
+                        {txn.currency}
                       </span>
                     </td>
                     <td className="px-4 py-2">
