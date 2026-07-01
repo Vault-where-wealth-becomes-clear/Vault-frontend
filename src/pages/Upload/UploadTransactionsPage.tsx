@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useUploads } from "@/api/uploads.api";
 import { useAccounts } from "@/api/accounts.api";
@@ -10,27 +10,83 @@ import {
 } from "@/api/transactions.api";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { extractErrorMessage } from "@/utils/apiError";
+import { getCategoryColor } from "@/utils/categoryColors";
 
 const CREDIT_CARD_TYPES = new Set(["credit_card_ars", "credit_card_usd"]);
 
-const CATEGORY_BG: Record<string, string> = {
-  Supermercado:    "#dcfce7",
-  Restaurantes:    "#ffedd5",
-  Delivery:        "#fef3c7",
-  Combustible:     "#e0f2fe",
-  Transporte:      "#dbeafe",
-  Salud:           "#fce7f3",
-  Educación:       "#e0e7ff",
-  Entretenimiento: "#fef9c3",
-  Ropa:            "#ede9fe",
-  Electrónica:     "#cffafe",
-  Servicios:       "#f1f5f9",
-  Suscripciones:   "#f3e8ff",
-  Transferencias:  "#f0fdf4",
-  Inversiones:     "#ecfccb",
-  Impuestos:       "#fef08a",
-  Varios:          "#f5f5f4",
-};
+function CategorySelect({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (cat: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const color = value ? getCategoryColor(value) : null;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 rounded border px-2 py-1 text-xs transition-colors ${
+          color
+            ? "text-vault-text dark:text-[#e6edf3]"
+            : "border-vault-border text-vault-muted2 dark:border-[#30363d] dark:text-[#8b949e]"
+        }`}
+        style={color ? { backgroundColor: `${color}18`, borderColor: `${color}45` } : undefined}
+      >
+        {color && (
+          <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: color }} />
+        )}
+        <span>{value || "Sin categoría"}</span>
+        <span className="ml-0.5 text-[9px] opacity-40">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-20 mt-1 max-h-52 w-44 overflow-y-auto rounded-lg border border-vault-border bg-white shadow-lg dark:border-[#30363d] dark:bg-[#161b22]">
+          <button
+            type="button"
+            onClick={() => { onChange(""); setOpen(false); }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#21262d]"
+          >
+            <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#9E9E9E]" />
+            <span className="text-vault-muted2 dark:text-[#8b949e]">Sin categoría</span>
+          </button>
+          {options.map((cat) => {
+            const c = getCategoryColor(cat);
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => { onChange(cat); setOpen(false); }}
+                className={`flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
+                  cat === value ? "bg-vault-s2 dark:bg-[#21262d]" : ""
+                }`}
+              >
+                <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: c }} />
+                <span className="text-vault-text dark:text-[#e6edf3]">{cat}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function loadAllCategories(): string[] {
   try {
@@ -316,18 +372,11 @@ export function UploadTransactionsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      <select
+                      <CategorySelect
                         value={currentCategory}
-                        onChange={(e) => setEdits((prev) => ({ ...prev, [txn.id]: e.target.value }))}
-                        className="input-vault py-1 text-xs"
-                      >
-                        <option value="">Sin categoría</option>
-                        {allCategories.map((cat) => (
-                          <option key={cat} value={cat} style={{ backgroundColor: CATEGORY_BG[cat] ?? "#f8fafc" }}>
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
+                        options={allCategories}
+                        onChange={(cat) => setEdits((prev) => ({ ...prev, [txn.id]: cat }))}
+                      />
                     </td>
                   </tr>
                 );
@@ -378,18 +427,11 @@ export function UploadTransactionsPage() {
                       {formatCurrency(Math.abs(saldo), currency)}
                     </td>
                     <td className="px-4 py-2">
-                      <select
+                      <CategorySelect
                         value={currentCategory}
-                        onChange={(e) => setEdits((prev) => ({ ...prev, [txn.id]: e.target.value }))}
-                        className="input-vault py-1 text-xs"
-                      >
-                        <option value="">Sin categoría</option>
-                        {allCategories.map((cat) => (
-                          <option key={cat} value={cat} style={{ backgroundColor: CATEGORY_BG[cat] ?? "#f8fafc" }}>
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
+                        options={allCategories}
+                        onChange={(cat) => setEdits((prev) => ({ ...prev, [txn.id]: cat }))}
+                      />
                     </td>
                   </tr>
                 );
