@@ -217,7 +217,7 @@ export function UploadTransactionsPage() {
                       <p className="truncate text-vault-text dark:text-[#e6edf3]">{txn.description}</p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
-                      <span className={txn.amount_ars >= 0 ? "text-vault-green" : "text-vault-text dark:text-[#e6edf3]"}>
+                      <span className="text-vault-text dark:text-[#e6edf3]">
                         {formatCurrency(Math.abs(txn.amount_ars), "ARS")}
                       </span>
                     </td>
