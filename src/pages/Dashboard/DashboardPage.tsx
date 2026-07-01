@@ -141,7 +141,7 @@ export function DashboardPage() {
     : `${formatPercent(summary.variation_pct)} vs. mes anterior`;
 
   // Breakdown: filter out zero-amount items
-  const filteredBreakdown = breakdown?.filter((item) => item.pct_of_total > 0 && item.amount_ars > 0) ?? [];
+  const filteredBreakdown = breakdown?.filter((item) => item.amount_ars !== 0 && item.pct_of_total !== 0) ?? [];
 
   const steps = [
     { n: 1, active: true, title: "Creá una cuenta", desc: "Agregá tu billetera" },
