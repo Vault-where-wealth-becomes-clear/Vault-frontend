@@ -1,11 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
+export interface FlujoDelMes {
+  ingresos_ars: number;
+  egresos_ars: number;
+  resultado_ars: number;
+  ingresos_usd: number;
+  egresos_usd: number;
+}
+
 export interface DashboardSummary {
   period: string;
   total_usd: number;
   variation_pct: number;
   insights: string[];
+  flujo_del_mes: FlujoDelMes | null;
 }
 
 export interface BreakdownItem {
@@ -46,11 +55,14 @@ export function useDashboardBreakdown(period?: string) {
   });
 }
 
-export function useDashboardEvolution() {
+export function useDashboardEvolution(period?: string) {
   return useQuery({
-    queryKey: ["dashboard-evolution"],
+    queryKey: ["dashboard-evolution", period],
     queryFn: async (): Promise<EvolutionPoint[]> => {
-      const { data } = await apiClient.get<{ points: EvolutionPoint[] }>("/dashboard/evolution");
+      const params = period ? `?period=${period}` : "";
+      const { data } = await apiClient.get<{ points: EvolutionPoint[] }>(
+        `/dashboard/evolution${params}`
+      );
       return data.points;
     },
     staleTime: 1000 * 60 * 5,
