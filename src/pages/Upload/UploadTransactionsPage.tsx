@@ -136,6 +136,7 @@ export function UploadTransactionsPage() {
   const changedCount = Object.keys(edits).length;
 
   // Credit card summary (ARS and USD totals, split by Impuestos)
+  // Only counts negative amounts — credits like CR.RG are excluded from expense totals
   const ccSummary = useMemo(() => {
     if (!isCreditCard || !transactions) return null;
     let arsConsumos = 0;
@@ -145,15 +146,15 @@ export function UploadTransactionsPage() {
     for (const txn of transactions) {
       const cat = (edits[txn.id] ?? txn.category ?? "").toLowerCase();
       const isImpuesto = cat === "impuestos";
-      if (txn.currency === "USD" && txn.amount_usd != null) {
+      if (txn.currency === "USD" && txn.amount_usd != null && txn.amount_usd < 0) {
         if (isImpuesto) usdImpuestos += Math.abs(txn.amount_usd);
         else usdConsumos += Math.abs(txn.amount_usd);
-      } else {
+      } else if (txn.currency !== "USD" && txn.amount_ars < 0) {
         if (isImpuesto) arsImpuestos += Math.abs(txn.amount_ars);
         else arsConsumos += Math.abs(txn.amount_ars);
       }
     }
-    return { arsConsumos, usdConsumos, arsImpuestos, usdImpuestos };
+    return { arsConsumos, usdConsumos, arsImpuestos, usdImpuestos, arsTotal: arsConsumos + arsImpuestos };
   }, [isCreditCard, transactions, edits]);
 
   // For libro diario: sort ASC and compute running saldo
@@ -277,7 +278,7 @@ export function UploadTransactionsPage() {
       )}
 
       {ccSummary && (
-        <div className="mb-4 grid grid-cols-3 gap-3">
+        <div className="mb-4 grid grid-cols-4 gap-3">
           <div className="rounded-vault border border-vault-border bg-white px-4 py-3 dark:border-[#30363d] dark:bg-[#161b22]">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
               Consumos ARS
@@ -313,6 +314,17 @@ export function UploadTransactionsPage() {
               )}
             </div>
           )}
+          <div className="rounded-vault border border-vault-accent/30 bg-vault-accent/5 px-4 py-3 dark:border-vault-accent/20">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-accent/70">
+              Total ARS
+            </p>
+            <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+              {formatCurrency(ccSummary.arsTotal, "ARS")}
+            </p>
+            <p className="mt-0.5 text-[10px] text-vault-muted2 dark:text-[#8b949e]">
+              consumos + impuestos
+            </p>
+          </div>
         </div>
       )}
 
