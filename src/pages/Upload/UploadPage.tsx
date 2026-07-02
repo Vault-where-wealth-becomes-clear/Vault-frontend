@@ -94,8 +94,10 @@ export function UploadPage() {
         const rateValue = Number(mepRateInput);
         if (rateValue > 0) {
           await setExchangeRate.mutateAsync({ periodMonth: periodStart, mepRate: rateValue });
-          await recalculatePeriod.mutateAsync(periodStart);
         }
+      }
+      if (declaredRate || Number(mepRateInput) > 0) {
+        await recalculatePeriod.mutateAsync(periodStart);
       }
       const uploadId = await submitUpload.mutateAsync({
         accountId,
