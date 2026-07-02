@@ -394,7 +394,7 @@ export function DashboardPage() {
                 Todavía no hay movimientos este mes.
               </div>
             ) : (
-              <BreakdownChart data={filteredBreakdown} />
+              <BreakdownChart data={filteredBreakdown} mepRate={mepForPeriod} />
             )}
           </div>
 
