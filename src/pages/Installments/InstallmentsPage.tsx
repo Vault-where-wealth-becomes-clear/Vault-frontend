@@ -1,117 +1,168 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useDashboardBreakdown } from "@/api/dashboard.api";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useTransactions } from "@/api/transactions.api";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { getCategoryColor } from "@/utils/categoryColors";
 
+// ─── canonical lists ──────────────────────────────────────────────────────────
+
+const EXPENSE_CATEGORIES = new Set([
+  "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
+  "Tecnología", "Entretenimiento", "Servicios", "Educación", "Viajes",
+  "Suscripciones", "Impuestos", "Varios",
+]);
+
 const DEFAULT_CATEGORIES = [
-  "Supermercado",
-  "Restaurantes",
-  "Transporte",
-  "Salud",
-  "Indumentaria",
-  "Tecnología",
-  "Entretenimiento",
-  "Servicios",
-  "Educación",
-  "Viajes",
-  "Inversiones",
-  "Varios",
+  "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
+  "Tecnología", "Entretenimiento", "Servicios", "Educación", "Viajes",
+  "Suscripciones", "Impuestos", "Varios",
+  "Ingreso operativo", "Rendimiento", "Cambio de moneda", "Pago deuda",
+  "Transferencia interna", "Reintegro", "Sin categoría",
 ];
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  Supermercado: "🛒",
-  Restaurantes: "🍽️",
-  Transporte: "🚗",
-  Salud: "❤️",
-  Indumentaria: "👕",
-  Tecnología: "💻",
-  Entretenimiento: "🎬",
-  Servicios: "🏠",
-  Educación: "📚",
-  Viajes: "✈️",
-  Inversiones: "📈",
-  Varios: "📦",
+const DEFAULT_EMOJIS: Record<string, string> = {
+  Supermercado: "🛒", Restaurantes: "🍽️", Transporte: "🚗", Salud: "❤️",
+  Indumentaria: "👕", Tecnología: "💻", Entretenimiento: "🎬", Servicios: "🏠",
+  Educación: "📚", Viajes: "✈️", Suscripciones: "🔄", Impuestos: "🧾",
+  Varios: "📦", "Ingreso operativo": "💼", Rendimiento: "📈",
+  "Cambio de moneda": "💱", "Pago deuda": "💳", "Transferencia interna": "↔️",
+  Reintegro: "↩️", "Sin categoría": "❓",
 };
 
 const EMOJI_OPTIONS = [
   "📦","🛒","🍽️","🚗","❤️","👕","💻","🎬","🏠","📚",
   "✈️","📈","🎁","💰","🏋️","🎮","🎵","🎨","🏖️","🐾",
   "🧾","🔧","🌮","🍕","🎂","🛍️","🚌","🏥","🍺","💊",
-  "🐶","🌱","⚽","📱","🎓","🏦","🔑","🎪","🌟","🍀",
+  "🐶","🌱","⚽","📱","🎓","🏦","🔑","🔄","💱","💳",
+  "↔️","↩️","❓","💼","💵","🏷️","⭐","🎪","🌟","🍀",
 ];
 
-interface CustomCategory {
-  name: string;
-  emoji: string;
-}
+// ─── storage helpers ──────────────────────────────────────────────────────────
+
+interface CustomCategory { name: string; emoji: string; }
+interface CategoryOverride { emoji?: string; color?: string; }
 
 function loadCustomCategories(): CustomCategory[] {
   try {
     const raw = localStorage.getItem("vault_custom_categories_v2");
     if (raw) return JSON.parse(raw);
-    // migrate from old format (plain string array)
     const old = localStorage.getItem("vault_custom_categories");
-    if (old) {
-      const names: string[] = JSON.parse(old);
-      return names.map((name) => ({ name, emoji: "✨" }));
-    }
+    if (old) return (JSON.parse(old) as string[]).map((name) => ({ name, emoji: "✨" }));
     return [];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
-
 function saveCustomCategories(cats: CustomCategory[]) {
   localStorage.setItem("vault_custom_categories_v2", JSON.stringify(cats));
   window.dispatchEvent(new Event("storage"));
 }
-
 function loadHiddenDefaults(): string[] {
-  try {
-    const raw = localStorage.getItem("vault_hidden_default_categories");
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem("vault_hidden_default_categories") ?? "[]"); }
+  catch { return []; }
 }
-
 function saveHiddenDefaults(hidden: string[]) {
   localStorage.setItem("vault_hidden_default_categories", JSON.stringify(hidden));
   window.dispatchEvent(new Event("storage"));
 }
+function loadOverrides(): Record<string, CategoryOverride> {
+  try { return JSON.parse(localStorage.getItem("vault_category_overrides") ?? "{}"); }
+  catch { return {}; }
+}
+function saveOverrides(overrides: Record<string, CategoryOverride>) {
+  localStorage.setItem("vault_category_overrides", JSON.stringify(overrides));
+}
+
+// ─── custom tooltip ───────────────────────────────────────────────────────────
+
+interface TooltipPayload {
+  name: string;
+  value: number;
+  payload: { category: string; amount_ars: number; pct: number };
+}
+
+function PieTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div
+      className="rounded-lg border border-vault-border bg-white px-3 py-2 shadow-lg dark:border-[#30363d] dark:bg-[#161b22]"
+      style={{ fontSize: 12 }}
+    >
+      <p className="mb-1 font-medium text-vault-text dark:text-[#e6edf3]">{p.category}</p>
+      <p className="text-vault-muted2 dark:text-[#8b949e]">{formatCurrency(p.amount_ars, "ARS")}</p>
+      <p className="text-vault-muted2 dark:text-[#8b949e]">{p.pct.toFixed(1)}% del total</p>
+    </div>
+  );
+}
+
+// ─── component ───────────────────────────────────────────────────────────────
 
 export function InstallmentsPage() {
-  const { data: breakdown } = useDashboardBreakdown();
-  const { data: transactions } = useTransactions();
-
-  const hasBreakdown = !!(breakdown && breakdown.length > 0);
-  const hasTransactions = !!(transactions && transactions.length > 0);
+  const { data: transactions } = useTransactions({ dateFrom: "2026-01-01" });
 
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>(loadCustomCategories);
   const [hiddenDefaults, setHiddenDefaults] = useState<string[]>(loadHiddenDefaults);
+  const [overrides, setOverrides] = useState<Record<string, CategoryOverride>>(loadOverrides);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
 
-  const visibleDefaults = DEFAULT_CATEGORIES.filter((c) => !hiddenDefaults.includes(c));
-
-  // Delete modal
+  // delete
   const [confirmDeleteCat, setConfirmDeleteCat] = useState<string | null>(null);
   const deleteImpact = transactions?.filter((t) => t.category === confirmDeleteCat).length ?? 0;
 
-  // Create modal
+  // create
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatEmoji, setNewCatEmoji] = useState("📦");
+  const [newCatColor, setNewCatColor] = useState("#78909C");
   const createNameRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     if (createModalOpen) setTimeout(() => createNameRef.current?.focus(), 50);
   }, [createModalOpen]);
 
-  const allCategoryNames = [
-    ...visibleDefaults,
-    ...customCategories.map((c) => c.name),
-  ];
+  // edit
+  const [editingCat, setEditingCat] = useState<{ name: string; isDefault: boolean } | null>(null);
+  const [editEmoji, setEditEmoji] = useState("📦");
+  const [editColor, setEditColor] = useState("#78909C");
+  const [editName, setEditName] = useState("");
+
+  const visibleDefaults = DEFAULT_CATEGORIES.filter((c) => !hiddenDefaults.includes(c));
+  const allCategoryNames = [...visibleDefaults, ...customCategories.map((c) => c.name)];
+
+  const getColor = (name: string, fallbackIndex = 0) =>
+    overrides[name]?.color ?? getCategoryColor(name, fallbackIndex);
+  const getEmoji = (name: string) => {
+    const custom = customCategories.find((c) => c.name === name);
+    return overrides[name]?.emoji ?? custom?.emoji ?? DEFAULT_EMOJIS[name] ?? "📦";
+  };
+
+  // ── cumulative acumulado desde enero 2026 ────────────────────────────────
+  const acumulado = useMemo(() => {
+    if (!transactions) return [];
+    const map = new Map<string, { amount_ars: number; amount_usd: number }>();
+    for (const t of transactions) {
+      if (!t.category || !EXPENSE_CATEGORIES.has(t.category)) continue;
+      if ((t.amount_ars ?? 0) >= 0) continue;
+      const prev = map.get(t.category) ?? { amount_ars: 0, amount_usd: 0 };
+      map.set(t.category, {
+        amount_ars: prev.amount_ars + Math.abs(t.amount_ars),
+        amount_usd: prev.amount_usd + Math.abs(t.amount_usd ?? 0),
+      });
+    }
+    const totalArs = Array.from(map.values()).reduce((s, v) => s + v.amount_ars, 0) || 1;
+    return Array.from(map.entries())
+      .map(([category, vals]) => ({
+        category,
+        amount_ars: vals.amount_ars,
+        amount_usd: vals.amount_usd,
+        pct: (vals.amount_ars / totalArs) * 100,
+      }))
+      .filter((item) => item.amount_ars > 0)
+      .sort((a, b) => b.amount_ars - a.amount_ars);
+  }, [transactions]);
+
+  const hasTransactions = !!(transactions && transactions.length > 0);
+
+  // ── handlers ──────────────────────────────────────────────────────────────
 
   const handleDeleteConfirm = () => {
     if (!confirmDeleteCat) return;
@@ -137,10 +188,41 @@ export function InstallmentsPage() {
     const updated = [...customCategories, { name: trimmed, emoji: newCatEmoji }];
     setCustomCategories(updated);
     saveCustomCategories(updated);
+    const newOverrides = { ...overrides, [trimmed]: { color: newCatColor } };
+    setOverrides(newOverrides);
+    saveOverrides(newOverrides);
     setCreateModalOpen(false);
     setNewCatName("");
     setNewCatEmoji("📦");
+    setNewCatColor("#78909C");
   };
+
+  const openEdit = (name: string, isDefault: boolean) => {
+    setEditingCat({ name, isDefault });
+    setEditName(name);
+    setEditEmoji(getEmoji(name));
+    setEditColor(getColor(name));
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingCat) return;
+    const newOverrides = {
+      ...overrides,
+      [editingCat.name]: { emoji: editEmoji, color: editColor },
+    };
+    setOverrides(newOverrides);
+    saveOverrides(newOverrides);
+    if (!editingCat.isDefault && editName.trim() && editName !== editingCat.name) {
+      const updated = customCategories.map((c) =>
+        c.name === editingCat.name ? { ...c, name: editName.trim() } : c
+      );
+      setCustomCategories(updated);
+      saveCustomCategories(updated);
+    }
+    setEditingCat(null);
+  };
+
+  // ── render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="p-7">
@@ -163,120 +245,208 @@ export function InstallmentsPage() {
             Subí tu primer extracto o registrá un movimiento manual para empezar a ver tu historial.
           </p>
           <div className="flex gap-3">
-            <Link to="/accounts" className="btn-primary">
-              Ir a Mis cuentas
-            </Link>
-            <button type="button" className="btn-ghost">
-              ¿Cómo funciona?
-            </button>
+            <Link to="/accounts" className="btn-primary">Ir a Mis cuentas</Link>
+            <button type="button" className="btn-ghost">¿Cómo funciona?</button>
           </div>
         </div>
       )}
 
-      {hasBreakdown && (
+      {/* ── Panel resumen acumulado ── */}
+      {acumulado.length > 0 && (
         <div className="card-vault mb-5">
-          <h2 className="mb-4 section-label">Resumen por categoría</h2>
+          <h2 className="mb-1 section-label">Acumulado desde enero 2026</h2>
           <p className="mb-4 text-xs text-vault-muted2 dark:text-[#8b949e]">
-            Gastos del período actual agrupados por categoría.
+            Gastos por categoría — monto total en ARS y USD.
           </p>
-          <ul className="flex flex-col gap-2">
-            {breakdown
-              .slice()
-              .sort((a, b) => b.pct_of_total - a.pct_of_total)
-              .map((item) => (
-                <li key={item.category} className="flex items-center gap-3">
-                  <span className="w-32 truncate text-sm text-vault-text dark:text-[#e6edf3]">
-                    {item.category}
-                  </span>
-                  <div className="flex-1 overflow-hidden rounded-full bg-vault-border dark:bg-[#30363d]">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{
-                        width: `${Math.min(item.pct_of_total, 100)}%`,
-                        backgroundColor: getCategoryColor(item.category),
-                      }}
-                    />
-                  </div>
-                  <span className="w-20 text-right text-xs tabular-nums text-vault-muted2 dark:text-[#8b949e]">
-                    {formatCurrency(item.amount_ars, "ARS")}
-                  </span>
-                  <span className="w-10 text-right text-xs tabular-nums text-vault-muted2 dark:text-[#8b949e]">
-                    {item.pct_of_total.toFixed(0)}%
-                  </span>
-                </li>
-              ))}
-          </ul>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+            {/* pie chart */}
+            <div className="flex-shrink-0" style={{ width: 180, height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={acumulado}
+                    dataKey="amount_ars"
+                    nameKey="category"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    stroke="none"
+                  >
+                    {acumulado.map((entry, index) => (
+                      <Cell
+                        key={entry.category}
+                        fill={getColor(entry.category, index)}
+                        stroke="none"
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<PieTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* table */}
+            <div className="flex-1 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-vault-border dark:border-[#30363d]">
+                    <th className="pb-2 text-left font-medium text-vault-muted2 dark:text-[#8b949e]">
+                      Categoría
+                    </th>
+                    <th className="pb-2 text-right font-medium text-vault-muted2 dark:text-[#8b949e]">
+                      ARS
+                    </th>
+                    <th className="pb-2 text-right font-medium text-vault-muted2 dark:text-[#8b949e]">
+                      USD
+                    </th>
+                    <th className="pb-2 text-right font-medium text-vault-muted2 dark:text-[#8b949e]">
+                      %
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {acumulado.map((item, index) => (
+                    <tr
+                      key={item.category}
+                      className="border-b border-vault-border/50 last:border-0 dark:border-[#30363d]/50"
+                    >
+                      <td className="py-2 pr-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
+                            style={{ background: getColor(item.category, index) }}
+                          />
+                          <span className="text-vault-text dark:text-[#e6edf3]">
+                            {item.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-2 text-right tabular-nums text-vault-text dark:text-[#e6edf3]">
+                        {formatCurrency(item.amount_ars, "ARS")}
+                      </td>
+                      <td className="py-2 pl-4 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                        {item.amount_usd > 0 ? formatCurrency(item.amount_usd, "USD") : "—"}
+                      </td>
+                      <td className="py-2 pl-3 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                        {item.pct.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Mis categorías */}
-      <div className="card-vault">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="section-label">Mis categorías</h2>
-          <button
-            type="button"
-            onClick={() => setCreateModalOpen(true)}
-            className="rounded-vault border border-vault-accent/40 bg-vault-accent/10 px-3 py-1 text-xs font-medium text-vault-accent hover:bg-vault-accent/20"
-          >
-            + Nueva categoría
-          </button>
-        </div>
-        <div
-          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8 }}
+      {/* ── Mis categorías (colapsable) ── */}
+      <div className="card-vault overflow-hidden p-0">
+        <button
+          type="button"
+          onClick={() => setCategoriesOpen((v) => !v)}
+          className={`flex w-full cursor-pointer items-center justify-between px-4 py-4 transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
+            categoriesOpen ? "border-b border-vault-border dark:border-[#30363d]" : ""
+          }`}
         >
-          {visibleDefaults.map((cat) => {
-            const color = getCategoryColor(cat);
-            return (
-              <div
-                key={cat}
-                className="group relative flex flex-col gap-1.5 rounded-xl border p-3"
-                style={{
-                  borderColor: `${color}50`,
-                  backgroundColor: `${color}12`,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteCat(cat)}
-                  className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
-                  title="Eliminar"
-                >
-                  ×
-                </button>
-                <span style={{ fontSize: 20 }}>{CATEGORY_EMOJIS[cat] ?? "📦"}</span>
-                <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat}</span>
-              </div>
-            );
-          })}
+          <h2 className="section-label">Mis categorías</h2>
+          <span
+            className="inline-block text-sm text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+            style={{ transform: categoriesOpen ? "rotate(90deg)" : "none" }}
+          >
+            ›
+          </span>
+        </button>
 
-          {customCategories.map((cat) => {
-            const color = getCategoryColor(cat.name);
-            return (
-              <div
-                key={cat.name}
-                className="group relative flex flex-col gap-1.5 rounded-xl border p-3"
-                style={{
-                  borderColor: `${color}50`,
-                  backgroundColor: `${color}12`,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setConfirmDeleteCat(cat.name)}
-                  className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
-                  title="Eliminar"
-                >
-                  ×
-                </button>
-                <span style={{ fontSize: 20 }}>{cat.emoji}</span>
-                <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat.name}</span>
-              </div>
-            );
-          })}
-        </div>
+        {categoriesOpen && (
+          <div className="px-4 pb-4 pt-3">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              {visibleDefaults.map((cat) => {
+                const color = getColor(cat);
+                return (
+                  <div
+                    key={cat}
+                    className="group relative flex flex-col gap-1.5 rounded-xl border p-3"
+                    style={{ borderColor: `${color}50`, backgroundColor: `${color}12` }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteCat(cat)}
+                      className="absolute right-5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                      title="Eliminar"
+                    >
+                      ×
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(cat, true)}
+                      className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-s2 hover:text-vault-text group-hover:opacity-100 dark:text-[#8b949e]"
+                      title="Editar"
+                    >
+                      ✎
+                    </button>
+                    <span style={{ fontSize: 20 }}>{getEmoji(cat)}</span>
+                    <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat}</span>
+                    <span
+                      className="mt-0.5 h-1.5 w-full rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                  </div>
+                );
+              })}
+
+              {customCategories.map((cat) => {
+                const color = getColor(cat.name);
+                return (
+                  <div
+                    key={cat.name}
+                    className="group relative flex flex-col gap-1.5 rounded-xl border p-3"
+                    style={{ borderColor: `${color}50`, backgroundColor: `${color}12` }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteCat(cat.name)}
+                      className="absolute right-5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                      title="Eliminar"
+                    >
+                      ×
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(cat.name, false)}
+                      className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-s2 hover:text-vault-text group-hover:opacity-100 dark:text-[#8b949e]"
+                      title="Editar"
+                    >
+                      ✎
+                    </button>
+                    <span style={{ fontSize: 20 }}>{getEmoji(cat.name)}</span>
+                    <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">{cat.name}</span>
+                    <span
+                      className="mt-0.5 h-1.5 w-full rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="rounded-vault border border-vault-accent/40 bg-vault-accent/10 px-3 py-1.5 text-xs font-medium text-vault-accent hover:bg-vault-accent/20"
+            >
+              + Nueva categoría
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Modal: confirmar eliminación */}
+      {/* ── Modal: confirmar eliminación ── */}
       {confirmDeleteCat && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -319,7 +489,7 @@ export function InstallmentsPage() {
         </div>
       )}
 
-      {/* Modal: crear categoría */}
+      {/* ── Modal: crear categoría ── */}
       {createModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -333,7 +503,7 @@ export function InstallmentsPage() {
               Nueva categoría
             </h3>
 
-            <div className="mb-4">
+            <div className="mb-3">
               <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
                 Nombre
               </label>
@@ -352,23 +522,32 @@ export function InstallmentsPage() {
               />
             </div>
 
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex-1">
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  Color
+                </label>
+                <input
+                  type="color"
+                  value={newCatColor}
+                  onChange={(e) => setNewCatColor(e.target.value)}
+                  className="h-9 w-full cursor-pointer rounded-vault border border-vault-border p-1 dark:border-[#30363d]"
+                />
+              </div>
+            </div>
+
             <div className="mb-5">
               <label className="mb-2 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
-                Ícono —{" "}
-                <span className="text-base">{newCatEmoji}</span>
+                Ícono — <span className="text-base">{newCatEmoji}</span>
               </label>
-              <div
-                style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 4 }}
-              >
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 4 }}>
                 {EMOJI_OPTIONS.map((emoji) => (
                   <button
                     key={emoji}
                     type="button"
                     onClick={() => setNewCatEmoji(emoji)}
                     className={`flex items-center justify-center rounded-lg py-1 text-base transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
-                      newCatEmoji === emoji
-                        ? "bg-vault-accent/10 ring-1 ring-vault-accent/40"
-                        : ""
+                      newCatEmoji === emoji ? "bg-vault-accent/10 ring-1 ring-vault-accent/40" : ""
                     }`}
                   >
                     {emoji}
@@ -392,6 +571,87 @@ export function InstallmentsPage() {
                 className="flex-1 rounded-vault bg-vault-accent py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
               >
                 Crear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: editar categoría ── */}
+      {editingCat && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEditingCat(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-4 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+              Editar "{editingCat.name}"
+            </h3>
+
+            {!editingCat.isDefault && (
+              <div className="mb-3">
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="input-vault"
+                  maxLength={30}
+                />
+              </div>
+            )}
+
+            <div className="mb-3">
+              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                Color
+              </label>
+              <input
+                type="color"
+                value={editColor}
+                onChange={(e) => setEditColor(e.target.value)}
+                className="h-9 w-full cursor-pointer rounded-vault border border-vault-border p-1 dark:border-[#30363d]"
+              />
+            </div>
+
+            <div className="mb-5">
+              <label className="mb-2 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                Ícono — <span className="text-base">{editEmoji}</span>
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 4 }}>
+                {EMOJI_OPTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setEditEmoji(emoji)}
+                    className={`flex items-center justify-center rounded-lg py-1 text-base transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
+                      editEmoji === emoji ? "bg-vault-accent/10 ring-1 ring-vault-accent/40" : ""
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setEditingCat(null)}
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                className="flex-1 rounded-vault bg-vault-accent py-2 text-sm font-medium text-white hover:opacity-90"
+              >
+                Guardar
               </button>
             </div>
           </div>
