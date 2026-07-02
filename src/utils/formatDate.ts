@@ -14,3 +14,14 @@ export function getCurrentPeriod(): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${now.getFullYear()}-${month}-01`;
 }
+
+export function formatDateTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
