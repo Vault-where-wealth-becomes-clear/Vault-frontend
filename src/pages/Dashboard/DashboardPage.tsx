@@ -8,6 +8,7 @@ import {
 } from "@/api/dashboard.api";
 import { useExportXlsx } from "@/api/exports.api";
 import { useExchangeRates, useSetExchangeRate } from "@/api/exchangeRates.api";
+import { getCotizacionMEP } from "@/api/mepQuote.api";
 import { useAccounts } from "@/api/accounts.api";
 import { PatrimonioChart } from "@/components/charts/PatrimonioChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
@@ -75,12 +76,8 @@ export function DashboardPage() {
     setMepFetching(true);
     setLiveMep(null);
     try {
-      const res = await fetch("https://dolarapi.com/v1/dolares/mep");
-      if (!res.ok) throw new Error("HTTP");
-      const json = await res.json();
-      const venta = Number(json.venta);
-      if (!venta || isNaN(venta)) throw new Error("invalid");
-      setLiveMep(venta);
+      const quote = await getCotizacionMEP();
+      setLiveMep(quote.venta);
     } catch {
       // silently fail — leave liveMep null
     } finally {
