@@ -4,6 +4,7 @@ import {
   useRecalculatePeriod,
   useSetExchangeRate,
 } from "@/api/exchangeRates.api";
+import { getCotizacionMEP } from "@/api/mepQuote.api";
 import { extractErrorMessage } from "@/utils/apiError";
 import { formatPeriod, getCurrentPeriod } from "@/utils/formatDate";
 
@@ -26,11 +27,7 @@ export function ExchangeRateSettings() {
     setAutoError(null);
     setAutoResult(null);
     try {
-      const res = await fetch("https://dolarapi.com/v1/dolares/mep");
-      if (!res.ok) throw new Error("HTTP error");
-      const json = await res.json();
-      const venta = Number(json.venta);
-      if (!venta || isNaN(venta)) throw new Error("Valor inválido");
+      const quote = await getCotizacionMEP();
       const fetchedAt = new Date().toLocaleString("es-AR", {
         day: "2-digit",
         month: "2-digit",
@@ -38,8 +35,8 @@ export function ExchangeRateSettings() {
         hour: "2-digit",
         minute: "2-digit",
       });
-      setAutoResult({ value: venta, fetchedAt });
-      setMepRate(String(venta));
+      setAutoResult({ value: quote.venta, fetchedAt });
+      setMepRate(String(quote.venta));
     } catch {
       setAutoError("No se pudo obtener el TC MEP. Ingresalo manualmente.");
     } finally {
