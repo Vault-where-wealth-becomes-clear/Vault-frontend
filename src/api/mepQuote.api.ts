@@ -46,20 +46,34 @@ interface ArgentinaDatosBolsaResponse {
 
 async function fetchFromDolarApi(): Promise<CotizacionMEP> {
   const json = await fetchJson<DolarApiBolsaResponse>(DOLARAPI_URL);
+  const compra = Number(json.compra);
+  const venta = Number(json.venta);
+  if (Number.isNaN(compra) || Number.isNaN(venta)) {
+    throw new Error("Respuesta invalida de dolarapi: compra/venta no numericos");
+  }
   return {
-    compra: Number(json.compra),
-    venta: Number(json.venta),
+    compra,
+    venta,
     fechaActualizacion: json.fechaActualizacion,
     fuente: "dolarapi",
   };
 }
 
 async function fetchFromArgentinaDatos(): Promise<CotizacionMEP> {
-  const json = await fetchJson<ArgentinaDatosBolsaResponse>(ARGENTINADATOS_URL);
+  const json = await fetchJson<ArgentinaDatosBolsaResponse[]>(ARGENTINADATOS_URL);
+  if (!Array.isArray(json) || json.length === 0) {
+    throw new Error("Respuesta invalida de argentinadatos: no hay cotizaciones disponibles");
+  }
+  const latest = json[json.length - 1];
+  const compra = Number(latest.compra);
+  const venta = Number(latest.venta);
+  if (Number.isNaN(compra) || Number.isNaN(venta)) {
+    throw new Error("Respuesta invalida de argentinadatos: compra/venta no numericos");
+  }
   return {
-    compra: Number(json.compra),
-    venta: Number(json.venta),
-    fechaActualizacion: new Date(json.fecha).toISOString(),
+    compra,
+    venta,
+    fechaActualizacion: new Date(latest.fecha).toISOString(),
     fuente: "argentinadatos",
   };
 }
@@ -91,12 +105,20 @@ export async function getCotizacionMEP(): Promise<CotizacionMEP> {
 
   try {
     const quote = await fetchFromDolarApi();
-    writeMepCache(quote);
+    try {
+      writeMepCache(quote);
+    } catch {
+      // cache write failed, non-fatal
+    }
     return quote;
   } catch {
     try {
       const quote = await fetchFromArgentinaDatos();
-      writeMepCache(quote);
+      try {
+        writeMepCache(quote);
+      } catch {
+        // cache write failed, non-fatal
+      }
       return quote;
     } catch {
       if (cached) {
