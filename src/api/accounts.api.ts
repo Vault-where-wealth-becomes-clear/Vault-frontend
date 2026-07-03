@@ -42,6 +42,58 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   savings_box: "Caja de ahorro",
 };
 
+/**
+ * Nombre a mostrar en toda la app: "Entidad · Tipo · Moneda · Referencia"
+ * (ej. "BBVA · CA · ARS · sueldo", "BBVA · Visa · ARS", "Efectivo · ARS · billetera").
+ * El tipo (emisor de tarjeta) y la referencia viajan embebidos en `account.name`
+ * desde que se crea la cuenta — no hay campos `issuer`/`reference` separados,
+ * así que se extraen de los segmentos separados por "·" según la convención de
+ * `generateAccountName` (AccountsPage.tsx): [prefijo, referencia?, moneda] para
+ * CC/CA/Efectivo, [emisor, referencia?] para tarjetas.
+ */
+export function getAccountDisplayName(account: Account): string {
+  const entity = account.institution?.trim() || "";
+  const parts = account.name
+    .split("·")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  let typeLabel = "";
+  let reference = "";
+
+  switch (account.account_type) {
+    case "checking_ars":
+    case "checking_usd":
+      typeLabel = "CC";
+      reference = parts.length === 3 ? parts[1] : "";
+      break;
+    case "savings_box":
+      typeLabel = "CA";
+      reference = parts.length === 3 ? parts[1] : "";
+      break;
+    case "cash":
+      reference = parts.length === 3 ? parts[1] : "";
+      break;
+    case "credit_card_ars":
+    case "credit_card_usd": {
+      const issuer = parts[0];
+      typeLabel = issuer && issuer !== entity ? issuer : "Tarjeta";
+      reference = parts.length === 2 ? parts[1] : "";
+      break;
+    }
+    case "broker":
+      typeLabel = "Broker";
+      break;
+    case "crypto":
+      typeLabel = "Cripto";
+      break;
+    default:
+      typeLabel = account.name;
+  }
+
+  return [entity, typeLabel, account.currency, reference].filter(Boolean).join(" · ");
+}
+
 export function useAccounts() {
   return useQuery({
     queryKey: ["accounts"],

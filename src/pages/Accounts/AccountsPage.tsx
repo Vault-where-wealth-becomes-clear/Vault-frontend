@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ACCOUNT_TYPE_LABELS,
+  getAccountDisplayName,
   useAccounts,
   useCreateAccount,
   useDeleteAccount,
@@ -11,13 +12,14 @@ import {
   type CurrencyType,
 } from "@/api/accounts.api";
 import { useSubmitUpload, useUploadStatus, useAccountUploads, useDeleteUpload, type UploadStatus } from "@/api/uploads.api";
-import { useCreateManualTransaction } from "@/api/transactions.api";
+import { useCreateManualTransaction, useTransactions, type Transaction } from "@/api/transactions.api";
 import type { SkillModule } from "@/components/upload/ModuleSelector";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { extractErrorMessage } from "@/utils/apiError";
 
 type BaseType = "credit_card" | "checking" | "broker" | "crypto" | "cash" | "savings_box";
 type RightPanel = "none" | "new-account" | "upload";
+type AccountSubView = "default" | "upload" | "periods" | "movement";
 
 const BASE_TYPE_OPTIONS: { value: BaseType; label: string }[] = [
   { value: "credit_card", label: "Tarjeta de crédito" },
@@ -167,14 +169,23 @@ export function AccountsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
-  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [accountSubView, setAccountSubView] = useState<AccountSubView>("default");
   const [periodStart, setPeriodStart] = useState(() => getMonthBounds().start);
-  const [periodEnd, setPeriodEnd] = useState(() => getMonthBounds().end);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
   const { data: activeStatus } = useUploadStatus(activeUploadId);
   const { data: accountUploads } = useAccountUploads(selectedAccount?.id ?? null);
+  const { data: accountTransactions } = useTransactions({
+    accountId: selectedAccount?.id,
+    enabled: !!selectedAccount,
+  });
+  const recentTransactions = useMemo<Transaction[]>(() => {
+    if (!accountTransactions) return [];
+    return [...accountTransactions]
+      .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at))
+      .slice(0, 10);
+  }, [accountTransactions]);
 
   // Delete upload modal
   const [deleteUploadId, setDeleteUploadId] = useState<string | null>(null);
@@ -197,7 +208,6 @@ export function AccountsPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Manual cash movement
-  const [showMovementForm, setShowMovementForm] = useState(false);
   const [manualDate, setManualDate] = useState(new Date().toISOString().split("T")[0]);
   const [manualDescription, setManualDescription] = useState("");
   const [manualCategory, setManualCategory] = useState("");
@@ -334,10 +344,9 @@ export function AccountsPage() {
   const handleAccountClick = (account: Account) => {
     setSelectedAccount(account);
     setRightPanel("upload");
-    setShowUploadForm(false);
+    setAccountSubView("default");
     const bounds = getMonthBounds();
     setPeriodStart(bounds.start);
-    setPeriodEnd(bounds.end);
     setUploadFile(null);
     setUploadError(null);
     setActiveUploadId(null);
@@ -402,7 +411,7 @@ export function AccountsPage() {
         setManualDescription("");
         setManualAmount("");
         setManualCategory("");
-        setShowMovementForm(false);
+        setAccountSubView("default");
       }, 2000);
     } catch (err) {
       setManualError(extractErrorMessage(err));
@@ -507,7 +516,7 @@ export function AccountsPage() {
                             >
                               <div>
                                 <p className="font-medium text-vault-text dark:text-[#e6edf3]">
-                                  {account.name}
+                                  {getAccountDisplayName(account)}
                                 </p>
                                 <p className="flex items-center text-xs text-vault-muted2 dark:text-[#8b949e]">
                                   {ACCOUNT_TYPE_LABELS[account.account_type]}
@@ -557,247 +566,133 @@ export function AccountsPage() {
 
         {/* Right panel: upload — cash */}
         {rightPanel === "upload" && selectedAccount && selectedAccount.account_type === "cash" && (
-          <div className="card-vault flex flex-col gap-4">
-            <div className="flex items-start justify-between">
+          <div className="card-vault flex flex-col overflow-hidden p-0">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
               <div>
-                <p
-                  className="leading-snug text-vault-text dark:text-[#e6edf3]"
-                  style={{ fontWeight: 300, fontSize: "16px" }}
-                >
-                  {selectedAccount.name}
+                <p className="leading-snug text-vault-text dark:text-[#e6edf3]" style={{ fontWeight: 300, fontSize: "16px" }}>
+                  {getAccountDisplayName(selectedAccount)}
                 </p>
                 <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#8b949e]">Efectivo</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setRightPanel("none");
-                  setSelectedAccount(null);
-                }}
-                className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
-              >
-                ✕
-              </button>
+              <button type="button" onClick={() => { setRightPanel("none"); setSelectedAccount(null); }} className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]">✕</button>
             </div>
 
-            <div>
-              {!showMovementForm ? (
-                <button
-                  type="button"
-                  onClick={() => setShowMovementForm(true)}
-                  className="btn-primary w-full"
-                >
-                  ＋ Registrar movimiento
-                </button>
-              ) : (
-                <form onSubmit={handleManualMovement} className="flex flex-col gap-3">
-                  {/* TIPO */}
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setManualType("ingreso")}
-                      className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${
-                        manualType === "ingreso"
-                          ? "bg-vault-accent text-white"
-                          : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"
-                      }`}
-                    >
-                      ↑ Ingreso
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setManualType("egreso")}
-                      className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${
-                        manualType === "egreso"
-                          ? "bg-vault-accent text-white"
-                          : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"
-                      }`}
-                    >
-                      ↓ Egreso
-                    </button>
-                  </div>
+            {/* Saldo */}
+            <div className="border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Saldo actual</p>
+              <p className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6edf3]" style={{ fontSize: 28 }}>
+                {formatCurrency(selectedAccount.current_balance, selectedAccount.currency)}
+              </p>
+            </div>
 
-                  {/* FECHA */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                      Fecha
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={manualDate}
-                      onChange={(e) => setManualDate(e.target.value)}
-                      className="input-vault"
-                    />
-                  </div>
-
-                  {/* DESCRIPCIÓN */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                      Descripción
-                    </label>
-                    <input
-                      type="text"
-                      value={manualDescription}
-                      onChange={(e) => setManualDescription(e.target.value)}
-                      placeholder="Ej: Supermercado Coto"
-                      className="input-vault"
-                    />
-                  </div>
-
-                  {/* CATEGORÍA */}
-                  <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                      Categoría
-                    </label>
-                    <select
-                      value={manualCategory}
-                      onChange={(e) => setManualCategory(e.target.value)}
-                      className="input-vault"
-                    >
-                      <option value="" disabled>
-                        Seleccioná una categoría
-                      </option>
-                      {MOVEMENT_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
+            {/* Content area */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {accountSubView === "default" && (
+                <>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    Últimas transacciones
+                  </p>
+                  {recentTransactions.length === 0 ? (
+                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">Sin transacciones registradas.</p>
+                  ) : (
+                    <ul>
+                      {recentTransactions.map((t) => (
+                        <li key={t.id} className="flex items-baseline gap-2 border-b border-vault-border/30 py-1.5 text-xs last:border-0 dark:border-[#30363d]/30">
+                          <span className="w-[46px] flex-shrink-0 text-vault-muted2 dark:text-[#8b949e]">
+                            {new Date(t.date + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-vault-muted2 dark:text-[#8b949e]">{t.description}</span>
+                          <span className={`flex-shrink-0 tabular-nums font-medium ${t.amount_ars >= 0 ? "text-vault-green" : "text-vault-text dark:text-[#e6edf3]"}`}>
+                            {t.amount_ars >= 0 ? "+" : ""}{formatCurrency(t.amount_ars, selectedAccount.currency)}
+                          </span>
+                        </li>
                       ))}
+                    </ul>
+                  )}
+                </>
+              )}
+              {accountSubView === "movement" && (
+                <form onSubmit={handleManualMovement} className="flex flex-col gap-3">
+                  <div className="flex gap-2">
+                    {(["ingreso", "egreso"] as const).map((type) => (
+                      <button key={type} type="button" onClick={() => setManualType(type)}
+                        className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${manualType === type ? "bg-vault-accent text-white" : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"}`}>
+                        {type === "ingreso" ? "↑ Ingreso" : "↓ Egreso"}
+                      </button>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Fecha</label>
+                    <input type="date" required value={manualDate} onChange={(e) => setManualDate(e.target.value)} className="input-vault" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Descripción</label>
+                    <input type="text" value={manualDescription} onChange={(e) => setManualDescription(e.target.value)} placeholder="Ej: Supermercado Coto" className="input-vault" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Categoría</label>
+                    <select value={manualCategory} onChange={(e) => setManualCategory(e.target.value)} className="input-vault">
+                      <option value="" disabled>Seleccioná una categoría</option>
+                      {MOVEMENT_CATEGORIES.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                   </div>
-
-                  {/* MONTO */}
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                      Monto ({selectedAccount.currency})
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={manualAmount}
-                      onChange={(e) => setManualAmount(e.target.value)}
-                      className="input-vault"
-                    />
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Monto ({selectedAccount.currency})</label>
+                    <input type="number" step="0.01" placeholder="0.00" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} className="input-vault" />
                   </div>
-
-                  {manualError && (
-                    <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
-                      {manualError}
-                    </div>
-                  )}
+                  {manualError && <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">{manualError}</div>}
                   {manualSuccess ? (
-                    <div
-                      className="text-vault-green"
-                      style={{ fontSize: 13, textAlign: "center", padding: "12px 0" }}
-                    >
-                      ✓ Movimiento registrado
-                    </div>
+                    <div className="text-vault-green" style={{ fontSize: 13, textAlign: "center", padding: "12px 0" }}>✓ Movimiento registrado</div>
                   ) : (
-                    <button
-                      type="submit"
-                      disabled={createManualTransaction.isPending}
-                      className="btn-primary mt-2 w-full"
-                    >
-                      {createManualTransaction.isPending
-                        ? "Registrando..."
-                        : "Registrar movimiento"}
+                    <button type="submit" disabled={createManualTransaction.isPending} className="btn-primary mt-1 w-full">
+                      {createManualTransaction.isPending ? "Registrando..." : "Registrar movimiento"}
                     </button>
                   )}
                 </form>
               )}
             </div>
 
+            {/* Buttons */}
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+              <button type="button"
+                onClick={() => setAccountSubView((v) => v === "movement" ? "default" : "movement")}
+                className={`w-full rounded-vault border py-1.5 text-xs font-medium transition-colors ${
+                  accountSubView === "movement"
+                    ? "border-vault-border text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                    : "border-vault-accent/40 bg-vault-accent/10 text-vault-accent hover:bg-vault-accent/20"
+                }`}>
+                {accountSubView === "movement" ? "Cancelar" : "+ Registrar movimiento"}
+              </button>
+            </div>
+
             {/* Edit section */}
-            <div className="border-t border-vault-border pt-3 dark:border-[#30363d]">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditOpen(!editOpen);
-                  setConfirmDelete(false);
-                }}
-                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
-              >
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+              <button type="button" onClick={() => { setEditOpen(!editOpen); setConfirmDelete(false); }}
+                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]">
                 Editar cuenta
-                <span
-                  className="inline-block transition-transform duration-200"
-                  style={{ transform: editOpen ? "rotate(90deg)" : "none" }}
-                >
-                  ›
-                </span>
+                <span className="inline-block transition-transform duration-200" style={{ transform: editOpen ? "rotate(90deg)" : "none" }}>›</span>
               </button>
               {editOpen && (
                 <form onSubmit={handleEditSubmit} className="mt-3 flex flex-col gap-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
-                      Referencia
-                    </label>
-                    <input
-                      type="text"
-                      value={editReference}
-                      onChange={(e) => setEditReference(e.target.value)}
-                      className="input-vault"
-                    />
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Referencia</label>
+                    <input type="text" value={editReference} onChange={(e) => setEditReference(e.target.value)} className="input-vault" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
-                      Notas
-                    </label>
-                    <textarea
-                      value={editNotes}
-                      onChange={(e) => setEditNotes(e.target.value)}
-                      rows={2}
-                      maxLength={120}
-                      placeholder="Anotaciones sobre esta cuenta (opcional)"
-                      className="input-vault resize-none"
-                    />
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Notas</label>
+                    <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} maxLength={120} placeholder="Anotaciones sobre esta cuenta (opcional)" className="input-vault resize-none" />
                   </div>
-                  {editError && (
-                    <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
-                      {editError}
-                    </div>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={updateAccount.isPending}
-                    className="btn-primary mt-1"
-                  >
-                    {updateAccount.isPending ? "Guardando..." : "Guardar cambios"}
-                  </button>
+                  {editError && <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">{editError}</div>}
+                  <button type="submit" disabled={updateAccount.isPending} className="btn-primary mt-1">{updateAccount.isPending ? "Guardando..." : "Guardar cambios"}</button>
                   {!confirmDelete ? (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(true)}
-                      className="w-full rounded-vault border border-vault-red/30 bg-transparent py-2 text-sm text-vault-red transition-colors hover:bg-vault-red/5"
-                    >
-                      Eliminar cuenta
-                    </button>
+                    <button type="button" onClick={() => setConfirmDelete(true)} className="w-full rounded-vault border border-vault-red/30 bg-transparent py-2 text-sm text-vault-red transition-colors hover:bg-vault-red/5">Eliminar cuenta</button>
                   ) : (
                     <div className="rounded-vault border border-vault-red/20 bg-vault-red/5 px-3.5 py-3">
-                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">
-                        ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede
-                        deshacer.
-                      </p>
+                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede deshacer.</p>
                       <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDelete(false)}
-                          className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!selectedAccount) return;
-                            deleteAccount.mutate(selectedAccount.id);
-                            setRightPanel("none");
-                            setSelectedAccount(null);
-                          }}
-                          className="flex-1 rounded border border-vault-red/30 bg-vault-red/10 py-1.5 text-xs text-vault-red transition-colors hover:bg-vault-red/20"
-                        >
-                          Sí, eliminar
-                        </button>
+                        <button type="button" onClick={() => setConfirmDelete(false)} className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]">Cancelar</button>
+                        <button type="button" onClick={() => { if (!selectedAccount) return; deleteAccount.mutate(selectedAccount.id); setRightPanel("none"); setSelectedAccount(null); }} className="flex-1 rounded border border-vault-red/30 bg-vault-red/10 py-1.5 text-xs text-vault-red transition-colors hover:bg-vault-red/20">Sí, eliminar</button>
                       </div>
                     </div>
                   )}
@@ -809,358 +704,208 @@ export function AccountsPage() {
 
         {/* Right panel: upload — non-cash */}
         {rightPanel === "upload" && selectedAccount && selectedAccount.account_type !== "cash" && (
-          <div className="card-vault flex flex-col gap-4">
+          <div className="card-vault flex flex-col overflow-hidden p-0">
             {/* Header */}
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
               <div>
-                <p
-                  className="leading-snug text-vault-text dark:text-[#e6edf3]"
-                  style={{ fontWeight: 300, fontSize: "18px" }}
-                >
-                  {selectedAccount.name}
+                <p className="leading-snug text-vault-text dark:text-[#e6edf3]" style={{ fontWeight: 300, fontSize: "18px" }}>
+                  {getAccountDisplayName(selectedAccount)}
                 </p>
                 <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
                   {ACCOUNT_TYPE_LABELS[selectedAccount.account_type]}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setRightPanel("none");
-                  setSelectedAccount(null);
-                }}
-                className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
-              >
-                ✕
-              </button>
+              <button type="button" onClick={() => { setRightPanel("none"); setSelectedAccount(null); }} className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]">✕</button>
             </div>
 
-            {/* Subir extracto — colapsable */}
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowUploadForm((v) => !v);
-                  setUploadFile(null);
-                  setUploadError(null);
-                }}
-                className="btn-primary w-full"
-              >
-                {showUploadForm ? "Cancelar" : "+ Subir extracto"}
-              </button>
+            {/* Saldo */}
+            <div className="border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Saldo actual</p>
+              <p className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6edf3]" style={{ fontSize: 28 }}>
+                {formatCurrency(selectedAccount.current_balance, selectedAccount.currency)}
+              </p>
+            </div>
 
-              {showUploadForm && (
-                <form onSubmit={handleUploadSubmit} className="mt-3 flex flex-col gap-3">
-                  <div>
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                      Período
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
-                          Desde
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          value={periodStart}
-                          onChange={(e) => setPeriodStart(e.target.value)}
-                          className="input-vault"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-vault-muted2 dark:text-[#8b949e]">
-                          Hasta
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          value={periodEnd}
-                          onChange={(e) => setPeriodEnd(e.target.value)}
-                          className="input-vault"
-                        />
-                      </div>
+            {/* Content area */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {/* Default: últimas transacciones */}
+              {accountSubView === "default" && (
+                <>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    Últimas transacciones
+                  </p>
+                  {recentTransactions.length === 0 ? (
+                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">Sin transacciones registradas.</p>
+                  ) : (
+                    <ul>
+                      {recentTransactions.map((t) => (
+                        <li key={t.id} className="flex items-baseline gap-2 border-b border-vault-border/30 py-1.5 text-xs last:border-0 dark:border-[#30363d]/30">
+                          <span className="w-[46px] flex-shrink-0 text-vault-muted2 dark:text-[#8b949e]">
+                            {new Date(t.date + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-vault-muted2 dark:text-[#8b949e]">{t.description}</span>
+                          <span className={`flex-shrink-0 tabular-nums font-medium ${t.amount_ars >= 0 ? "text-vault-green" : "text-vault-text dark:text-[#e6edf3]"}`}>
+                            {t.amount_ars >= 0 ? "+" : ""}{formatCurrency(t.amount_ars, selectedAccount.currency)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {activeStatus && (
+                    <div className="mt-3 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2.5 text-xs dark:bg-[#21262d]">
+                      Último envío:{" "}
+                      <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
+                        {STATUS_LABELS[activeStatus.status]}
+                      </span>
+                      {activeStatus.status === "review" && (
+                        <Link to={`/uploads/${activeStatus.upload_id}/review`} className="ml-2 text-vault-accent hover:underline">Revisar →</Link>
+                      )}
                     </div>
-                  </div>
+                  )}
+                </>
+              )}
 
+              {/* Upload form */}
+              {accountSubView === "upload" && (
+                <form onSubmit={handleUploadSubmit} className="flex flex-col gap-3">
                   <div>
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                      Archivo
-                    </p>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Mes</label>
                     <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.xlsx"
-                      className="hidden"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                      type="month"
+                      required
+                      value={periodStart.slice(0, 7)}
+                      onChange={(e) => {
+                        setPeriodStart(`${e.target.value}-01`);
+                      }}
+                      className="input-vault"
                     />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Archivo</label>
+                    <input ref={fileInputRef} type="file" accept=".pdf,.xlsx" className="hidden" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} />
                     {uploadFile ? (
                       <div className="flex items-center justify-between rounded-lg border border-vault-green/30 bg-vault-green/5 px-3.5 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-vault-green">✓</span>
-                          <span className="max-w-[140px] truncate text-xs text-vault-text dark:text-[#e6edf3]">
-                            {uploadFile.name}
-                          </span>
+                          <span className="max-w-[140px] truncate text-xs text-vault-text dark:text-[#e6edf3]">{uploadFile.name}</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setUploadFile(null)}
-                          className="ml-2 text-xs text-vault-muted2 transition-colors hover:text-vault-red dark:text-[#8b949e]"
-                        >
-                          ×
-                        </button>
+                        <button type="button" onClick={() => setUploadFile(null)} className="ml-2 text-xs text-vault-muted2 hover:text-vault-red dark:text-[#8b949e]">×</button>
                       </div>
                     ) : (
                       <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDragging(true);
-                        }}
+                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                         onDragLeave={() => setIsDragging(false)}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          setIsDragging(false);
-                          const file = e.dataTransfer.files?.[0];
-                          if (file) setUploadFile(file);
-                        }}
-                        className={`flex flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-6 text-center transition-colors ${
-                          isDragging
-                            ? "border-vault-accent bg-vault-accent/5"
-                            : "border-vault-border2 dark:border-[#484f58]"
-                        }`}
+                        onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) setUploadFile(f); }}
+                        className={`flex flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-5 text-center transition-colors ${isDragging ? "border-vault-accent bg-vault-accent/5" : "border-vault-border2 dark:border-[#484f58]"}`}
                       >
                         <span className="text-xl text-vault-muted2 dark:text-[#8b949e]">↑</span>
-                        <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-                          Arrastrá tu PDF o XLSX acá
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 transition-colors hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]"
-                        >
-                          Seleccionar archivo
-                        </button>
+                        <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">PDF o XLSX</p>
+                        <button type="button" onClick={() => fileInputRef.current?.click()} className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]">Seleccionar</button>
                       </div>
                     )}
                   </div>
-
-                  {uploadError && (
-                    <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
-                      {uploadError}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={submitUpload.isPending || !uploadFile}
-                    className="btn-primary mt-1 w-full"
-                  >
+                  {uploadError && <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">{uploadError}</div>}
+                  <button type="submit" disabled={submitUpload.isPending || !uploadFile} className="btn-primary mt-1 w-full">
                     {submitUpload.isPending ? "Subiendo..." : "Subir extracto"}
                   </button>
-
                   {activeStatus && (
                     <div className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm dark:bg-[#21262d]">
                       Estado:{" "}
-                      <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
-                        {STATUS_LABELS[activeStatus.status]}
-                      </span>
-                      {activeStatus.error_message && (
-                        <p className="mt-1 text-xs text-vault-red">{activeStatus.error_message}</p>
-                      )}
+                      <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>{STATUS_LABELS[activeStatus.status]}</span>
                       {activeStatus.status === "review" && (
-                        <Link
-                          to={`/uploads/${activeStatus.upload_id}/review`}
-                          className="mt-2 inline-block text-xs font-medium text-vault-accent hover:underline"
-                        >
-                          Revisar transacciones →
-                        </Link>
+                        <Link to={`/uploads/${activeStatus.upload_id}/review`} className="mt-1 block text-xs text-vault-accent hover:underline">Revisar transacciones →</Link>
                       )}
                       {activeStatus.pending_mep && (
-                        <p className="mt-2 text-xs text-vault-yellow">
-                          Falta el TC MEP —{" "}
-                          <Link to="/settings" className="underline">
-                            declaralo en Configuración
-                          </Link>
-                        </p>
+                        <p className="mt-1 text-xs text-vault-yellow">Falta TC MEP — <Link to="/settings" className="underline">configurar</Link></p>
                       )}
                     </div>
                   )}
                 </form>
               )}
-            </div>
 
-            {/* Períodos cargados */}
-            <div className="border-t border-vault-border pt-3 dark:border-[#30363d]">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                Períodos cargados
-              </p>
-              {!accountUploads || accountUploads.length === 0 ? (
-                <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-                  Todavía no hay extractos subidos.
-                </p>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {accountUploads.map((u) => {
-                    const [year, month] = u.period_month.split("-");
-                    const label = new Date(Number(year), Number(month) - 1, 1).toLocaleDateString(
-                      "es-AR",
-                      { month: "long", year: "numeric" }
-                    );
-                    const statusLabel =
-                      u.status === "done"
-                        ? "Completado"
-                        : u.status === "review"
-                          ? "Revisar"
-                          : u.status === "processing"
-                            ? "Procesando"
-                            : u.status === "error"
-                              ? "Error"
-                              : "Pendiente";
-                    const statusColor =
-                      u.status === "done"
-                        ? "text-vault-green"
-                        : u.status === "review"
-                          ? "text-vault-yellow"
-                          : u.status === "error"
-                            ? "text-vault-red"
-                            : u.status === "processing"
-                              ? "text-vault-accent"
-                              : "text-vault-muted2 dark:text-[#8b949e]";
-                    return (
-                      <li
-                        key={u.id}
-                        className="flex items-center justify-between rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 dark:bg-[#21262d]"
-                      >
-                        <div>
-                          <p className="text-xs font-medium capitalize text-vault-text dark:text-[#e6edf3]">
-                            {label}
-                          </p>
-                          <p className={`text-[11px] ${statusColor}`}>{statusLabel}</p>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {(u.status === "review" || u.status === "done") && (
-                            <Link
-                              to={`/uploads/${u.id}/transactions`}
-                              className={
-                                u.status === "review"
-                                  ? "rounded border border-vault-yellow/40 bg-vault-yellow/10 px-2.5 py-0.5 text-[11px] font-medium text-vault-yellow hover:bg-vault-yellow/20"
-                                  : "rounded border border-vault-border px-2.5 py-0.5 text-[11px] text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#30363d] dark:text-[#8b949e]"
-                              }
-                            >
-                              Ver
-                            </Link>
-                          )}
-                          {(u.status === "done" || u.status === "review" || u.status === "error") && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteUploadId(u.id);
-                              }}
-                              className="flex h-5 w-5 items-center justify-center rounded text-[13px] text-vault-muted2 hover:bg-vault-red/10 hover:text-vault-red dark:text-[#8b949e]"
-                              title="Eliminar extracto"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {/* Periods list */}
+              {accountSubView === "periods" && (
+                <>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Períodos cargados</p>
+                  {!accountUploads || accountUploads.length === 0 ? (
+                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">Todavía no hay extractos subidos.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-1.5">
+                      {accountUploads.map((u) => {
+                        const [year, month] = u.period_month.split("-");
+                        const label = new Date(Number(year), Number(month) - 1, 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+                        const statusColor = u.status === "done" ? "text-vault-green" : u.status === "review" ? "text-vault-yellow" : u.status === "error" ? "text-vault-red" : u.status === "processing" ? "text-vault-accent" : "text-vault-muted2 dark:text-[#8b949e]";
+                        const statusLabel = u.status === "done" ? "Completado" : u.status === "review" ? "Revisar" : u.status === "processing" ? "Procesando" : u.status === "error" ? "Error" : "Pendiente";
+                        return (
+                          <li key={u.id} className="flex items-center justify-between rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 dark:bg-[#21262d]">
+                            <div>
+                              <p className="text-xs font-medium capitalize text-vault-text dark:text-[#e6edf3]">{label}</p>
+                              <p className={`text-[11px] ${statusColor}`}>{statusLabel}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {(u.status === "review" || u.status === "done") && (
+                                <Link to={`/uploads/${u.id}/transactions`}
+                                  className={u.status === "review" ? "rounded border border-vault-yellow/40 bg-vault-yellow/10 px-2.5 py-0.5 text-[11px] font-medium text-vault-yellow hover:bg-vault-yellow/20" : "rounded border border-vault-border px-2.5 py-0.5 text-[11px] text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#30363d] dark:text-[#8b949e]"}>
+                                  Ver
+                                </Link>
+                              )}
+                              {(u.status === "done" || u.status === "review" || u.status === "error") && (
+                                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteUploadId(u.id); }}
+                                  className="flex h-5 w-5 items-center justify-center rounded text-[13px] text-vault-muted2 hover:bg-vault-red/10 hover:text-vault-red dark:text-[#8b949e]" title="Eliminar extracto">×</button>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Editar cuenta */}
-            <div className="border-t border-vault-border pt-3 dark:border-[#30363d]">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditOpen(!editOpen);
-                  setConfirmDelete(false);
-                }}
-                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
-              >
+            {/* Buttons */}
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+              <div className="flex gap-2">
+                <button type="button"
+                  onClick={() => { setAccountSubView((v) => v === "upload" ? "default" : "upload"); setUploadFile(null); setUploadError(null); }}
+                  className={`flex-1 rounded-vault border py-1.5 text-xs font-medium transition-colors ${accountSubView === "upload" ? "border-vault-border text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]" : "border-vault-accent/40 bg-vault-accent/10 text-vault-accent hover:bg-vault-accent/20"}`}>
+                  {accountSubView === "upload" ? "Cancelar" : "+ Subir extracto"}
+                </button>
+                <button type="button"
+                  onClick={() => setAccountSubView((v) => v === "periods" ? "default" : "periods")}
+                  className={`flex-1 rounded-vault border py-1.5 text-xs font-medium transition-colors ${accountSubView === "periods" ? "border-vault-accent/40 bg-vault-accent/10 text-vault-accent" : "border-vault-border2 text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]"}`}>
+                  Ver todos los períodos
+                </button>
+              </div>
+            </div>
+
+            {/* Edit section */}
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+              <button type="button" onClick={() => { setEditOpen(!editOpen); setConfirmDelete(false); }}
+                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]">
                 Editar cuenta
-                <span
-                  className="inline-block transition-transform duration-200"
-                  style={{ transform: editOpen ? "rotate(90deg)" : "none" }}
-                >
-                  ›
-                </span>
+                <span className="inline-block transition-transform duration-200" style={{ transform: editOpen ? "rotate(90deg)" : "none" }}>›</span>
               </button>
               {editOpen && (
                 <form onSubmit={handleEditSubmit} className="mt-3 flex flex-col gap-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
-                      Referencia
-                    </label>
-                    <input
-                      type="text"
-                      value={editReference}
-                      onChange={(e) => setEditReference(e.target.value)}
-                      className="input-vault"
-                    />
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Referencia</label>
+                    <input type="text" value={editReference} onChange={(e) => setEditReference(e.target.value)} className="input-vault" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
-                      Notas
-                    </label>
-                    <textarea
-                      value={editNotes}
-                      onChange={(e) => setEditNotes(e.target.value)}
-                      rows={2}
-                      maxLength={120}
-                      placeholder="Anotaciones sobre esta cuenta (opcional)"
-                      className="input-vault resize-none"
-                    />
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">Notas</label>
+                    <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} maxLength={120} placeholder="Anotaciones sobre esta cuenta (opcional)" className="input-vault resize-none" />
                   </div>
-                  {editError && (
-                    <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">
-                      {editError}
-                    </div>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={updateAccount.isPending}
-                    className="btn-primary mt-1"
-                  >
-                    {updateAccount.isPending ? "Guardando..." : "Guardar cambios"}
-                  </button>
+                  {editError && <div className="rounded-vault border border-vault-red/20 bg-vault-red/10 px-3.5 py-2.5 text-sm text-vault-red">{editError}</div>}
+                  <button type="submit" disabled={updateAccount.isPending} className="btn-primary mt-1">{updateAccount.isPending ? "Guardando..." : "Guardar cambios"}</button>
                   {!confirmDelete ? (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(true)}
-                      className="w-full rounded-vault border border-vault-red/30 bg-transparent py-2 text-sm text-vault-red transition-colors hover:bg-vault-red/5"
-                    >
-                      Eliminar cuenta
-                    </button>
+                    <button type="button" onClick={() => setConfirmDelete(true)} className="w-full rounded-vault border border-vault-red/30 bg-transparent py-2 text-sm text-vault-red transition-colors hover:bg-vault-red/5">Eliminar cuenta</button>
                   ) : (
                     <div className="rounded-vault border border-vault-red/20 bg-vault-red/5 px-3.5 py-3">
-                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">
-                        ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede
-                        deshacer.
-                      </p>
+                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede deshacer.</p>
                       <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDelete(false)}
-                          className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!selectedAccount) return;
-                            deleteAccount.mutate(selectedAccount.id);
-                            setRightPanel("none");
-                            setSelectedAccount(null);
-                          }}
-                          className="flex-1 rounded border border-vault-red/30 bg-vault-red/10 py-1.5 text-xs text-vault-red transition-colors hover:bg-vault-red/20"
-                        >
-                          Sí, eliminar
-                        </button>
+                        <button type="button" onClick={() => setConfirmDelete(false)} className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]">Cancelar</button>
+                        <button type="button" onClick={() => { if (!selectedAccount) return; deleteAccount.mutate(selectedAccount.id); setRightPanel("none"); setSelectedAccount(null); }} className="flex-1 rounded border border-vault-red/30 bg-vault-red/10 py-1.5 text-xs text-vault-red transition-colors hover:bg-vault-red/20">Sí, eliminar</button>
                       </div>
                     </div>
                   )}

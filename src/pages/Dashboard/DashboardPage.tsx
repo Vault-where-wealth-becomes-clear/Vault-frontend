@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   useDashboard,
   useDashboardBreakdown,
-  useDashboardEvolution,
+  useDashboardMonthlySeries,
   useFullDashboard,
-  type EvolutionPoint,
 } from "@/api/dashboard.api";
 import { useExportXlsx } from "@/api/exports.api";
 import { useExchangeRates, useSetExchangeRate } from "@/api/exchangeRates.api";
-import { useAccounts } from "@/api/accounts.api";
-import { PatrimonioChart } from "@/components/charts/PatrimonioChart";
+import { useAccounts, getAccountDisplayName } from "@/api/accounts.api";
+import { useUploads } from "@/api/uploads.api";
+import { MonthlySeriesChart } from "@/components/charts/MonthlySeriesChart";
+import { AccountBalanceChart, type AccountBalancePoint, type AccountBalanceLine } from "@/components/charts/AccountBalanceChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { extractErrorMessage } from "@/utils/apiError";
@@ -39,19 +40,24 @@ const ADVANCED_SECTIONS: {
   },
 ];
 
-function addMonths(period: string, delta: number): string {
-  const [year, month] = period.split("-").map(Number);
-  const d = new Date(year, month - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
 export function DashboardPage() {
-  const [period, setPeriod] = useState<string | undefined>(undefined);
-  const [selectedChartPoint, setSelectedChartPoint] = useState<EvolutionPoint | null>(null);
+  const { data: uploads } = useUploads();
+
+  const latestDonePeriod = useMemo(() => {
+    const done = uploads?.filter((u) => u.status === "done") ?? [];
+    return done.map((u) => u.period_month.slice(0, 7)).sort().pop();
+  }, [uploads]);
+
+  const donePeriodSet = useMemo(
+    () => new Set((uploads?.filter((u) => u.status === "done") ?? []).map((u) => u.period_month.slice(0, 7))),
+    [uploads]
+  );
+
+  const period = latestDonePeriod;
 
   const { data: summary, isLoading: isLoadingSummary } = useDashboard(period);
   const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown(period);
-  const { data: evolution, isLoading: isLoadingEvolution } = useDashboardEvolution(
+  const { data: monthlySeries, isLoading: isLoadingMonthlySeries } = useDashboardMonthlySeries(
     summary?.period
   );
   const { data: fullDashboard } = useFullDashboard(period);
@@ -111,14 +117,69 @@ export function DashboardPage() {
     }
   };
 
-  const handleChartMonthClick = (point: EvolutionPoint) => {
-    setSelectedChartPoint((prev) => (prev?.month === point.month ? null : point));
-  };
-
   const currentPeriodRate = exchangeRates?.find((r) =>
     r.period_month.startsWith(summary?.period ?? "__")
   );
   const mepForPeriod = currentPeriodRate?.mep_rate;
+
+  // Serie mensual: solo meses con extractos procesados (evita meses vacíos en 0)
+  const filteredMonthlySeries = useMemo(() => {
+    if (!monthlySeries) return [];
+    if (donePeriodSet.size === 0) return monthlySeries;
+    return monthlySeries.filter((p) => donePeriodSet.has(p.month));
+  }, [monthlySeries, donePeriodSet]);
+
+  // Saldo por cuenta a lo largo de los meses — una línea por cuenta (tarjetas
+  // de crédito excluidas: current_balance nunca se actualiza para ellas).
+  // El saldo de cierre de cada mes es el saldo de apertura del upload
+  // siguiente (SF(N) = SI(N+1), invariante ya reconciliado en el worker);
+  // para el mes más reciente de cada cuenta se usa el current_balance vivo.
+  const accountBalanceSeries = useMemo(() => {
+    if (!accounts || !uploads) return { points: [] as AccountBalancePoint[], lines: [] as AccountBalanceLine[] };
+
+    const nonCcAccounts = accounts.filter(
+      (a) => a.is_active && a.account_type !== "credit_card_ars" && a.account_type !== "credit_card_usd"
+    );
+    const doneUploads = uploads.filter((u) => u.status === "done");
+
+    const monthSet = new Set<string>();
+    const perAccountBalances = new Map<string, Map<string, number>>();
+
+    for (const account of nonCcAccounts) {
+      const accountUploads = doneUploads
+        .filter((u) => u.account_id === account.id)
+        .sort((a, b) => a.period_month.localeCompare(b.period_month));
+      if (accountUploads.length === 0) continue;
+
+      const isUsd = account.currency === "USD";
+      const balances = new Map<string, number>();
+      accountUploads.forEach((u, i) => {
+        const month = u.period_month.slice(0, 7);
+        const next = accountUploads[i + 1];
+        const closing = next
+          ? Number(isUsd ? next.opening_balance_usd : next.opening_balance_ars)
+          : Number(account.current_balance);
+        balances.set(month, closing);
+        monthSet.add(month);
+      });
+      perAccountBalances.set(account.id, balances);
+    }
+
+    const months = Array.from(monthSet).sort().slice(-6);
+    const points: AccountBalancePoint[] = months.map((month) => {
+      const point: AccountBalancePoint = { month };
+      for (const [accountId, balances] of perAccountBalances) {
+        point[accountId] = balances.has(month) ? balances.get(month)! : null;
+      }
+      return point;
+    });
+
+    const lines: AccountBalanceLine[] = nonCcAccounts
+      .filter((a) => perAccountBalances.has(a.id))
+      .map((a) => ({ accountId: a.id, label: getAccountDisplayName(a), currency: a.currency }));
+
+    return { points, lines };
+  }, [accounts, uploads]);
 
   if (isLoadingSummary || !summary) {
     return (
@@ -130,15 +191,6 @@ export function DashboardPage() {
 
   const isEmpty = !accounts || accounts.length === 0;
   const insights = [...(summary.insights ?? []), ...(fullDashboard?.insights ?? [])];
-
-  // Patrimony display: chart selection overrides summary
-  const displayPatrimonio = selectedChartPoint?.total_usd ?? summary.total_usd;
-  const patrimonioLabel = selectedChartPoint
-    ? `Patrimonio al ${formatPeriod(selectedChartPoint.month)}`
-    : "Patrimonio total";
-  const patrimonioHint = selectedChartPoint
-    ? "Hacé click en el gráfico para cambiar"
-    : `${formatPercent(summary.variation_pct)} vs. mes anterior`;
 
   // Breakdown: filter out zero-amount items
   const filteredBreakdown = breakdown?.filter((item) => item.amount_ars !== 0 && item.pct_of_total !== 0) ?? [];
@@ -154,35 +206,14 @@ export function DashboardPage() {
     },
   ];
 
-  const flujo = summary.flujo_del_mes;
-
   return (
     <div className="p-7">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => { setPeriod(addMonths(summary.period, -1)); setSelectedChartPoint(null); }}
-              className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:text-[#8b949e]"
-              aria-label="Mes anterior"
-            >
-              ‹
-            </button>
-            <h1 className="page-title">{formatPeriod(summary.period)}</h1>
-            <button
-              type="button"
-              onClick={() => { setPeriod(addMonths(summary.period, 1)); setSelectedChartPoint(null); }}
-              disabled={summary.period >= addMonths(new Date().toISOString().slice(0, 7), 0)}
-              className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent hover:text-vault-accent disabled:opacity-30 dark:text-[#8b949e]"
-              aria-label="Mes siguiente"
-            >
-              ›
-            </button>
-          </div>
+          <h1 className="page-title">Tablero</h1>
           <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">
-            Resumen de tu patrimonio y movimientos.
+            {summary.period ? `Datos de ${formatPeriod(summary.period)}` : "Resumen de tu patrimonio y movimientos."}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -288,117 +319,36 @@ export function DashboardPage() {
           {/* Row 1: patrimonio card (full width) */}
           <div className="mb-5">
             <SummaryCard
-              label={patrimonioLabel}
+              label="Patrimonio total"
               value={
                 currencyDisplay === "USD"
-                  ? formatCurrency(displayPatrimonio, "USD")
+                  ? formatCurrency(summary.total_usd, "USD")
                   : mepForPeriod
-                  ? formatCurrency(displayPatrimonio * mepForPeriod, "ARS")
-                  : formatCurrency(displayPatrimonio, "USD")
+                  ? formatCurrency(summary.total_usd * mepForPeriod, "ARS")
+                  : formatCurrency(summary.total_usd, "USD")
               }
-              hint={patrimonioHint}
-              hintColor={
-                selectedChartPoint
-                  ? "muted"
-                  : summary.variation_pct >= 0
-                  ? "green"
-                  : "red"
-              }
+              hint={`${formatPercent(summary.variation_pct)} vs. mes anterior`}
+              hintColor={summary.variation_pct >= 0 ? "green" : "red"}
             />
           </div>
 
-          {/* Row 2: chart (2/3) + flujo del mes (1/3) */}
-          <div className="mb-5 grid grid-cols-3 gap-4">
-            <div className="card-vault col-span-2">
-              <h2 className="section-label mb-4">Evolución patrimonial</h2>
-              {isLoadingEvolution || !evolution ? (
-                <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                  Cargando...
-                </div>
-              ) : evolution.length === 0 ? (
-                <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                  Sin datos históricos aún.
-                </div>
-              ) : (
-                <PatrimonioChart
-                  data={evolution}
-                  selectedMonth={selectedChartPoint?.month}
-                  onMonthClick={handleChartMonthClick}
-                />
-              )}
-              {selectedChartPoint && (
-                <p className="mt-1 text-center text-[11px] text-vault-muted2 dark:text-[#8b949e]">
-                  Hacé click en el mismo punto para deseleccionar
-                </p>
-              )}
-            </div>
-
-            {/* Flujo del mes */}
-            <div className="card-vault flex flex-col gap-3">
-              <h2 className="section-label">Flujo del mes</h2>
-              {flujo ? (
-                <>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between rounded-vault bg-vault-green/5 px-3 py-2.5">
-                      <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">Ingresos</span>
-                      <span className="text-sm font-semibold tabular-nums text-vault-green">
-                        {formatCurrency(flujo.ingresos_ars, "ARS")}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-vault bg-vault-red/5 px-3 py-2.5">
-                      <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">Egresos</span>
-                      <span className="text-sm font-semibold tabular-nums text-vault-red">
-                        {formatCurrency(Math.abs(flujo.egresos_ars), "ARS")}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={`mt-auto rounded-vault border px-3 py-2.5 ${
-                    flujo.resultado_ars >= 0
-                      ? "border-vault-green/30 bg-vault-green/5"
-                      : "border-vault-red/30 bg-vault-red/5"
-                  }`}>
-                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
-                      Resultado del período
-                    </p>
-                    <p className={`text-xl font-semibold tabular-nums ${
-                      flujo.resultado_ars >= 0 ? "text-vault-green" : "text-vault-red"
-                    }`}>
-                      {flujo.resultado_ars >= 0 ? "+" : ""}
-                      {formatCurrency(flujo.resultado_ars, "ARS")}
-                    </p>
-                    {flujo.ingresos_usd > 0 || flujo.egresos_usd < 0 ? (
-                      <p className="mt-0.5 text-[11px] text-vault-muted2 dark:text-[#8b949e]">
-                        USD {flujo.resultado_ars >= 0 ? "+" : ""}
-                        {(flujo.ingresos_usd + flujo.egresos_usd).toFixed(2)}
-                      </p>
-                    ) : null}
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-1 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                  Sin movimientos este mes.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Row 3: gastos por categoría (full width, solo con movimiento real) */}
+          {/* Row 2: gráfico compuesto — resultado, patrimonio, cartera y gasto mensual */}
           <div className="mb-5 card-vault">
-            <h2 className="section-label mb-4">Gastos por categoría</h2>
-            {isLoadingBreakdown ? (
-              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+            <h2 className="section-label mb-4">Evolución mensual</h2>
+            {isLoadingMonthlySeries || !monthlySeries ? (
+              <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
                 Cargando...
               </div>
-            ) : filteredBreakdown.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                Todavía no hay movimientos este mes.
+            ) : filteredMonthlySeries.length === 0 ? (
+              <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+                Sin datos históricos aún.
               </div>
             ) : (
-              <BreakdownChart data={filteredBreakdown} mepRate={mepForPeriod} />
+              <MonthlySeriesChart data={filteredMonthlySeries} />
             )}
           </div>
 
-          {/* Row 4: insights */}
+          {/* Row 3: insights */}
           {insights.length > 0 && (
             <div className="mb-5 card-vault">
               <h2 className="section-label mb-4">Insights</h2>
@@ -416,7 +366,78 @@ export function DashboardPage() {
             </div>
           )}
 
-          {/* Row 5: análisis avanzado */}
+          {/* Row 4: flujo del mes — tabla de los últimos meses disponibles */}
+          {filteredMonthlySeries.length > 0 && (
+            <div className="mb-5 card-vault">
+              <h2 className="section-label mb-3">Flujo del mes</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-vault-border dark:border-[#30363d]">
+                      <th className="py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        Mes
+                      </th>
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        Ingresos
+                      </th>
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        Egresos
+                      </th>
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        Resultado
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...filteredMonthlySeries]
+                      .reverse()
+                      .map((point) => (
+                        <tr
+                          key={point.month}
+                          className="border-b border-vault-border/50 last:border-0 dark:border-[#30363d]/50"
+                        >
+                          <td className="py-2 capitalize text-vault-text dark:text-[#e6edf3]">
+                            {formatPeriod(point.month)}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-vault-green">
+                            {formatCurrency(point.ingresos_ars, "ARS")}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-vault-red">
+                            {formatCurrency(Math.abs(point.egresos_ars), "ARS")}
+                          </td>
+                          <td
+                            className={`py-2 text-right tabular-nums font-medium ${
+                              point.resultado_ars >= 0 ? "text-vault-green" : "text-vault-red"
+                            }`}
+                          >
+                            {point.resultado_ars >= 0 ? "+" : ""}
+                            {formatCurrency(point.resultado_ars, "ARS")}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Row 5: gastos por categoría (pie chart) */}
+          <div className="mb-5 card-vault">
+            <h2 className="section-label mb-4">Gastos por categoría</h2>
+            {isLoadingBreakdown ? (
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+                Cargando...
+              </div>
+            ) : filteredBreakdown.length === 0 ? (
+              <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+                Todavía no hay movimientos este mes.
+              </div>
+            ) : (
+              <BreakdownChart data={filteredBreakdown} mepRate={mepForPeriod} />
+            )}
+          </div>
+
+          {/* Row 6: análisis avanzado (al final de la página) */}
           <div className="card-vault">
             <h2 className="section-label mb-4">Análisis avanzado</h2>
             <div className="grid grid-cols-3 gap-4">
@@ -437,6 +458,21 @@ export function DashboardPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Row 7: saldo de cuentas — una línea por cuenta a lo largo de los meses */}
+          <div className="mt-5 card-vault">
+            <h2 className="section-label mb-4">Saldo de cuentas</h2>
+            {accountBalanceSeries.points.length === 0 ? (
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+                Sin extractos procesados aún para mostrar saldos históricos.
+              </div>
+            ) : (
+              <AccountBalanceChart
+                points={accountBalanceSeries.points}
+                lines={accountBalanceSeries.lines}
+              />
+            )}
           </div>
         </>
       )}

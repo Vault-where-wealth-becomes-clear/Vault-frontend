@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useUploads } from "@/api/uploads.api";
-import { useAccounts } from "@/api/accounts.api";
+import { useAccounts, getAccountDisplayName } from "@/api/accounts.api";
 import {
   useUploadTransactions,
   useCorrectTransaction,
@@ -231,7 +231,7 @@ export function UploadTransactionsPage() {
           <div>
             <h1 className="page-title capitalize">{periodLabel}</h1>
             <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
-              {account?.name && <span className="mr-2">{account.name} ·</span>}
+              {account && <span className="mr-2">{getAccountDisplayName(account)} ·</span>}
               {transactions?.length ?? 0} transacciones
             </p>
           </div>

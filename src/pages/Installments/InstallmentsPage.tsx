@@ -4,14 +4,10 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useTransactions, type Transaction } from "@/api/transactions.api";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { getCategoryColor } from "@/utils/categoryColors";
+import { CategoryLedger } from "@/components/transactions/CategoryLedger";
+import { EXPENSE_CATEGORIES, sumByCategory, type CategoryTotal } from "@/utils/categoryGroups";
 
 // ─── canonical lists ──────────────────────────────────────────────────────────
-
-const EXPENSE_CATEGORIES = new Set([
-  "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
-  "Tecnología", "Entretenimiento", "Servicios", "Educación", "Viajes",
-  "Suscripciones", "Impuestos", "Varios",
-]);
 
 const DEFAULT_CATEGORIES = [
   "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
@@ -74,13 +70,7 @@ function saveOverrides(overrides: Record<string, CategoryOverride>) {
 
 // ─── period helpers ───────────────────────────────────────────────────────────
 
-function addMonths(period: string, delta: number): string {
-  const [year, month] = period.split("-").map(Number);
-  const d = new Date(year, month - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function formatPeriodLabel(period: string): string {
+function formatMonthLabel(period: string): string {
   const [year, month] = period.split("-").map(Number);
   return new Date(year, month - 1, 1).toLocaleDateString("es-AR", {
     month: "long",
@@ -88,16 +78,9 @@ function formatPeriodLabel(period: string): string {
   });
 }
 
-function currentMonthStr(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
 // ─── pie tooltip ──────────────────────────────────────────────────────────────
 
-interface PieEntry { category: string; amount_ars: number; amount_usd: number; pct: number; }
-
-function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: PieEntry }> }) {
+function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: CategoryTotal }> }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
@@ -115,109 +98,23 @@ function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ p
   );
 }
 
-// ─── summary computer ────────────────────────────────────────────────────────
+interface MonthTotal { month: string; amount_ars: number; amount_usd: number; }
 
-function computeSummary(transactions: Transaction[], period: string): PieEntry[] {
+function sumByMonth(transactions: Transaction[], category: string): MonthTotal[] {
   const map = new Map<string, { amount_ars: number; amount_usd: number }>();
   for (const t of transactions) {
-    if (t.date.slice(0, 7) !== period) continue;
-    if (!t.category || !EXPENSE_CATEGORIES.has(t.category)) continue;
+    if (t.category !== category) continue;
     if ((t.amount_ars ?? 0) >= 0) continue;
-    const prev = map.get(t.category) ?? { amount_ars: 0, amount_usd: 0 };
-    map.set(t.category, {
-      amount_ars: prev.amount_ars + Math.abs(t.amount_ars),
-      amount_usd: prev.amount_usd + Math.abs(t.amount_usd ?? 0),
+    const monthKey = t.date.slice(0, 7);
+    const prev = map.get(monthKey) ?? { amount_ars: 0, amount_usd: 0 };
+    map.set(monthKey, {
+      amount_ars: prev.amount_ars + (t.currency === "ARS" ? Math.abs(t.amount_ars) : 0),
+      amount_usd: prev.amount_usd + (t.currency === "USD" ? Math.abs(t.amount_usd ?? 0) : 0),
     });
   }
-  const totalArs = Array.from(map.values()).reduce((s, v) => s + v.amount_ars, 0) || 1;
   return Array.from(map.entries())
-    .map(([category, vals]) => ({
-      category,
-      amount_ars: vals.amount_ars,
-      amount_usd: vals.amount_usd,
-      pct: (vals.amount_ars / totalArs) * 100,
-    }))
-    .filter((item) => item.amount_ars > 0)
-    .sort((a, b) => b.amount_ars - a.amount_ars);
-}
-
-// ─── inline pie + table block ─────────────────────────────────────────────────
-
-function SummaryBlock({
-  items,
-  onCategoryClick,
-  getColor,
-}: {
-  items: PieEntry[];
-  onCategoryClick: (cat: string) => void;
-  getColor: (name: string, i: number) => string;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-      {/* pie */}
-      <div className="flex-shrink-0" style={{ width: 160, height: 160 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={items}
-              dataKey="amount_ars"
-              nameKey="category"
-              innerRadius={44}
-              outerRadius={72}
-              paddingAngle={2}
-              stroke="none"
-              onClick={(d) => onCategoryClick(d.category)}
-              style={{ cursor: "pointer" }}
-            >
-              {items.map((entry, i) => (
-                <Cell key={entry.category} fill={getColor(entry.category, i)} stroke="none" />
-              ))}
-            </Pie>
-            <Tooltip content={<PieTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-      {/* table */}
-      <div className="flex-1 overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-vault-border dark:border-[#30363d]">
-              <th className="pb-2 text-left font-medium text-vault-muted2 dark:text-[#8b949e]">Categoría</th>
-              <th className="pb-2 text-right font-medium text-vault-muted2 dark:text-[#8b949e]">ARS</th>
-              <th className="pb-2 text-right font-medium text-vault-muted2 dark:text-[#8b949e]">USD</th>
-              <th className="pb-2 text-right font-medium text-vault-muted2 dark:text-[#8b949e]">%</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr
-                key={item.category}
-                className="cursor-pointer border-b border-vault-border/50 last:border-0 transition-colors hover:bg-vault-s2/50 dark:border-[#30363d]/50 dark:hover:bg-[#21262d]/50"
-                onClick={() => onCategoryClick(item.category)}
-              >
-                <td className="py-2 pr-3">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 flex-shrink-0 rounded-sm" style={{ background: getColor(item.category, i) }} />
-                    <span className="text-vault-text dark:text-[#e6edf3]">{item.category}</span>
-                  </div>
-                </td>
-                <td className="py-2 text-right tabular-nums text-vault-text dark:text-[#e6edf3]">
-                  {formatCurrency(item.amount_ars, "ARS")}
-                </td>
-                <td className="py-2 pl-4 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
-                  {item.amount_usd > 0 ? formatCurrency(item.amount_usd, "USD") : "—"}
-                </td>
-                <td className="py-2 pl-3 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
-                  {item.pct.toFixed(1)}%
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+    .map(([month, vals]) => ({ month, ...vals }))
+    .sort((a, b) => b.month.localeCompare(a.month));
 }
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -225,12 +122,9 @@ function SummaryBlock({
 export function InstallmentsPage() {
   const { data: transactions, isLoading } = useTransactions({ dateFrom: "2026-01-01" });
 
-  // Period nav
-  const [selectedPeriod, setSelectedPeriod] = useState(currentMonthStr);
-  const today = useMemo(currentMonthStr, []);
-
-  // Category detail modal
-  const [categoryDetail, setCategoryDetail] = useState<string | null>(null);
+  // Drill-down: categoría → mes → libro diario
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
 
   // Mis categorías state
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>(loadCustomCategories);
@@ -268,54 +162,39 @@ export function InstallmentsPage() {
     return overrides[name]?.emoji ?? custom?.emoji ?? DEFAULT_EMOJIS[name] ?? "📦";
   };
 
-  // ── period summary ────────────────────────────────────────────────────────
-  const monthlyData = useMemo(
-    () => computeSummary(transactions ?? [], selectedPeriod),
-    [transactions, selectedPeriod]
+  // ── acumulado (fijo, todo el histórico) ──────────────────────────────────
+  const acumulado = useMemo(
+    () => sumByCategory(transactions ?? [], EXPENSE_CATEGORIES),
+    [transactions]
   );
-  const monthlyTotal = monthlyData.reduce((s, item) => s + item.amount_ars, 0);
+  const acumuladoTotal = acumulado.reduce((s, item) => s + item.amount_ars, 0);
 
-  // ── cumulative acumulado ─────────────────────────────────────────────────
-  const acumulado = useMemo(() => {
-    if (!transactions) return [];
-    const map = new Map<string, { amount_ars: number; amount_usd: number }>();
-    for (const t of transactions) {
-      if (!t.category || !EXPENSE_CATEGORIES.has(t.category)) continue;
-      if ((t.amount_ars ?? 0) >= 0) continue;
-      const prev = map.get(t.category) ?? { amount_ars: 0, amount_usd: 0 };
-      map.set(t.category, {
-        amount_ars: prev.amount_ars + Math.abs(t.amount_ars),
-        amount_usd: prev.amount_usd + Math.abs(t.amount_usd ?? 0),
-      });
-    }
-    const totalArs = Array.from(map.values()).reduce((s, v) => s + v.amount_ars, 0) || 1;
-    return Array.from(map.entries())
-      .map(([category, vals]) => ({
-        category,
-        amount_ars: vals.amount_ars,
-        amount_usd: vals.amount_usd,
-        pct: (vals.amount_ars / totalArs) * 100,
-      }))
-      .filter((item) => item.amount_ars > 0)
-      .sort((a, b) => b.amount_ars - a.amount_ars);
-  }, [transactions]);
+  // ── nivel 1: totales por mes de la categoría expandida ───────────────────
+  const monthlyForCategory = useMemo(
+    () => (expandedCategory ? sumByMonth(transactions ?? [], expandedCategory) : []),
+    [transactions, expandedCategory]
+  );
 
-  // ── category detail transactions ─────────────────────────────────────────
-  const categoryTransactions = useMemo(() => {
-    if (!categoryDetail || !transactions) return [];
-    return transactions
-      .filter(
-        (t) =>
-          t.date.slice(0, 7) === selectedPeriod &&
-          t.category === categoryDetail &&
-          (t.amount_ars ?? 0) < 0
-      )
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [transactions, categoryDetail, selectedPeriod]);
+  // ── nivel 2: libro diario del mes+categoría expandidos ───────────────────
+  const ledgerTransactions = useMemo(() => {
+    if (!expandedCategory || !expandedMonth || !transactions) return [];
+    return transactions.filter(
+      (t) => t.category === expandedCategory && t.date.slice(0, 7) === expandedMonth
+    );
+  }, [transactions, expandedCategory, expandedMonth]);
 
   const hasTransactions = !!(transactions && transactions.length > 0);
 
-  // ── handlers ──────────────────────────────────────────────────────────────
+  const toggleCategory = (category: string) => {
+    setExpandedCategory((prev) => (prev === category ? null : category));
+    setExpandedMonth(null);
+  };
+
+  const toggleMonth = (month: string) => {
+    setExpandedMonth((prev) => (prev === month ? null : month));
+  };
+
+  // ── handlers (Mis categorías) ────────────────────────────────────────────
   const handleDeleteConfirm = () => {
     if (!confirmDeleteCat) return;
     if (DEFAULT_CATEGORIES.includes(confirmDeleteCat)) {
@@ -374,35 +253,12 @@ export function InstallmentsPage() {
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <div className="p-7">
-      {/* ── Header + period nav ── */}
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="page-title">Historial de gastos</h1>
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
-            Tus movimientos procesados y resumen por categoría.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedPeriod(addMonths(selectedPeriod, -1))}
-            disabled={selectedPeriod <= "2026-01"}
-            className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent hover:text-vault-accent disabled:opacity-30 dark:text-[#8b949e]"
-          >
-            ‹
-          </button>
-          <span className="min-w-[120px] text-center text-sm font-medium capitalize text-vault-text dark:text-[#e6edf3]">
-            {formatPeriodLabel(selectedPeriod)}
-          </span>
-          <button
-            type="button"
-            onClick={() => setSelectedPeriod(addMonths(selectedPeriod, 1))}
-            disabled={selectedPeriod >= today}
-            className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent hover:text-vault-accent disabled:opacity-30 dark:text-[#8b949e]"
-          >
-            ›
-          </button>
-        </div>
+      {/* ── Header ── */}
+      <div className="mb-6">
+        <h1 className="page-title">Historial de gastos</h1>
+        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          Acumulado histórico por categoría — tocá una categoría para ver el detalle por mes.
+        </p>
       </div>
 
       {!hasTransactions && !isLoading && (
@@ -423,55 +279,136 @@ export function InstallmentsPage() {
         </div>
       )}
 
-      {/* ── Monthly panel (primary) ── */}
+      {/* ── Acumulado (fijo, panel principal) ── */}
       <div className="card-vault mb-5">
-        <div className="mb-4 flex items-baseline gap-3">
-          <h2 className="section-label">Gastos de {formatPeriodLabel(selectedPeriod)}</h2>
-          {monthlyTotal > 0 && (
-            <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-              hacé click en una categoría para ver el detalle
-            </span>
-          )}
-        </div>
+        <h2 className="section-label mb-4">Gastos acumulados</h2>
         {isLoading ? (
           <div className="flex h-24 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
             Cargando...
           </div>
-        ) : monthlyTotal > 0 ? (
+        ) : acumuladoTotal > 0 ? (
           <>
-            <p
-              className="mb-5 tabular-nums font-light text-vault-text dark:text-[#e6edf3]"
-              style={{ fontSize: 36 }}
-            >
-              {formatCurrency(monthlyTotal, "ARS")}
+            <p className="mb-5 tabular-nums font-light text-vault-text dark:text-[#e6edf3]" style={{ fontSize: 36 }}>
+              {formatCurrency(acumuladoTotal, "ARS")}
             </p>
-            <SummaryBlock
-              items={monthlyData}
-              onCategoryClick={setCategoryDetail}
-              getColor={getColor}
-            />
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+              {/* Pie chart */}
+              <div className="flex-shrink-0" style={{ width: 160, height: 160 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={acumulado}
+                      dataKey="amount_ars"
+                      nameKey="category"
+                      innerRadius={44}
+                      outerRadius={72}
+                      paddingAngle={2}
+                      stroke="none"
+                      onClick={(d) => toggleCategory(d.category)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {acumulado.map((entry, i) => (
+                        <Cell key={entry.category} fill={getColor(entry.category, i)} stroke="none" />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<PieTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Category list — nivel 0 */}
+              <div className="min-w-0 flex-1">
+                {acumulado.map((item, i) => {
+                  const isExpanded = expandedCategory === item.category;
+                  const color = getColor(item.category, i);
+                  return (
+                    <div key={item.category}>
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(item.category)}
+                        className="flex w-full items-center gap-2 border-b border-vault-border/50 py-2.5 text-left text-xs transition-colors hover:bg-vault-s2/30 dark:border-[#30363d]/50"
+                      >
+                        <span className="h-2.5 w-2.5 flex-shrink-0 rounded-sm" style={{ background: color }} />
+                        <span className="flex-1 text-vault-text dark:text-[#e6edf3]">{item.category}</span>
+                        <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                          {formatCurrency(item.amount_ars, "ARS")}
+                        </span>
+                        {item.amount_usd > 0 && (
+                          <span className="tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                            {formatCurrency(item.amount_usd, "USD")}
+                          </span>
+                        )}
+                        <span className="w-10 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                          {item.pct.toFixed(1)}%
+                        </span>
+                        <span
+                          className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#8b949e]"
+                          style={{ transform: isExpanded ? "rotate(90deg)" : "none" }}
+                        >
+                          ›
+                        </span>
+                      </button>
+
+                      {/* Nivel 1: totales por mes */}
+                      {isExpanded && (
+                        <div className="border-b border-vault-border/50 bg-vault-s2/30 px-2 pb-2 pt-1.5 dark:border-[#30363d]/50 dark:bg-[#21262d]/30">
+                          {monthlyForCategory.length === 0 ? (
+                            <p className="py-2 text-center text-xs text-vault-muted2 dark:text-[#8b949e]">
+                              Sin movimientos para esta categoría.
+                            </p>
+                          ) : (
+                            monthlyForCategory.map((m) => {
+                              const monthExpanded = expandedMonth === m.month;
+                              return (
+                                <div key={m.month}>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleMonth(m.month)}
+                                    className="flex w-full items-center gap-2 rounded py-1.5 text-left text-xs transition-colors hover:bg-vault-s2/60 dark:hover:bg-[#21262d]/60"
+                                  >
+                                    <span className="flex-1 capitalize text-vault-text dark:text-[#e6edf3]">
+                                      {formatMonthLabel(m.month)}
+                                    </span>
+                                    <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                                      {formatCurrency(m.amount_ars, "ARS")}
+                                    </span>
+                                    {m.amount_usd > 0 && (
+                                      <span className="tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                                        {formatCurrency(m.amount_usd, "USD")}
+                                      </span>
+                                    )}
+                                    <span
+                                      className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#8b949e]"
+                                      style={{ transform: monthExpanded ? "rotate(90deg)" : "none" }}
+                                    >
+                                      ›
+                                    </span>
+                                  </button>
+
+                                  {/* Nivel 2: libro diario (débito/crédito) */}
+                                  {monthExpanded && (
+                                    <div className="mb-1 rounded-vault bg-white px-2 pb-2 pt-1 dark:bg-[#161b22]">
+                                      <CategoryLedger transactions={ledgerTransactions} />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </>
         ) : (
           <div className="flex h-20 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-            Sin gastos registrados para este período.
+            Sin gastos registrados.
           </div>
         )}
       </div>
-
-      {/* ── Acumulado desde enero 2026 (secondary) ── */}
-      {acumulado.length > 0 && (
-        <div className="card-vault mb-5">
-          <h2 className="mb-1 section-label">Acumulado desde enero 2026</h2>
-          <p className="mb-4 text-xs text-vault-muted2 dark:text-[#8b949e]">
-            Total acumulado por categoría — ARS y USD.
-          </p>
-          <SummaryBlock
-            items={acumulado}
-            onCategoryClick={setCategoryDetail}
-            getColor={getColor}
-          />
-        </div>
-      )}
 
       {/* ── Mis categorías (colapsable) ── */}
       <div className="card-vault overflow-hidden p-0">
@@ -559,88 +496,6 @@ export function InstallmentsPage() {
           </div>
         )}
       </div>
-
-      {/* ── Modal: category detail ── */}
-      {categoryDetail && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setCategoryDetail(null)}
-        >
-          <div
-            className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-2xl border border-vault-border bg-white shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-vault-border px-6 py-4 dark:border-[#30363d]">
-              <div>
-                <h3 className="text-base font-medium capitalize text-vault-text dark:text-[#e6edf3]">
-                  {categoryDetail}
-                </h3>
-                <p className="text-xs capitalize text-vault-muted2 dark:text-[#8b949e]">
-                  {formatPeriodLabel(selectedPeriod)}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCategoryDetail(null)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-vault-muted2 hover:bg-vault-s2 hover:text-vault-text dark:text-[#8b949e] dark:hover:bg-[#21262d]"
-              >
-                ×
-              </button>
-            </div>
-            <div className="overflow-y-auto p-6">
-              {categoryTransactions.length === 0 ? (
-                <p className="text-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                  Sin transacciones en este período.
-                </p>
-              ) : (
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-vault-border dark:border-[#30363d]">
-                      <th className="pb-2 text-left font-medium text-vault-muted2 dark:text-[#8b949e]">Fecha</th>
-                      <th className="pb-2 text-left font-medium text-vault-muted2 dark:text-[#8b949e]">Descripción</th>
-                      <th className="pb-2 text-right font-medium text-vault-muted2 dark:text-[#8b949e]">Monto</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categoryTransactions.map((t) => (
-                      <tr
-                        key={t.id}
-                        className="border-b border-vault-border/50 last:border-0 dark:border-[#30363d]/50"
-                      >
-                        <td className="py-2 pr-3 whitespace-nowrap text-vault-muted2 dark:text-[#8b949e]">
-                          {new Date(t.date + "T12:00:00").toLocaleDateString("es-AR", {
-                            day: "2-digit",
-                            month: "short",
-                          })}
-                        </td>
-                        <td className="max-w-[220px] py-2 pr-3">
-                          <p className="truncate text-vault-text dark:text-[#e6edf3]">{t.description}</p>
-                        </td>
-                        <td className="py-2 text-right tabular-nums text-vault-text dark:text-[#e6edf3]">
-                          {formatCurrency(Math.abs(t.amount_ars), "ARS")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-vault-border dark:border-[#30363d]">
-                      <td colSpan={2} className="pt-2 text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
-                        Total
-                      </td>
-                      <td className="pt-2 text-right tabular-nums font-semibold text-vault-text dark:text-[#e6edf3]">
-                        {formatCurrency(
-                          categoryTransactions.reduce((s, t) => s + Math.abs(t.amount_ars), 0),
-                          "ARS"
-                        )}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Modal: confirmar eliminación ── */}
       {confirmDeleteCat && (

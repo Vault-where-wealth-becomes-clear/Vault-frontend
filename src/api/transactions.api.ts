@@ -26,6 +26,8 @@ export interface Transaction {
   needs_review: boolean;
   is_corrected: boolean;
   created_at: string;
+  current_installment: number | null;
+  total_installments: number | null;
 }
 
 interface TransactionFilters {
@@ -33,18 +35,21 @@ interface TransactionFilters {
   category?: string;
   dateFrom?: string;
   dateTo?: string;
+  enabled?: boolean;
 }
 
 export function useTransactions(filters: TransactionFilters = {}) {
+  const { enabled = true, ...queryFilters } = filters;
   return useQuery({
-    queryKey: ["transactions", filters],
+    queryKey: ["transactions", queryFilters],
+    enabled,
     queryFn: async (): Promise<Transaction[]> => {
       const { data } = await apiClient.get<Transaction[]>("/transactions", {
         params: {
-          account_id: filters.accountId,
-          category: filters.category,
-          date_from: filters.dateFrom,
-          date_to: filters.dateTo,
+          account_id: queryFilters.accountId,
+          category: queryFilters.category,
+          date_from: queryFilters.dateFrom,
+          date_to: queryFilters.dateTo,
         },
       });
       return data;
