@@ -34,6 +34,8 @@ interface CreditCardBreakdown {
   consumosUsd: number;
   impuestosArs: number;
   creditosArs: number;
+  remanenteArs: number;
+  remanenteUsd: number;
   totalArs: number;
   totalUsd: number;
 }
@@ -43,8 +45,15 @@ interface CreditCardBreakdown {
  * El total del período incluye TODAS las transacciones del resumen —
  * las cuotas de compras anteriores igual las cobra el banco este mes,
  * así que cuentan como consumo del período (se muestran con badge "cuota X/Y").
+ * `remanenteArs`/`remanenteUsd`: saldo del período anterior que no se canceló
+ * del todo (SALDO ANTERIOR - pago, extraído por el worker) — sin esto, ese
+ * remanente desaparece del total mostrado.
  */
-function computeCreditCardBreakdown(transactions: Transaction[]): CreditCardBreakdown {
+function computeCreditCardBreakdown(
+  transactions: Transaction[],
+  remanenteArs: number,
+  remanenteUsd: number
+): CreditCardBreakdown {
   let consumosArs = 0;
   let consumosUsd = 0;
   let impuestosArs = 0;
@@ -75,8 +84,10 @@ function computeCreditCardBreakdown(transactions: Transaction[]): CreditCardBrea
     consumosUsd,
     impuestosArs,
     creditosArs,
-    totalArs: consumosArs + impuestosArs - creditosArs,
-    totalUsd: consumosUsd,
+    remanenteArs,
+    remanenteUsd,
+    totalArs: consumosArs + impuestosArs - creditosArs + remanenteArs,
+    totalUsd: consumosUsd + remanenteUsd,
   };
 }
 
@@ -98,6 +109,10 @@ interface AccountSummary {
   totalSpentNative: number;
   creditCardBreakdown: CreditCardBreakdown | null;
   transactions: Transaction[];
+  // Motivo por el que el período quedó en revisión sin que sea un error de
+  // carga (ej. la reconciliación créditos-débitos+saldo anterior no cerró
+  // contra el saldo impreso) — null si no hay nada para mostrar.
+  reviewNote: string | null;
 }
 
 interface EntitySummary {
@@ -263,16 +278,28 @@ export function MonthlyPage() {
   const entityData = useMemo((): EntitySummary[] => {
     if (!accounts || !periodTransactions || !uploads || !period) return [];
 
-    // Both ARS and USD opening balances — Decimal from Pydantic serializes as string, coerce
+    // Both ARS and USD opening balances — Decimal from Pydantic serializes as string, coerce.
+    // "review" cuenta acá también: la carga puede haber quedado en revisión
+    // por una reconciliación que no cerró (ver reviewNoteByAccount abajo),
+    // pero eso no significa que el saldo inicial extraído esté vacío — si lo
+    // excluyéramos, el saldo mostrado sería 0 en vez del valor real.
     const openingByAccount = new Map<string, { ars: number; usd: number }>();
+    const reviewNoteByAccount = new Map<string, string>();
     [...uploads]
-      .filter((u) => u.status === "done" && u.period_month.slice(0, 7) === period)
+      .filter(
+        (u) =>
+          (u.status === "done" || u.status === "review") &&
+          u.period_month.slice(0, 7) === period
+      )
       .sort((a, b) => a.uploaded_at.localeCompare(b.uploaded_at))
       .forEach((u) => {
         openingByAccount.set(u.account_id, {
           ars: Number(u.opening_balance_ars) || 0,
           usd: Number(u.opening_balance_usd) || 0,
         });
+        if (u.status === "review" && u.error_message) {
+          reviewNoteByAccount.set(u.account_id, u.error_message);
+        }
       });
 
     const txByAccount = new Map<string, Transaction[]>();
@@ -313,7 +340,9 @@ export function MonthlyPage() {
           0
         );
 
-      const creditCardBreakdown = isCreditCard ? computeCreditCardBreakdown(txns) : null;
+      const creditCardBreakdown = isCreditCard
+        ? computeCreditCardBreakdown(txns, openingBalances.ars, openingBalances.usd)
+        : null;
 
       const institution = account.institution ?? "Sin entidad";
       const accSummary: AccountSummary = {
@@ -331,6 +360,7 @@ export function MonthlyPage() {
         totalSpentNative,
         creditCardBreakdown,
         transactions: [...txns].sort((a, b) => a.date.localeCompare(b.date)),
+        reviewNote: reviewNoteByAccount.get(account.id) ?? null,
       };
 
       const existing = byInstitution.get(institution);
@@ -593,6 +623,13 @@ export function MonthlyPage() {
                                         )}
                                       </button>
 
+                                      {account.reviewNote && (
+                                        <p className="-mt-1 mb-2 flex items-start gap-1 text-[11px] text-vault-red">
+                                          <span aria-hidden="true">⚠</span>
+                                          <span>{account.reviewNote}</span>
+                                        </p>
+                                      )}
+
                                       {/* Desglose del período — tarjetas de crédito (Regla 2) */}
                                       {account.hasData && isAccountOpen && account.isCreditCard && account.creditCardBreakdown && (
                                         <div className="mb-2 grid grid-cols-2 gap-2 rounded-vault bg-vault-s2/40 px-3 py-2 text-xs dark:bg-[#21262d]/40 sm:grid-cols-4">
@@ -663,6 +700,34 @@ export function MonthlyPage() {
                                                 </tr>
                                               </thead>
                                               <tbody>
+                                                {account.creditCardBreakdown &&
+                                                  (account.creditCardBreakdown.remanenteArs > 0 ||
+                                                    account.creditCardBreakdown.remanenteUsd > 0) && (
+                                                    <tr className="border-b border-vault-border/20 italic dark:border-[#30363d]/20">
+                                                      <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#8b949e]">
+                                                        —
+                                                      </td>
+                                                      <td className="max-w-[180px] truncate py-1.5 text-vault-muted2 dark:text-[#8b949e]">
+                                                        Saldo anterior sin pagar
+                                                        <span
+                                                          className="ml-1.5 rounded bg-vault-red/10 px-1 py-0.5 text-[10px] font-medium text-vault-red not-italic"
+                                                          title="SALDO ANTERIOR menos SU PAGO del resumen previo — no es un consumo del período, es deuda que se arrastra"
+                                                        >
+                                                          arrastre
+                                                        </span>
+                                                      </td>
+                                                      <td className="py-1.5 text-right tabular-nums font-medium text-vault-red">
+                                                        {account.creditCardBreakdown.remanenteArs > 0
+                                                          ? formatCurrency(account.creditCardBreakdown.remanenteArs, "ARS")
+                                                          : ""}
+                                                      </td>
+                                                      <td className="py-1.5 pr-3 text-right tabular-nums font-medium text-vault-red">
+                                                        {account.creditCardBreakdown.remanenteUsd > 0
+                                                          ? formatCurrency(account.creditCardBreakdown.remanenteUsd, "USD")
+                                                          : ""}
+                                                      </td>
+                                                    </tr>
+                                                  )}
                                                 {account.transactions.map((t) => {
                                                   const ars = Number(t.amount_ars) || 0;
                                                   const usd = Number(t.amount_usd) || 0;
@@ -707,6 +772,23 @@ export function MonthlyPage() {
                                                   );
                                                 })}
                                               </tbody>
+                                              {account.creditCardBreakdown && (
+                                                <tfoot>
+                                                  <tr className="border-t border-vault-border/40 dark:border-[#30363d]/40">
+                                                    <td colSpan={2} className="py-1.5 pl-3 font-semibold text-vault-text dark:text-[#e6edf3]">
+                                                      Total del período
+                                                    </td>
+                                                    <td className="py-1.5 text-right tabular-nums font-semibold text-vault-red">
+                                                      {formatCurrency(account.creditCardBreakdown.totalArs, "ARS")}
+                                                    </td>
+                                                    <td className="py-1.5 pr-3 text-right tabular-nums font-semibold text-vault-red">
+                                                      {account.creditCardBreakdown.totalUsd > 0
+                                                        ? formatCurrency(account.creditCardBreakdown.totalUsd, "USD")
+                                                        : ""}
+                                                    </td>
+                                                  </tr>
+                                                </tfoot>
+                                              )}
                                             </table>
                                           ) : (
                                             /* Libro diario in native currency */
@@ -734,6 +816,23 @@ export function MonthlyPage() {
                                                 </tr>
                                               </thead>
                                               <tbody>
+                                                <tr className="border-b border-vault-border/20 bg-vault-s2/60 dark:border-[#30363d]/20 dark:bg-[#21262d]/60">
+                                                  <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#8b949e]">
+                                                    —
+                                                  </td>
+                                                  <td className="max-w-[180px] truncate py-1.5 font-medium text-vault-text dark:text-[#e6edf3]">
+                                                    Saldo anterior
+                                                  </td>
+                                                  <td className="py-1.5 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                                                    —
+                                                  </td>
+                                                  <td className="py-1.5 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                                                    —
+                                                  </td>
+                                                  <td className="py-1.5 pr-3 text-right tabular-nums font-semibold text-vault-text dark:text-[#e6edf3]">
+                                                    {formatCurrency(account.openingNative, account.currency)}
+                                                  </td>
+                                                </tr>
                                                 {(() => {
                                                   let balance = account.openingNative;
                                                   return account.transactions.map((t) => {

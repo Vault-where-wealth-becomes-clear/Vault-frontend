@@ -6,8 +6,8 @@ export function formatCurrency(
   const opts: Intl.NumberFormatOptions = {
     style: "currency",
     currency,
-    minimumFractionDigits: currency === "USD" ? 2 : 0,
-    maximumFractionDigits: currency === "USD" ? 2 : 0,
+    minimumFractionDigits: currency === "USD" ? 2 : 1,
+    maximumFractionDigits: currency === "USD" ? 2 : 1,
     notation: compact ? "compact" : "standard",
   };
   return new Intl.NumberFormat("es-AR", opts).format(amount);
