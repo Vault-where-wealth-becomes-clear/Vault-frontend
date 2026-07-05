@@ -16,6 +16,8 @@ export interface Upload {
   pending_mep: boolean;
   opening_balance_ars: number;
   opening_balance_usd: number;
+  closing_balance_ars: number;
+  closing_balance_usd: number;
   uploaded_at: string;
   processed_at: string | null;
 }

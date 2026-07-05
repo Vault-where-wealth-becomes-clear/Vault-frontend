@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDashboard } from "@/api/dashboard.api";
 import { useUploads } from "@/api/uploads.api";
 import { useAccounts, getAccountDisplayName, type AccountType } from "@/api/accounts.api";
@@ -218,11 +219,26 @@ export function MonthlyPage() {
     return ordered;
   }, [uploads]);
 
-  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(() => searchParams.get("period"));
   const [expandedEntities, setExpandedEntities] = useState<Set<string>>(new Set());
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [expandedBreakdownCategory, setExpandedBreakdownCategory] = useState<string | null>(null);
   const [expandedFlujo, setExpandedFlujo] = useState<"ingresos" | "egresos" | null>(null);
+
+  // El sidebar linkea directo a un mes (/monthly?period=YYYY-MM) — sincroniza
+  // acá para que funcione incluso si ya estabas parado en esta página.
+  useEffect(() => {
+    const p = searchParams.get("period");
+    if (p && p !== selectedPeriod) {
+      setSelectedPeriod(p);
+      setExpandedEntities(new Set());
+      setExpandedAccounts(new Set());
+      setExpandedBreakdownCategory(null);
+      setExpandedFlujo(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const period = selectedPeriod ?? months[0];
   const dateFrom = period ? `${period}-01` : undefined;
@@ -404,6 +420,7 @@ export function MonthlyPage() {
 
   const handleMonthSelect = (m: string) => {
     setSelectedPeriod(m);
+    setSearchParams({ period: m }, { replace: true });
     setExpandedEntities(new Set());
     setExpandedAccounts(new Set());
     setExpandedBreakdownCategory(null);

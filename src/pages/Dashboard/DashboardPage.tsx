@@ -10,13 +10,14 @@ import { useExportXlsx } from "@/api/exports.api";
 import { useExchangeRates, useSetExchangeRate } from "@/api/exchangeRates.api";
 import { useAccounts, getAccountDisplayName } from "@/api/accounts.api";
 import { useUploads } from "@/api/uploads.api";
-import { MonthlySeriesChart } from "@/components/charts/MonthlySeriesChart";
+import { useTransactions } from "@/api/transactions.api";
 import { AccountBalanceChart, type AccountBalancePoint, type AccountBalanceLine } from "@/components/charts/AccountBalanceChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { extractErrorMessage } from "@/utils/apiError";
 import { formatCurrency, formatPercent } from "@/utils/formatCurrency";
 import { formatPeriod } from "@/utils/formatDate";
+import { computeUploadClosingBalance, groupTransactionsByUpload } from "@/utils/accountBalance";
 
 const ADVANCED_SECTIONS: {
   key: "cartera" | "proyeccion" | "compromisos";
@@ -42,6 +43,10 @@ const ADVANCED_SECTIONS: {
 
 export function DashboardPage() {
   const { data: uploads } = useUploads();
+  // Sin filtro: todas las transacciones del usuario, para poder reconstruir
+  // el saldo histórico de cuentas sin extractos (ej. efectivo) a partir de
+  // sus movimientos manuales — no tienen uploads que den un saldo por período.
+  const { data: allTransactions } = useTransactions();
 
   const latestDonePeriod = useMemo(() => {
     const done = uploads?.filter((u) => u.status === "done") ?? [];
@@ -57,7 +62,7 @@ export function DashboardPage() {
 
   const { data: summary, isLoading: isLoadingSummary } = useDashboard(period);
   const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown(period);
-  const { data: monthlySeries, isLoading: isLoadingMonthlySeries } = useDashboardMonthlySeries(
+  const { data: monthlySeries } = useDashboardMonthlySeries(
     summary?.period
   );
   const { data: fullDashboard } = useFullDashboard(period);
@@ -73,10 +78,28 @@ export function DashboardPage() {
   const [mepFetching, setMepFetching] = useState(false);
   const [liveMep, setLiveMep] = useState<number | null>(null);
   const [mepSaving, setMepSaving] = useState(false);
+  const [hiddenAccountIds, setHiddenAccountIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem("vault_liquid_assets_hidden_accounts");
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set();
+    }
+  });
 
   const toggleCurrency = (currency: "USD" | "ARS") => {
     setCurrencyDisplay(currency);
     localStorage.setItem("vault_currency_display", currency);
+  };
+
+  const toggleAccountVisibility = (accountId: string) => {
+    setHiddenAccountIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(accountId)) next.delete(accountId);
+      else next.add(accountId);
+      localStorage.setItem("vault_liquid_assets_hidden_accounts", JSON.stringify([...next]));
+      return next;
+    });
   };
 
   const handleExport = async () => {
@@ -129,11 +152,31 @@ export function DashboardPage() {
     return monthlySeries.filter((p) => donePeriodSet.has(p.month));
   }, [monthlySeries, donePeriodSet]);
 
+  // TC MEP más cercano a un mes dado — igual estrategia que el worker
+  // (_get_mep_rate: exacto o el más reciente disponible), para poder
+  // convertir cuentas ARS/USD a una sola moneda en el gráfico.
+  const getMepRateForMonth = useMemo(() => {
+    const sorted = [...(exchangeRates ?? [])].sort((a, b) =>
+      a.period_month.localeCompare(b.period_month)
+    );
+    return (month: string): number | null => {
+      const exact = sorted.find((r) => r.period_month.slice(0, 7) === month);
+      if (exact) return exact.mep_rate;
+      const priorOrEqual = sorted.filter((r) => r.period_month.slice(0, 7) <= month);
+      if (priorOrEqual.length > 0) return priorOrEqual[priorOrEqual.length - 1].mep_rate;
+      return sorted[0]?.mep_rate ?? null;
+    };
+  }, [exchangeRates]);
+
   // Saldo por cuenta a lo largo de los meses — una línea por cuenta (tarjetas
   // de crédito excluidas: current_balance nunca se actualiza para ellas).
   // El saldo de cierre de cada mes es el saldo de apertura del upload
   // siguiente (SF(N) = SI(N+1), invariante ya reconciliado en el worker);
   // para el mes más reciente de cada cuenta se usa el current_balance vivo.
+  // Todas las cuentas se convierten a currencyDisplay (el mismo toggle
+  // USD/ARS del resto del tablero) para que las magnitudes sean comparables
+  // entre cuentas — antes una CA en USD se veía "chiquita" al lado de
+  // cuentas en ARS solo por estar en otra moneda, sin conversión real.
   const accountBalanceSeries = useMemo(() => {
     if (!accounts || !uploads) return { points: [] as AccountBalancePoint[], lines: [] as AccountBalanceLine[] };
 
@@ -142,8 +185,17 @@ export function DashboardPage() {
     );
     const doneUploads = uploads.filter((u) => u.status === "done");
 
+    const toDisplayCurrency = (nativeValue: number, accountIsUsd: boolean, month: string): number | null => {
+      const targetIsUsd = currencyDisplay === "USD";
+      if (accountIsUsd === targetIsUsd) return nativeValue;
+      const rate = getMepRateForMonth(month);
+      if (rate == null) return null; // sin TC para convertir — mejor no mostrar un número engañoso
+      return accountIsUsd ? nativeValue * rate : nativeValue / rate;
+    };
+
     const monthSet = new Set<string>();
-    const perAccountBalances = new Map<string, Map<string, number>>();
+    const perAccountBalances = new Map<string, Map<string, number | null>>();
+    const txnsByUpload = groupTransactionsByUpload(allTransactions ?? []);
 
     for (const account of nonCcAccounts) {
       const accountUploads = doneUploads
@@ -152,20 +204,62 @@ export function DashboardPage() {
       if (accountUploads.length === 0) continue;
 
       const isUsd = account.currency === "USD";
-      const balances = new Map<string, number>();
-      accountUploads.forEach((u, i) => {
+      const balances = new Map<string, number | null>();
+      accountUploads.forEach((u) => {
         const month = u.period_month.slice(0, 7);
-        const next = accountUploads[i + 1];
-        const closing = next
-          ? Number(isUsd ? next.opening_balance_usd : next.opening_balance_ars)
-          : Number(account.current_balance);
-        balances.set(month, closing);
+        // Saldo inicial + neto de las transacciones de ESTE upload — no
+        // depende de closing_balance_{ars,usd} (requiere que el worker haya
+        // podido leer el saldo impreso, falla si el LLM no alinea 1:1 con el
+        // extracto) ni de current_balance (valor derivado por el LLM).
+        const closing = computeUploadClosingBalance(u, txnsByUpload.get(u.id) ?? [], isUsd);
+        balances.set(month, toDisplayCurrency(closing, isUsd, month));
         monthSet.add(month);
       });
       perAccountBalances.set(account.id, balances);
     }
 
     const months = Array.from(monthSet).sort().slice(-6);
+    const latestMonth = months[months.length - 1];
+
+    // Cuentas sin ningún extracto cargado (ej. efectivo/caja de seguridad) no
+    // tienen un saldo de apertura/cierre por período — se reconstruye el
+    // saldo corriente sumando sus transacciones manuales hasta el final de
+    // cada mes. Así una cuenta con un depósito de hace varios meses (ej.
+    // 29-12) aparece con ese saldo desde ese mes en adelante, no solo en el
+    // más reciente del gráfico.
+    if (months.length > 0) {
+      for (const account of nonCcAccounts) {
+        if (perAccountBalances.has(account.id)) continue;
+        const accountTxns = (allTransactions ?? []).filter((t) => t.account_id === account.id);
+        const isUsd = account.currency === "USD";
+        if (accountTxns.length > 0) {
+          const balances = new Map<string, number | null>();
+          for (const month of months) {
+            const txnsUpToMonth = accountTxns.filter((t) => t.date.slice(0, 7) <= month);
+            if (txnsUpToMonth.length === 0) {
+              balances.set(month, null); // la cuenta todavía no existía en este mes
+              continue;
+            }
+            const running = txnsUpToMonth.reduce(
+              (acc, t) => acc + Number(isUsd ? t.amount_usd ?? 0 : t.amount_ars),
+              0
+            );
+            balances.set(month, toDisplayCurrency(running, isUsd, month));
+          }
+          perAccountBalances.set(account.id, balances);
+        } else if (latestMonth) {
+          // Sin transacciones ni extractos — último recurso: current_balance
+          // anclado al mes más reciente (mejor que no mostrar nada).
+          const balance = Number(account.current_balance);
+          if (!balance) continue;
+          perAccountBalances.set(
+            account.id,
+            new Map([[latestMonth, toDisplayCurrency(balance, isUsd, latestMonth)]])
+          );
+        }
+      }
+    }
+
     const points: AccountBalancePoint[] = months.map((month) => {
       const point: AccountBalancePoint = { month };
       for (const [accountId, balances] of perAccountBalances) {
@@ -176,10 +270,44 @@ export function DashboardPage() {
 
     const lines: AccountBalanceLine[] = nonCcAccounts
       .filter((a) => perAccountBalances.has(a.id))
-      .map((a) => ({ accountId: a.id, label: getAccountDisplayName(a), currency: a.currency }));
+      .map((a) => ({ accountId: a.id, label: getAccountDisplayName(a), currency: currencyDisplay }));
 
     return { points, lines };
-  }, [accounts, uploads]);
+  }, [accounts, uploads, allTransactions, currencyDisplay, getMepRateForMonth]);
+
+  // Gráfico de activos líquidos: editable — el usuario elige qué cuentas se
+  // muestran vía hiddenAccountIds (persistido en localStorage). Las líneas
+  // ocultas no se pasan al chart; los puntos se dejan como están, el chart
+  // solo dibuja lo que aparece en `lines`.
+  const visibleAccountBalanceLines = useMemo(
+    () => accountBalanceSeries.lines.filter((l) => !hiddenAccountIds.has(l.accountId)),
+    [accountBalanceSeries.lines, hiddenAccountIds]
+  );
+
+  // Patrimonio neto real por mes para "Flujo del mes": suma de TODAS las
+  // cuentas del gráfico de activos líquidos (no solo las visibles — ocultar
+  // una cuenta del gráfico no debería cambiar el patrimonio total), ya
+  // convertidas a currencyDisplay. No usar point.patrimonio_usd del backend
+  // acá: ese valor es el patrimonio que calculó el LLM de la ÚLTIMA cuenta
+  // procesada ese período (cada extracto solo ve su propia cuenta), no una
+  // suma real de todas las cuentas — por eso cuentas sin extracto (efectivo,
+  // caja de seguridad) quedaban afuera del patrimonio de meses pasados.
+  const netWorthByMonth = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const point of accountBalanceSeries.points) {
+      let sum = 0;
+      let hasAny = false;
+      for (const line of accountBalanceSeries.lines) {
+        const v = point[line.accountId];
+        if (typeof v === "number") {
+          sum += v;
+          hasAny = true;
+        }
+      }
+      if (hasAny) map.set(point.month, sum);
+    }
+    return map;
+  }, [accountBalanceSeries]);
 
   if (isLoadingSummary || !summary) {
     return (
@@ -332,19 +460,47 @@ export function DashboardPage() {
             />
           </div>
 
-          {/* Row 2: gráfico compuesto — resultado, patrimonio, cartera y gasto mensual */}
+          {/* Row 2: activos líquidos — saldo por cuenta a lo largo de los meses,
+              editable: el usuario elige qué cuentas se muestran. */}
           <div className="mb-5 card-vault">
-            <h2 className="section-label mb-4">Evolución mensual</h2>
-            {isLoadingMonthlySeries || !monthlySeries ? (
-              <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                Cargando...
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="section-label mb-0">Activos líquidos</h2>
+              {accountBalanceSeries.lines.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {accountBalanceSeries.lines.map((line) => {
+                    const isHidden = hiddenAccountIds.has(line.accountId);
+                    return (
+                      <button
+                        key={line.accountId}
+                        type="button"
+                        onClick={() => toggleAccountVisibility(line.accountId)}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                          isHidden
+                            ? "border-vault-border2 text-vault-muted2 opacity-50 dark:border-[#30363d] dark:text-[#8b949e]"
+                            : "border-vault-accent/40 bg-vault-accent/10 text-vault-accent"
+                        }`}
+                        title={isHidden ? "Mostrar en el gráfico" : "Ocultar del gráfico"}
+                      >
+                        {line.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {accountBalanceSeries.points.length === 0 ? (
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+                Sin extractos procesados aún para mostrar saldos históricos.
               </div>
-            ) : filteredMonthlySeries.length === 0 ? (
-              <div className="flex h-44 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                Sin datos históricos aún.
+            ) : visibleAccountBalanceLines.length === 0 ? (
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+                Todas las cuentas están ocultas — activá alguna arriba para verla en el gráfico.
               </div>
             ) : (
-              <MonthlySeriesChart data={filteredMonthlySeries} />
+              <AccountBalanceChart
+                points={accountBalanceSeries.points}
+                lines={visibleAccountBalanceLines}
+              />
             )}
           </div>
 
@@ -386,6 +542,9 @@ export function DashboardPage() {
                       <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
                         Resultado
                       </th>
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        Patrimonio neto ({currencyDisplay})
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -412,6 +571,11 @@ export function DashboardPage() {
                           >
                             {point.resultado_ars >= 0 ? "+" : ""}
                             {formatCurrency(point.resultado_ars, "ARS")}
+                          </td>
+                          <td className="py-2 text-right tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                            {netWorthByMonth.has(point.month)
+                              ? formatCurrency(netWorthByMonth.get(point.month)!, currencyDisplay)
+                              : "—"}
                           </td>
                         </tr>
                       ))}
@@ -460,20 +624,6 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* Row 7: saldo de cuentas — una línea por cuenta a lo largo de los meses */}
-          <div className="mt-5 card-vault">
-            <h2 className="section-label mb-4">Saldo de cuentas</h2>
-            {accountBalanceSeries.points.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
-                Sin extractos procesados aún para mostrar saldos históricos.
-              </div>
-            ) : (
-              <AccountBalanceChart
-                points={accountBalanceSeries.points}
-                lines={accountBalanceSeries.lines}
-              />
-            )}
-          </div>
         </>
       )}
     </div>

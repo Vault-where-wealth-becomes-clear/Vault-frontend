@@ -11,8 +11,9 @@ import {
   type AccountType,
   type CurrencyType,
 } from "@/api/accounts.api";
-import { useSubmitUpload, useUploadStatus, useAccountUploads, useDeleteUpload, type UploadStatus } from "@/api/uploads.api";
+import { useSubmitUpload, useUploadStatus, useAccountUploads, useUploads, useDeleteUpload, type UploadStatus } from "@/api/uploads.api";
 import { useCreateManualTransaction, useTransactions, type Transaction } from "@/api/transactions.api";
+import { computeUploadClosingBalance, groupTransactionsByUpload } from "@/utils/accountBalance";
 import type { SkillModule } from "@/components/upload/ModuleSelector";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { extractErrorMessage } from "@/utils/apiError";
@@ -133,8 +134,32 @@ const STATUS_COLORS: Record<UploadStatus, string> = {
   error: "text-vault-red",
 };
 
+// Cuentas con formato de libro diario (saldo inicial/final por período,
+// reconciliado por el worker) — el saldo mostrado en "Mis cuentas" solo
+// tiene sentido para estas y para efectivo (saldo manual en tiempo real).
+// Tarjetas de crédito no tienen saldo de cuenta (son consumo/deuda del
+// período), y broker/cripto se valúan por posiciones, no por saldo de caja.
+const LEDGER_ACCOUNT_TYPES = new Set<AccountType>(["checking_ars", "checking_usd", "savings_box"]);
+
+/** null si esta cuenta no tiene un saldo que tenga sentido mostrar en "Mis cuentas". */
+function getAccountDisplayBalance(
+  account: Account,
+  latestClosingBalanceByAccount: Map<string, number>
+): number | null {
+  if (account.account_type === "cash") return Number(account.current_balance);
+  if (LEDGER_ACCOUNT_TYPES.has(account.account_type)) {
+    return latestClosingBalanceByAccount.get(account.id) ?? null;
+  }
+  return null;
+}
+
 export function AccountsPage() {
   const { data: accounts, isLoading } = useAccounts();
+  const { data: allUploads } = useUploads();
+  // Sin filtro: todas las transacciones del usuario, para calcular el saldo
+  // de cierre real de cada upload (saldo inicial + neto de sus transacciones)
+  // sin depender de ningún valor derivado por el LLM.
+  const { data: allTransactions } = useTransactions();
   const createAccount = useCreateAccount();
   const deleteAccount = useDeleteAccount();
   const updateAccount = useUpdateAccount();
@@ -227,6 +252,30 @@ export function AccountsPage() {
   }, [accounts]);
 
   const allGroupKeys = useMemo(() => Array.from(groupedAccounts.keys()), [groupedAccounts]);
+
+  // Saldo final del último período cargado por cuenta (no account.current_balance:
+  // ese campo lo pisa el último upload PROCESADO, no el cronológicamente más
+  // reciente — si se cargan meses fuera de orden queda desactualizado). Solo
+  // se calcula para cuentas con formato de libro diario.
+  const latestClosingBalanceByAccount = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!accounts || !allUploads) return map;
+    const txnsByUpload = groupTransactionsByUpload(allTransactions ?? []);
+    for (const account of accounts) {
+      if (!LEDGER_ACCOUNT_TYPES.has(account.account_type)) continue;
+      const done = allUploads
+        .filter((u) => u.account_id === account.id && u.status === "done")
+        .sort((a, b) => b.period_month.localeCompare(a.period_month));
+      if (done.length === 0) continue;
+      const latest = done[0];
+      const isUsd = account.currency === "USD";
+      map.set(
+        account.id,
+        computeUploadClosingBalance(latest, txnsByUpload.get(latest.id) ?? [], isUsd)
+      );
+    }
+    return map;
+  }, [accounts, allUploads, allTransactions]);
 
   useEffect(() => {
     if (newParam === "true") {
@@ -536,9 +585,19 @@ export function AccountsPage() {
                                   )}
                                 </p>
                               </div>
-                              <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
-                                {formatCurrency(account.current_balance, account.currency)}
-                              </span>
+                              {(() => {
+                                const displayBalance = getAccountDisplayBalance(
+                                  account,
+                                  latestClosingBalanceByAccount
+                                );
+                                return (
+                                  displayBalance !== null && (
+                                    <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                                      {formatCurrency(displayBalance, account.currency)}
+                                    </span>
+                                  )
+                                );
+                              })()}
                             </li>
                           ))}
                         </ul>
@@ -718,13 +777,26 @@ export function AccountsPage() {
               <button type="button" onClick={() => { setRightPanel("none"); setSelectedAccount(null); }} className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]">✕</button>
             </div>
 
-            {/* Saldo */}
-            <div className="border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">Saldo actual</p>
-              <p className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6edf3]" style={{ fontSize: 28 }}>
-                {formatCurrency(selectedAccount.current_balance, selectedAccount.currency)}
-              </p>
-            </div>
+            {/* Saldo — solo cuentas con formato de libro diario (checking/caja de
+                ahorro): tarjetas de crédito, broker y cripto no tienen un saldo
+                de cuenta que tenga sentido mostrar acá. */}
+            {LEDGER_ACCOUNT_TYPES.has(selectedAccount.account_type) && (
+              <div className="border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                  Saldo final ({latestClosingBalanceByAccount.has(selectedAccount.id)
+                    ? "último período cargado"
+                    : "sin extractos aún"})
+                </p>
+                <p className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6edf3]" style={{ fontSize: 28 }}>
+                  {latestClosingBalanceByAccount.has(selectedAccount.id)
+                    ? formatCurrency(
+                        latestClosingBalanceByAccount.get(selectedAccount.id)!,
+                        selectedAccount.currency
+                      )
+                    : "—"}
+                </p>
+              </div>
+            )}
 
             {/* Content area */}
             <div className="flex-1 overflow-y-auto px-4 py-3">

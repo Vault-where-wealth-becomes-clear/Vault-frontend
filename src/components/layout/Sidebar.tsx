@@ -3,7 +3,9 @@ import { NavLink, Link } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 import { logout } from "@/api/auth.api";
 import { useAccounts } from "@/api/accounts.api";
+import { useUploads } from "@/api/uploads.api";
 import { PLAN_LABELS } from "@/utils/planLabels";
+import { formatPeriod } from "@/utils/formatDate";
 import { useTheme } from "@/hooks/useTheme";
 import vaultLogo from "@/assets/vault-logo.png";
 
@@ -20,8 +22,11 @@ const menuItemClass =
 export function Sidebar() {
   const user = useAuthStore((s) => s.user);
   const { data: accounts } = useAccounts();
+  const { data: uploads } = useUploads();
   const [accountsOpen, setAccountsOpen] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
+  const [monthsOpen, setMonthsOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
@@ -39,6 +44,24 @@ export function Sidebar() {
     });
     return keys;
   }, [accounts]);
+
+  // Meses con al menos un extracto procesado, más reciente primero — para el
+  // desplegable de "Mes a mes" en el sidebar.
+  const monthsWithData = useMemo(() => {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+    (uploads ?? [])
+      .filter((u) => u.status === "done")
+      .sort((a, b) => b.period_month.localeCompare(a.period_month))
+      .forEach((u) => {
+        const m = u.period_month.slice(0, 7);
+        if (!seen.has(m)) {
+          seen.add(m);
+          ordered.push(m);
+        }
+      });
+    return ordered;
+  }, [uploads]);
 
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -67,6 +90,63 @@ export function Sidebar() {
           <span className="w-4 text-center">▤</span>
           Tablero
         </NavLink>
+
+        {/* Mes a mes con desplegable de períodos */}
+        <div className="mb-0.5">
+          <div className="flex items-center">
+            <NavLink
+              to="/monthly"
+              className={({ isActive }) =>
+                `flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-normal transition-colors ${
+                  isActive
+                    ? "bg-[#eff6ff] text-[#1e3a8a] dark:bg-[#1d2d50] dark:text-[#93c5fd]"
+                    : "text-vault-muted2 dark:text-[#c9d1d9] hover:bg-[#f1f5f9] hover:text-vault-text dark:hover:bg-[#21262d] dark:hover:text-[#e6edf3]"
+                }`
+              }
+            >
+              <span className="w-4 text-center">◫</span>
+              Mes a mes
+            </NavLink>
+            <button
+              type="button"
+              onClick={() => setMonthsOpen((o) => !o)}
+              className="ml-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-base text-vault-muted2 dark:text-[#8b949e] transition-colors hover:bg-[#f1f5f9] hover:text-vault-text"
+              aria-label={monthsOpen ? "Colapsar meses" : "Expandir meses"}
+            >
+              <span
+                className="inline-block leading-none transition-transform duration-200"
+                style={{ transform: monthsOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+              >
+                ›
+              </span>
+            </button>
+          </div>
+
+          {monthsOpen && (
+            <div className="ml-7 mt-1 flex flex-col gap-0.5 border-l border-vault-border dark:border-[#30363d] pl-2">
+              {monthsWithData.length === 0 ? (
+                <p className="px-2 py-1.5 text-[12px] text-vault-muted2 dark:text-[#8b949e]">
+                  Sin extractos aún
+                </p>
+              ) : (
+                monthsWithData.map((month) => (
+                  <Link
+                    key={month}
+                    to={`/monthly?period=${month}`}
+                    onClick={() => setSelectedMonth(month)}
+                    className={`truncate rounded-md px-2 py-1.5 text-[12px] capitalize transition-colors ${
+                      selectedMonth === month
+                        ? "bg-[#eff6ff] text-vault-accent dark:bg-[#1d2d50] dark:text-[#93c5fd]"
+                        : "text-vault-muted2 dark:text-[#c9d1d9] hover:bg-[#f1f5f9] hover:text-vault-text dark:hover:bg-[#21262d] dark:hover:text-[#e6edf3]"
+                    }`}
+                  >
+                    {formatPeriod(month)}
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Mis cuentas con desplegable */}
         <div className="mb-0.5">
@@ -126,19 +206,14 @@ export function Sidebar() {
           )}
         </div>
 
-        <NavLink to="/upload" className={({ isActive }) => navLinkClass(isActive)}>
-          <span className="w-4 text-center">↑</span>
-          Subir extracto
-        </NavLink>
-
-        <NavLink to="/monthly" className={({ isActive }) => navLinkClass(isActive)}>
-          <span className="w-4 text-center">◫</span>
-          Mes a mes
-        </NavLink>
-
         <NavLink to="/installments" className={({ isActive }) => navLinkClass(isActive)}>
           <span className="w-4 text-center">◷</span>
           Historial de gastos
+        </NavLink>
+
+        <NavLink to="/upload" className={({ isActive }) => navLinkClass(isActive)}>
+          <span className="w-4 text-center">↑</span>
+          Subir extracto
         </NavLink>
       </nav>
 
