@@ -14,6 +14,10 @@ export interface Upload {
   error_message: string | null;
   requested_modules: SkillModule[];
   pending_mep: boolean;
+  opening_balance_ars: number;
+  opening_balance_usd: number;
+  closing_balance_ars: number;
+  closing_balance_usd: number;
   uploaded_at: string;
   processed_at: string | null;
 }
@@ -40,6 +44,32 @@ export function useUploads() {
     queryFn: async (): Promise<Upload[]> => {
       const { data } = await apiClient.get<Upload[]>("/uploads");
       return data;
+    },
+  });
+}
+
+export function useAccountUploads(accountId: string | null) {
+  return useQuery({
+    queryKey: ["uploads", "account", accountId],
+    enabled: !!accountId,
+    queryFn: async (): Promise<Upload[]> => {
+      const { data } = await apiClient.get<Upload[]>("/uploads", {
+        params: { account_id: accountId },
+      });
+      return data;
+    },
+  });
+}
+
+export function useDeleteUpload() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (uploadId: string): Promise<void> => {
+      await apiClient.delete(`/uploads/${uploadId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["uploads"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
     },
   });
 }

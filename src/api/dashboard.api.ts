@@ -1,11 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
+export interface FlujoDelMes {
+  ingresos_ars: number;
+  egresos_ars: number;
+  resultado_ars: number;
+  ingresos_usd: number;
+  egresos_usd: number;
+}
+
 export interface DashboardSummary {
   period: string;
   total_usd: number;
   variation_pct: number;
   insights: string[];
+  flujo_del_mes: FlujoDelMes | null;
 }
 
 export interface BreakdownItem {
@@ -13,11 +22,6 @@ export interface BreakdownItem {
   amount_ars: number;
   amount_usd: number | null;
   pct_of_total: number;
-}
-
-export interface EvolutionPoint {
-  month: string;
-  total_usd: number;
 }
 
 export function useDashboard(period?: string) {
@@ -46,11 +50,27 @@ export function useDashboardBreakdown(period?: string) {
   });
 }
 
-export function useDashboardEvolution() {
+export interface MonthlySeriesPoint {
+  month: string;
+  ingresos_ars: number;
+  egresos_ars: number;
+  resultado_ars: number;
+  resultado_usd: number | null;
+  gasto_usd: number | null;
+  patrimonio_usd: number | null;
+  cartera_usd: number | null;
+}
+
+export function useDashboardMonthlySeries(period?: string, months = 6) {
   return useQuery({
-    queryKey: ["dashboard-evolution"],
-    queryFn: async (): Promise<EvolutionPoint[]> => {
-      const { data } = await apiClient.get<{ points: EvolutionPoint[] }>("/dashboard/evolution");
+    queryKey: ["dashboard-monthly-series", period, months],
+    queryFn: async (): Promise<MonthlySeriesPoint[]> => {
+      const params = new URLSearchParams();
+      if (period) params.set("period", period);
+      params.set("months", String(months));
+      const { data } = await apiClient.get<{ points: MonthlySeriesPoint[] }>(
+        `/dashboard/monthly-series?${params.toString()}`
+      );
       return data.points;
     },
     staleTime: 1000 * 60 * 5,

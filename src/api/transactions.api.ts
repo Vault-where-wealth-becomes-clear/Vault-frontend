@@ -2,20 +2,28 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
 export const STANDARD_CATEGORIES = [
+  // Gastos
   "Supermercado",
   "Restaurantes",
-  "Delivery",
-  "Combustible",
   "Transporte",
   "Salud",
-  "Educación",
+  "Indumentaria",
+  "Tecnología",
   "Entretenimiento",
-  "Ropa",
-  "Electrónica",
   "Servicios",
+  "Educación",
+  "Viajes",
   "Suscripciones",
-  "Transferencias",
-  "Inversiones",
+  "Impuestos",
+  "Varios",
+  // Ingresos y movimientos
+  "Ingreso operativo",
+  "Rendimiento",
+  "Cambio de moneda",
+  "Pago deuda",
+  "Transferencia interna",
+  // Transitorio
+  "Reintegro",
   "Sin categoría",
 ];
 
@@ -33,6 +41,8 @@ export interface Transaction {
   needs_review: boolean;
   is_corrected: boolean;
   created_at: string;
+  current_installment: number | null;
+  total_installments: number | null;
 }
 
 interface TransactionFilters {
@@ -40,19 +50,35 @@ interface TransactionFilters {
   category?: string;
   dateFrom?: string;
   dateTo?: string;
+  enabled?: boolean;
 }
 
 export function useTransactions(filters: TransactionFilters = {}) {
+  const { enabled = true, ...queryFilters } = filters;
   return useQuery({
-    queryKey: ["transactions", filters],
+    queryKey: ["transactions", queryFilters],
+    enabled,
     queryFn: async (): Promise<Transaction[]> => {
       const { data } = await apiClient.get<Transaction[]>("/transactions", {
         params: {
-          account_id: filters.accountId,
-          category: filters.category,
-          date_from: filters.dateFrom,
-          date_to: filters.dateTo,
+          account_id: queryFilters.accountId,
+          category: queryFilters.category,
+          date_from: queryFilters.dateFrom,
+          date_to: queryFilters.dateTo,
         },
+      });
+      return data;
+    },
+  });
+}
+
+export function useUploadTransactions(uploadId: string | null) {
+  return useQuery({
+    queryKey: ["transactions", "upload", uploadId],
+    enabled: !!uploadId,
+    queryFn: async (): Promise<Transaction[]> => {
+      const { data } = await apiClient.get<Transaction[]>("/transactions", {
+        params: { upload_id: uploadId },
       });
       return data;
     },
