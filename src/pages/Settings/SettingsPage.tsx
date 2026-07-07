@@ -1,8 +1,17 @@
 import { useState } from "react";
+import { useDeleteMyData } from "@/api/users.api";
 
 export function SettingsPage() {
   const [notifPatrimonio, setNotifPatrimonio] = useState(false);
   const [notifRecordatorio, setNotifRecordatorio] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const deleteData = useDeleteMyData();
+
+  const handleDeleteData = async () => {
+    await deleteData.mutateAsync();
+    setConfirmDelete(false);
+  };
 
   return (
     <div className="p-7">
@@ -125,7 +134,7 @@ export function SettingsPage() {
       </div>
 
       {/* PRIVACIDAD Y DATOS */}
-      <div className="card-vault max-w-md">
+      <div className="card-vault mb-5 max-w-md">
         <h2 className="mb-3 section-label">Privacidad y datos</h2>
         <p className="mb-3 text-sm text-vault-muted2 dark:text-[#8b949e]">
           Vault no comparte ni vende tus datos. Los PDFs se eliminan del servidor una vez
@@ -134,6 +143,47 @@ export function SettingsPage() {
         <a href="#" className="text-sm text-vault-accent transition-colors hover:underline">
           Ver política de privacidad
         </a>
+      </div>
+
+      {/* ZONA PELIGROSA */}
+      <div className="card-vault max-w-md border-vault-red/30">
+        <h2 className="mb-3 section-label text-vault-red">Zona peligrosa</h2>
+        <p className="mb-4 text-sm text-vault-muted2 dark:text-[#8b949e]">
+          Elimina todos tus uploads, transacciones y snapshots financieros. Tus cuentas y
+          configuración se conservan.
+        </p>
+        {!confirmDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-vault border border-vault-red/40 bg-vault-red/10 px-3.5 py-2 text-sm font-medium text-vault-red hover:bg-vault-red/20"
+          >
+            Borrar todos mis datos financieros
+          </button>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-medium text-vault-red">
+              ¿Estás seguro? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleDeleteData}
+                disabled={deleteData.isPending}
+                className="rounded-vault bg-vault-red px-3.5 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {deleteData.isPending ? "Borrando..." : "Sí, borrar todo"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="rounded-vault border border-vault-border px-3.5 py-2 text-sm text-vault-muted2 hover:text-vault-text dark:text-[#8b949e]"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

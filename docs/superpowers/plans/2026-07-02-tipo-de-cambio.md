@@ -7,7 +7,8 @@
 **Architecture:** A new decoupled client-side service (`src/api/mepQuote.api.ts`) calls `dolarapi.com` first, falls back to `argentinadatos.com` on failure, and falls back to a `localStorage`-cached last-known value if both network calls fail. A `useMepQuote()` react-query hook wraps this with 1-hour `staleTime` and `initialData` seeded from the cache, so a fresh cache never triggers a network call, a stale cache is shown immediately while refreshing in the background, and a cold start with no cache/no network surfaces an explicit error without breaking the upload flow. The hook is warmed once at `AppLayout` mount (fires on app open) and consumed again in `UploadPage` (react-query dedupes by `queryKey`, so this is instant). `UploadPage` auto-fills the MEP field from the live quote and, on submit, auto-declares it via the existing `/exchange-rates` backend endpoint (unless a rate is already declared for that period), then proceeds with the upload — eliminating the previous "declaralo en Configuración" manual detour. Two existing ad-hoc duplicate implementations of this same fetch (`DashboardPage.tsx`, `ExchangeRateSettings.tsx`) are refactored to call the same shared function, so there is exactly one place that knows about `dolarapi.com`.
 
 Separately (Tasks 7–8, in `Vault-backend`), this plan fixes two currency-mixing bugs in how totals get computed once a TC MEP is declared, found while investigating where the exchange rate is actually applied:
-- `app/services/mep_service.py::recalculate_period` currently runs `amount_usd = amount_ars / mep_rate` for **every** transaction in a period regardless of its native `currency`. For a transaction whose native currency is USD (e.g. a `credit_card_usd` or `broker` account), `amount_ars` is the *derived* side (computed at ingestion as `amount_usd * mep_rate_at_ingestion_time`) — recalculating `amount_usd` from it re-derives the dollar amount through two MEP conversions, silently drifting the true USD value every time the rate is redeclared. Because Task 4 makes the frontend call `recalculate` far more often (automatically, on almost every upload, instead of only when a user manually visits Settings), this bug would otherwise get triggered far more frequently once this plan ships.
+
+- `app/services/mep_service.py::recalculate_period` currently runs `amount_usd = amount_ars / mep_rate` for **every** transaction in a period regardless of its native `currency`. For a transaction whose native currency is USD (e.g. a `credit_card_usd` or `broker` account), `amount_ars` is the _derived_ side (computed at ingestion as `amount_usd * mep_rate_at_ingestion_time`) — recalculating `amount_usd` from it re-derives the dollar amount through two MEP conversions, silently drifting the true USD value every time the rate is redeclared. Because Task 4 makes the frontend call `recalculate` far more often (automatically, on almost every upload, instead of only when a user manually visits Settings), this bug would otherwise get triggered far more frequently once this plan ships.
 - `app/services/dashboard_service.py::get_month_summary` only adds `cash`/`crypto` account balances to the USD total when the account's own `currency` is already `USD` — ARS-denominated cash/crypto balances are silently dropped from the total instead of being converted through the period's MEP rate.
 
 **Tech Stack:** Frontend: React 18 + TypeScript + Vite + Electron, `@tanstack/react-query` v5, `zustand`, `axios`. No frontend test runner exists in this repo (no vitest/jest configured) — verification gates for each frontend task are `npm run typecheck` (fast, catches type errors) plus manual QA in the running dev server (`npm run dev`) for anything UI-visible, matching how this codebase currently verifies changes. Backend: FastAPI + SQLAlchemy async + Postgres, pytest with a real Postgres test database (`vault_test`) — Tasks 7–8 use real TDD against that database (start it with `docker compose up -d postgres` in `Vault-backend`, then `docker compose exec postgres createdb -U vault vault_test` once if it doesn't exist yet).
@@ -32,16 +33,18 @@ Separately (Tasks 7–8, in `Vault-backend`), this plan fixes two currency-mixin
 - `fuente: "cache"` is only used when **both** live APIs failed and a stale cached value is being served as last resort (so the UI can show a "desactualizado" indicator). A cache hit that's still within the 1-hour TTL keeps its original `fuente` ("dolarapi" or "argentinadatos") since it isn't stale.
 - If both APIs fail and there is no cache at all, the query must surface an explicit error state — never silently break the upload form.
 - Service must stay swappable: all provider-specific fetch/parse logic lives in two small private functions (`fetchFromDolarApi`, `fetchFromArgentinaDatos`) behind the single public `getCotizacionMEP()` — no other file should ever call `fetch("https://dolarapi.com/...")` directly after this plan (Tasks 5–6 remove the two remaining direct calls).
-- Currency rule for Tasks 7–8 (`Vault-backend`, a separate repo/branch checkout at `../Vault-backend`, also on a `tipo-de-cambio` branch): a `Transaction.currency` (or `Account.currency`) of `ARS` means `amount_ars`/`current_balance` is ground truth and the USD figure must always be *derived* as `ars_value / mep_rate`; a currency of `USD` means the USD figure is ground truth and the ARS figure must always be *derived* as `usd_value * mep_rate`. Never derive a value into its own ground-truth field, and never sum raw ARS and raw USD figures together without one of these conversions.
+- Currency rule for Tasks 7–8 (`Vault-backend`, a separate repo/branch checkout at `../Vault-backend`, also on a `tipo-de-cambio` branch): a `Transaction.currency` (or `Account.currency`) of `ARS` means `amount_ars`/`current_balance` is ground truth and the USD figure must always be _derived_ as `ars_value / mep_rate`; a currency of `USD` means the USD figure is ground truth and the ARS figure must always be _derived_ as `usd_value * mep_rate`. Never derive a value into its own ground-truth field, and never sum raw ARS and raw USD figures together without one of these conversions.
 
 ---
 
 ### Task 1: Add `formatDateTime` util
 
 **Files:**
+
 - Modify: `src/utils/formatDate.ts`
 
 **Interfaces:**
+
 - Produces: `formatDateTime(isoString: string): string` — used by Task 4 to render `fechaActualizacion`.
 
 - [ ] **Step 1: Add the function**
@@ -78,9 +81,11 @@ git commit -m "feat: add formatDateTime util for MEP quote timestamps"
 ### Task 2: Create the MEP quote service (`src/api/mepQuote.api.ts`)
 
 **Files:**
+
 - Create: `src/api/mepQuote.api.ts`
 
 **Interfaces:**
+
 - Consumes: nothing from other tasks (this is the foundation).
 - Produces:
   - `type CotizacionFuente = "dolarapi" | "argentinadatos" | "cache"`
@@ -223,9 +228,11 @@ Expected: no errors.
 - [ ] **Step 3: Manual smoke check**
 
 Run: `npm run dev`, open the app, open devtools console, and run:
+
 ```js
-await (await import("/src/api/mepQuote.api.ts")).getCotizacionMEP()
+await (await import("/src/api/mepQuote.api.ts")).getCotizacionMEP();
 ```
+
 Expected: resolves to an object like `{ compra: ..., venta: ..., fechaActualizacion: "...", fuente: "dolarapi" }`. Then check Application → Local Storage for a `vault_mep_cache` key containing that value plus a `cachedAt` timestamp.
 
 - [ ] **Step 4: Commit**
@@ -240,9 +247,11 @@ git commit -m "feat: add decoupled MEP quote service with fallback and 1h cache"
 ### Task 3: Prefetch the quote at app startup
 
 **Files:**
+
 - Modify: `src/components/layout/AppLayout.tsx`
 
 **Interfaces:**
+
 - Consumes: `useMepQuote` from `@/api/mepQuote.api` (Task 2).
 
 - [ ] **Step 1: Warm the query on mount**
@@ -289,9 +298,11 @@ git commit -m "feat: prefetch MEP quote when the app shell mounts"
 ### Task 4: Auto-fill and auto-declare MEP on the Upload page
 
 **Files:**
+
 - Modify: `src/pages/Upload/UploadPage.tsx`
 
 **Interfaces:**
+
 - Consumes: `useMepQuote` (Task 2), `formatDateTime` (Task 1), existing `useExchangeRates`/`useSetExchangeRate`/`useRecalculatePeriod` from `src/api/exchangeRates.api.ts`.
 
 - [ ] **Step 1: Update imports**
@@ -388,52 +399,52 @@ export function UploadPage() {
 Replace:
 
 ```tsx
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!file || !accountId) return;
-    setError(null);
-    try {
-      const uploadId = await submitUpload.mutateAsync({
-        accountId,
-        periodMonth: periodStart,
-        file,
-        requestedModules,
-      });
-      setActiveUploadId(uploadId);
-      setFile(null);
-    } catch (err) {
-      setError(extractErrorMessage(err));
-    }
-  };
+const handleSubmit = async (event: FormEvent) => {
+  event.preventDefault();
+  if (!file || !accountId) return;
+  setError(null);
+  try {
+    const uploadId = await submitUpload.mutateAsync({
+      accountId,
+      periodMonth: periodStart,
+      file,
+      requestedModules,
+    });
+    setActiveUploadId(uploadId);
+    setFile(null);
+  } catch (err) {
+    setError(extractErrorMessage(err));
+  }
+};
 ```
 
 with:
 
 ```tsx
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!file || !accountId) return;
-    setError(null);
-    try {
-      if (!declaredRate) {
-        const rateValue = Number(mepRateInput);
-        if (rateValue > 0) {
-          await setExchangeRate.mutateAsync({ periodMonth: periodStart, mepRate: rateValue });
-          await recalculatePeriod.mutateAsync(periodStart);
-        }
+const handleSubmit = async (event: FormEvent) => {
+  event.preventDefault();
+  if (!file || !accountId) return;
+  setError(null);
+  try {
+    if (!declaredRate) {
+      const rateValue = Number(mepRateInput);
+      if (rateValue > 0) {
+        await setExchangeRate.mutateAsync({ periodMonth: periodStart, mepRate: rateValue });
+        await recalculatePeriod.mutateAsync(periodStart);
       }
-      const uploadId = await submitUpload.mutateAsync({
-        accountId,
-        periodMonth: periodStart,
-        file,
-        requestedModules,
-      });
-      setActiveUploadId(uploadId);
-      setFile(null);
-    } catch (err) {
-      setError(extractErrorMessage(err));
     }
-  };
+    const uploadId = await submitUpload.mutateAsync({
+      accountId,
+      periodMonth: periodStart,
+      file,
+      requestedModules,
+    });
+    setActiveUploadId(uploadId);
+    setFile(null);
+  } catch (err) {
+    setError(extractErrorMessage(err));
+  }
+};
 ```
 
 - [ ] **Step 4: Render the MEP field**
@@ -441,55 +452,54 @@ with:
 Insert this new block right before the existing "Archivo" file-input `<div>` (i.e. right after the closing `</div>` of the "Desde"/"Hasta" `grid grid-cols-2 gap-3` block, still inside the `<form>`):
 
 ```tsx
-              <div className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm">
-                {declaredRate ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-vault-muted2 dark:text-[#8b949e]">TC MEP declarado</span>
-                    <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
-                      ${declaredRate.mep_rate.toFixed(2)}
-                    </span>
-                  </div>
-                ) : isLoadingMep ? (
-                  <div className="h-4 w-40 animate-pulse rounded bg-vault-border dark:bg-[#30363d]" />
-                ) : isMepError && !mepQuote ? (
-                  <p className="text-xs text-vault-yellow">
-                    No se pudo obtener el TC MEP automáticamente. Ingresalo manualmente abajo.
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
-                        TC MEP (auto)
-                        {mepQuote?.fuente === "cache" && (
-                          <span
-                            title="Valor desactualizado — no se pudo refrescar"
-                            className="ml-1.5 text-vault-yellow"
-                          >
-                            ⚠ desactualizado
-                          </span>
-                        )}
-                      </label>
-                      {mepQuote && (
-                        <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-                          Actualizado: {formatDateTime(mepQuote.fechaActualizacion)}
-                        </span>
-                      )}
-                    </div>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={mepRateInput}
-                      onChange={(e) => {
-                        setMepRateInput(e.target.value);
-                        setMepEditedByUser(true);
-                      }}
-                      placeholder="1250.00"
-                      className="input-vault"
-                    />
-                  </div>
-                )}
-              </div>
-
+<div className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm">
+  {declaredRate ? (
+    <div className="flex items-center justify-between">
+      <span className="text-vault-muted2 dark:text-[#8b949e]">TC MEP declarado</span>
+      <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+        ${declaredRate.mep_rate.toFixed(2)}
+      </span>
+    </div>
+  ) : isLoadingMep ? (
+    <div className="h-4 w-40 animate-pulse rounded bg-vault-border dark:bg-[#30363d]" />
+  ) : isMepError && !mepQuote ? (
+    <p className="text-xs text-vault-yellow">
+      No se pudo obtener el TC MEP automáticamente. Ingresalo manualmente abajo.
+    </p>
+  ) : (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+          TC MEP (auto)
+          {mepQuote?.fuente === "cache" && (
+            <span
+              title="Valor desactualizado — no se pudo refrescar"
+              className="ml-1.5 text-vault-yellow"
+            >
+              ⚠ desactualizado
+            </span>
+          )}
+        </label>
+        {mepQuote && (
+          <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+            Actualizado: {formatDateTime(mepQuote.fechaActualizacion)}
+          </span>
+        )}
+      </div>
+      <input
+        type="number"
+        step="0.01"
+        value={mepRateInput}
+        onChange={(e) => {
+          setMepRateInput(e.target.value);
+          setMepEditedByUser(true);
+        }}
+        placeholder="1250.00"
+        className="input-vault"
+      />
+    </div>
+  )}
+</div>
 ```
 
 - [ ] **Step 5: Typecheck**
@@ -500,6 +510,7 @@ Expected: no errors.
 - [ ] **Step 6: Manual QA**
 
 Run: `npm run dev`, go to "Cargar extracto":
+
 1. Confirm the MEP field shows a pre-filled numeric value with an "Actualizado: dd/mm/yyyy hh:mm" timestamp within a second or two of the page loading (should already be warm from `AppLayout`'s prefetch — no long spinner).
 2. Edit the value manually and confirm it doesn't get overwritten while typing.
 3. Change the "Desde" date to a period that already has a declared rate (via Settings) and confirm the field switches to the read-only "TC MEP declarado" view.
@@ -518,9 +529,11 @@ git commit -m "feat: auto-fill and auto-declare MEP rate on the upload screen"
 ### Task 5: Refactor `DashboardPage.tsx` to use the shared service
 
 **Files:**
+
 - Modify: `src/pages/Dashboard/DashboardPage.tsx`
 
 **Interfaces:**
+
 - Consumes: `getCotizacionMEP` from `@/api/mepQuote.api` (Task 2).
 
 - [ ] **Step 1: Add the import**
@@ -536,39 +549,39 @@ import { getCotizacionMEP } from "@/api/mepQuote.api";
 Replace:
 
 ```tsx
-  const handleFetchLiveMep = async () => {
-    setMepFetching(true);
-    setLiveMep(null);
-    try {
-      const res = await fetch("https://dolarapi.com/v1/dolares/mep");
-      if (!res.ok) throw new Error("HTTP");
-      const json = await res.json();
-      const venta = Number(json.venta);
-      if (!venta || isNaN(venta)) throw new Error("invalid");
-      setLiveMep(venta);
-    } catch {
-      // silently fail — leave liveMep null
-    } finally {
-      setMepFetching(false);
-    }
-  };
+const handleFetchLiveMep = async () => {
+  setMepFetching(true);
+  setLiveMep(null);
+  try {
+    const res = await fetch("https://dolarapi.com/v1/dolares/mep");
+    if (!res.ok) throw new Error("HTTP");
+    const json = await res.json();
+    const venta = Number(json.venta);
+    if (!venta || isNaN(venta)) throw new Error("invalid");
+    setLiveMep(venta);
+  } catch {
+    // silently fail — leave liveMep null
+  } finally {
+    setMepFetching(false);
+  }
+};
 ```
 
 with:
 
 ```tsx
-  const handleFetchLiveMep = async () => {
-    setMepFetching(true);
-    setLiveMep(null);
-    try {
-      const quote = await getCotizacionMEP();
-      setLiveMep(quote.venta);
-    } catch {
-      // silently fail — leave liveMep null
-    } finally {
-      setMepFetching(false);
-    }
-  };
+const handleFetchLiveMep = async () => {
+  setMepFetching(true);
+  setLiveMep(null);
+  try {
+    const quote = await getCotizacionMEP();
+    setLiveMep(quote.venta);
+  } catch {
+    // silently fail — leave liveMep null
+  } finally {
+    setMepFetching(false);
+  }
+};
 ```
 
 - [ ] **Step 3: Typecheck**
@@ -592,9 +605,11 @@ git commit -m "refactor: dashboard MEP fetch uses shared mepQuote service"
 ### Task 6: Refactor `ExchangeRateSettings.tsx` to use the shared service
 
 **Files:**
+
 - Modify: `src/pages/Settings/ExchangeRateSettings.tsx`
 
 **Interfaces:**
+
 - Consumes: `getCotizacionMEP` from `@/api/mepQuote.api` (Task 2).
 
 - [ ] **Step 1: Add the import**
@@ -610,57 +625,57 @@ import { getCotizacionMEP } from "@/api/mepQuote.api";
 Replace:
 
 ```tsx
-  const handleAutoFetch = async () => {
-    setAutoFetching(true);
-    setAutoError(null);
-    setAutoResult(null);
-    try {
-      const res = await fetch("https://dolarapi.com/v1/dolares/mep");
-      if (!res.ok) throw new Error("HTTP error");
-      const json = await res.json();
-      const venta = Number(json.venta);
-      if (!venta || isNaN(venta)) throw new Error("Valor inválido");
-      const fetchedAt = new Date().toLocaleString("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      setAutoResult({ value: venta, fetchedAt });
-      setMepRate(String(venta));
-    } catch {
-      setAutoError("No se pudo obtener el TC MEP. Ingresalo manualmente.");
-    } finally {
-      setAutoFetching(false);
-    }
-  };
+const handleAutoFetch = async () => {
+  setAutoFetching(true);
+  setAutoError(null);
+  setAutoResult(null);
+  try {
+    const res = await fetch("https://dolarapi.com/v1/dolares/mep");
+    if (!res.ok) throw new Error("HTTP error");
+    const json = await res.json();
+    const venta = Number(json.venta);
+    if (!venta || isNaN(venta)) throw new Error("Valor inválido");
+    const fetchedAt = new Date().toLocaleString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    setAutoResult({ value: venta, fetchedAt });
+    setMepRate(String(venta));
+  } catch {
+    setAutoError("No se pudo obtener el TC MEP. Ingresalo manualmente.");
+  } finally {
+    setAutoFetching(false);
+  }
+};
 ```
 
 with:
 
 ```tsx
-  const handleAutoFetch = async () => {
-    setAutoFetching(true);
-    setAutoError(null);
-    setAutoResult(null);
-    try {
-      const quote = await getCotizacionMEP();
-      const fetchedAt = new Date().toLocaleString("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-      setAutoResult({ value: quote.venta, fetchedAt });
-      setMepRate(String(quote.venta));
-    } catch {
-      setAutoError("No se pudo obtener el TC MEP. Ingresalo manualmente.");
-    } finally {
-      setAutoFetching(false);
-    }
-  };
+const handleAutoFetch = async () => {
+  setAutoFetching(true);
+  setAutoError(null);
+  setAutoResult(null);
+  try {
+    const quote = await getCotizacionMEP();
+    const fetchedAt = new Date().toLocaleString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    setAutoResult({ value: quote.venta, fetchedAt });
+    setMepRate(String(quote.venta));
+  } catch {
+    setAutoError("No se pudo obtener el TC MEP. Ingresalo manualmente.");
+  } finally {
+    setAutoFetching(false);
+  }
+};
 ```
 
 - [ ] **Step 3: Typecheck**
@@ -684,10 +699,12 @@ git commit -m "refactor: exchange rate settings auto-fetch uses shared mepQuote 
 ### Task 7: Fix `recalculate_period` currency-mixing bug (`Vault-backend`)
 
 **Files (in the `Vault-backend` repo, `tipo-de-cambio` branch):**
+
 - Modify: `app/services/mep_service.py`
 - Test: `tests/test_mep_service.py` (create)
 
 **Interfaces:**
+
 - Consumes: `Transaction`, `Upload` models; `CurrencyType` from `app.models.enums`; the `db` async-session pytest fixture from `tests/conftest.py`.
 - Produces: `recalculate_period(db, period_month, mep_rate) -> int` keeps its existing signature and return value (rows updated), but is now currency-safe — Task 8 does not depend on this function directly, but both fix the same class of bug.
 
@@ -791,9 +808,11 @@ async def test_recalculate_period_updates_usd_for_ars_native_transactions(db):
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run (from `Vault-backend`, with the test Postgres up):
+
 ```bash
 source .venv/bin/activate && python -m pytest tests/test_mep_service.py -v
 ```
+
 Expected: `test_recalculate_period_does_not_corrupt_usd_native_transactions` FAILS. Today's single UPDATE (`amount_usd = amount_ars / mep_rate`, no currency filter) runs against this row too: it overwrites `amount_usd` to `100000.00 / 1300 = 76.9231`, corrupting the real USD ground-truth value of `100.0000`, and it never touches `amount_ars` at all, leaving it at the stale `100000.00` instead of the expected recalculated `130000.00`. Both assertions fail.
 `test_recalculate_period_updates_usd_for_ars_native_transactions` PASSES even against the current code (an ARS-native row happens to be handled correctly by today's single UPDATE) — that's expected; it's a regression guard for the fix in Step 3, not a repro of this bug.
 
@@ -854,17 +873,21 @@ async def recalculate_period(db: AsyncSession, period_month: date, mep_rate: Dec
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run:
+
 ```bash
 python -m pytest tests/test_mep_service.py -v
 ```
+
 Expected: both tests PASS.
 
 - [ ] **Step 5: Run the full backend test suite to check for regressions**
 
 Run:
+
 ```bash
 python -m pytest -v
 ```
+
 Expected: all tests pass (no regressions in `test_health.py` or `tests/test_lambda`).
 
 - [ ] **Step 6: Commit**
@@ -879,10 +902,12 @@ git commit -m "fix: recalculate_period no longer mixes ARS and USD ground-truth 
 ### Task 8: Convert ARS cash/crypto balances into the dashboard USD total (`Vault-backend`)
 
 **Files (in the `Vault-backend` repo, `tipo-de-cambio` branch):**
+
 - Modify: `app/services/dashboard_service.py`
 - Test: `tests/test_dashboard_service.py` (create)
 
 **Interfaces:**
+
 - Consumes: `Account`, `ExchangeRate` models; `AccountType`, `CurrencyType` from `app.models.enums`; the `db` fixture.
 - Produces: `get_month_summary(db, user_id, period_month) -> MonthSummary` keeps its existing signature/fields (`total_usd`, `savings`, `by_category`).
 
@@ -951,9 +976,11 @@ async def test_ars_cash_balance_is_skipped_without_a_declared_rate(db):
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run:
+
 ```bash
 python -m pytest tests/test_dashboard_service.py -v
 ```
+
 Expected: `test_ars_cash_balance_is_converted_via_mep_rate` FAILS with `total_usd == Decimal("0")` (today's `cash_rows` query filters `Account.currency == CurrencyType.USD`, so the ARS row above is never added).
 
 - [ ] **Step 3: Fix `get_month_summary`**
@@ -1016,17 +1043,21 @@ with:
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run:
+
 ```bash
 python -m pytest tests/test_dashboard_service.py -v
 ```
+
 Expected: both tests PASS.
 
 - [ ] **Step 5: Run the full backend test suite to check for regressions**
 
 Run:
+
 ```bash
 python -m pytest -v
 ```
+
 Expected: all tests pass, including `tests/test_mep_service.py` from Task 7.
 
 - [ ] **Step 6: Commit**
@@ -1045,30 +1076,37 @@ git commit -m "fix: convert ARS cash/crypto balances via MEP rate instead of exc
 - [ ] **Step 1: Frontend — full typecheck + lint + build**
 
 Run (in `Vault-frontend`):
+
 ```bash
 npm run typecheck && npm run lint && npm run build
 ```
+
 Expected: all three pass with no errors.
 
 - [ ] **Step 2: Frontend — grep for any remaining direct calls to the public APIs**
 
 Run:
+
 ```bash
 grep -rn "dolarapi.com\|argentinadatos.com" src/ --include="*.tsx" --include="*.ts" | grep -v "src/api/mepQuote.api.ts"
 ```
+
 Expected: no output (confirms `mepQuote.api.ts` is now the single place that knows about these providers).
 
 - [ ] **Step 3: Backend — full test suite + ruff**
 
 Run (in `Vault-backend`, test Postgres up):
+
 ```bash
 source .venv/bin/activate && python -m pytest -v && ruff check app tests worker
 ```
+
 Expected: all tests pass, no lint errors.
 
 - [ ] **Step 4: End-to-end manual QA in the running app**
 
 Run `npm run dev` (or `npm run dist:mac`/`dist:win` if testing the packaged Electron app) in `Vault-frontend`, pointed at a locally running backend (`Vault-backend`), and walk through:
+
 1. Fresh app open (clear `localStorage` first) → open "Cargar extracto" → MEP field goes from skeleton to a live value within ~5s.
 2. Quit and reopen the app within an hour → MEP field shows the same value instantly, with zero network requests to `dolarapi.com` (check Network tab).
 3. Wait past the 1-hour mark (or manually edit the `cachedAt` timestamp in `localStorage` to be >1h old) → reopen → value shows immediately from cache, then a background request refreshes it silently.
