@@ -11,7 +11,11 @@ import { useExchangeRates, useSetExchangeRate } from "@/api/exchangeRates.api";
 import { useAccounts, getAccountDisplayName } from "@/api/accounts.api";
 import { useUploads } from "@/api/uploads.api";
 import { useTransactions } from "@/api/transactions.api";
-import { AccountBalanceChart, type AccountBalancePoint, type AccountBalanceLine } from "@/components/charts/AccountBalanceChart";
+import {
+  AccountBalanceChart,
+  type AccountBalancePoint,
+  type AccountBalanceLine,
+} from "@/components/charts/AccountBalanceChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { extractErrorMessage } from "@/utils/apiError";
@@ -50,11 +54,17 @@ export function DashboardPage() {
 
   const latestDonePeriod = useMemo(() => {
     const done = uploads?.filter((u) => u.status === "done") ?? [];
-    return done.map((u) => u.period_month.slice(0, 7)).sort().pop();
+    return done
+      .map((u) => u.period_month.slice(0, 7))
+      .sort()
+      .pop();
   }, [uploads]);
 
   const donePeriodSet = useMemo(
-    () => new Set((uploads?.filter((u) => u.status === "done") ?? []).map((u) => u.period_month.slice(0, 7))),
+    () =>
+      new Set(
+        (uploads?.filter((u) => u.status === "done") ?? []).map((u) => u.period_month.slice(0, 7))
+      ),
     [uploads]
   );
 
@@ -62,9 +72,7 @@ export function DashboardPage() {
 
   const { data: summary, isLoading: isLoadingSummary } = useDashboard(period);
   const { data: breakdown, isLoading: isLoadingBreakdown } = useDashboardBreakdown(period);
-  const { data: monthlySeries } = useDashboardMonthlySeries(
-    summary?.period
-  );
+  const { data: monthlySeries } = useDashboardMonthlySeries(summary?.period);
   const { data: fullDashboard } = useFullDashboard(period);
   const { data: exchangeRates } = useExchangeRates();
   const { data: accounts } = useAccounts();
@@ -178,14 +186,20 @@ export function DashboardPage() {
   // entre cuentas — antes una CA en USD se veía "chiquita" al lado de
   // cuentas en ARS solo por estar en otra moneda, sin conversión real.
   const accountBalanceSeries = useMemo(() => {
-    if (!accounts || !uploads) return { points: [] as AccountBalancePoint[], lines: [] as AccountBalanceLine[] };
+    if (!accounts || !uploads)
+      return { points: [] as AccountBalancePoint[], lines: [] as AccountBalanceLine[] };
 
     const nonCcAccounts = accounts.filter(
-      (a) => a.is_active && a.account_type !== "credit_card_ars" && a.account_type !== "credit_card_usd"
+      (a) =>
+        a.is_active && a.account_type !== "credit_card_ars" && a.account_type !== "credit_card_usd"
     );
     const doneUploads = uploads.filter((u) => u.status === "done");
 
-    const toDisplayCurrency = (nativeValue: number, accountIsUsd: boolean, month: string): number | null => {
+    const toDisplayCurrency = (
+      nativeValue: number,
+      accountIsUsd: boolean,
+      month: string
+    ): number | null => {
       const targetIsUsd = currencyDisplay === "USD";
       if (accountIsUsd === targetIsUsd) return nativeValue;
       const rate = getMepRateForMonth(month);
@@ -241,7 +255,7 @@ export function DashboardPage() {
               continue;
             }
             const running = txnsUpToMonth.reduce(
-              (acc, t) => acc + Number(isUsd ? t.amount_usd ?? 0 : t.amount_ars),
+              (acc, t) => acc + Number(isUsd ? (t.amount_usd ?? 0) : t.amount_ars),
               0
             );
             balances.set(month, toDisplayCurrency(running, isUsd, month));
@@ -270,7 +284,11 @@ export function DashboardPage() {
 
     const lines: AccountBalanceLine[] = nonCcAccounts
       .filter((a) => perAccountBalances.has(a.id))
-      .map((a) => ({ accountId: a.id, label: getAccountDisplayName(a), currency: currencyDisplay }));
+      .map((a) => ({
+        accountId: a.id,
+        label: getAccountDisplayName(a),
+        currency: currencyDisplay,
+      }));
 
     return { points, lines };
   }, [accounts, uploads, allTransactions, currencyDisplay, getMepRateForMonth]);
@@ -321,7 +339,8 @@ export function DashboardPage() {
   const insights = [...(summary.insights ?? []), ...(fullDashboard?.insights ?? [])];
 
   // Breakdown: filter out zero-amount items
-  const filteredBreakdown = breakdown?.filter((item) => item.amount_ars !== 0 && item.pct_of_total !== 0) ?? [];
+  const filteredBreakdown =
+    breakdown?.filter((item) => item.amount_ars !== 0 && item.pct_of_total !== 0) ?? [];
 
   const steps = [
     { n: 1, active: true, title: "Creá una cuenta", desc: "Agregá tu billetera" },
@@ -341,7 +360,9 @@ export function DashboardPage() {
         <div>
           <h1 className="page-title">Tablero</h1>
           <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">
-            {summary.period ? `Datos de ${formatPeriod(summary.period)}` : "Resumen de tu patrimonio y movimientos."}
+            {summary.period
+              ? `Datos de ${formatPeriod(summary.period)}`
+              : "Resumen de tu patrimonio y movimientos."}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -385,31 +406,75 @@ export function DashboardPage() {
             >
               Agregá tu primera cuenta para empezar a ver tu patrimonio real.
             </p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 0, alignItems: "flex-start" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 0,
+                alignItems: "flex-start",
+              }}
+            >
               {steps.map((step, i) => (
                 <>
                   <div
                     key={step.n}
-                    style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 12px" }}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "0 12px",
+                    }}
                   >
                     <div
-                      className={step.active ? "" : "border border-vault-border dark:border-[#30363d]"}
-                      style={{ width: 40, height: 40, borderRadius: "50%", background: step.active ? "#1e3a8a" : "transparent", color: step.active ? "white" : undefined, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 500, flexShrink: 0 }}
+                      className={
+                        step.active ? "" : "border border-vault-border dark:border-[#30363d]"
+                      }
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: step.active ? "#1e3a8a" : "transparent",
+                        color: step.active ? "white" : undefined,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 15,
+                        fontWeight: 500,
+                        flexShrink: 0,
+                      }}
                     >
-                      <span className={step.active ? "text-white" : "text-vault-muted2 dark:text-[#8b949e]"}>{step.n}</span>
+                      <span
+                        className={
+                          step.active ? "text-white" : "text-vault-muted2 dark:text-[#8b949e]"
+                        }
+                      >
+                        {step.n}
+                      </span>
                     </div>
-                    <p className="text-center text-sm font-medium text-vault-text dark:text-[#e6edf3]">{step.title}</p>
-                    <p className="text-center text-xs text-vault-muted2 dark:text-[#8b949e]">{step.desc}</p>
+                    <p className="text-center text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                      {step.title}
+                    </p>
+                    <p className="text-center text-xs text-vault-muted2 dark:text-[#8b949e]">
+                      {step.desc}
+                    </p>
                   </div>
                   {i < steps.length - 1 && (
-                    <div key={`sep-${i}`} className="bg-vault-border dark:bg-[#30363d]" style={{ width: 48, height: 1, marginTop: 20, flexShrink: 0 }} />
+                    <div
+                      key={`sep-${i}`}
+                      className="bg-vault-border dark:bg-[#30363d]"
+                      style={{ width: 48, height: 1, marginTop: 20, flexShrink: 0 }}
+                    />
                   )}
                 </>
               ))}
             </div>
           </div>
           <div style={{ padding: "0 32px 24px", display: "flex", gap: 10 }}>
-            <Link to="/accounts" className="btn-primary">Agregar mi primera cuenta</Link>
+            <Link to="/accounts" className="btn-primary">
+              Agregar mi primera cuenta
+            </Link>
           </div>
         </div>
       ) : (
@@ -420,7 +485,9 @@ export function DashboardPage() {
               <span>Sin TC MEP para este período.</span>
               {liveMep ? (
                 <>
-                  <span className="font-medium text-vault-text dark:text-[#e6edf3]">TC MEP: ${liveMep.toFixed(2)}</span>
+                  <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+                    TC MEP: ${liveMep.toFixed(2)}
+                  </span>
                   <button
                     type="button"
                     onClick={handleSaveLiveMep}
@@ -440,7 +507,9 @@ export function DashboardPage() {
                   {mepFetching ? "Obteniendo..." : "Obtener TC MEP actual"}
                 </button>
               )}
-              <Link to="/settings" className="ml-auto text-xs text-vault-accent hover:underline">Configurar manualmente</Link>
+              <Link to="/settings" className="ml-auto text-xs text-vault-accent hover:underline">
+                Configurar manualmente
+              </Link>
             </div>
           )}
 
@@ -452,8 +521,8 @@ export function DashboardPage() {
                 currencyDisplay === "USD"
                   ? formatCurrency(summary.total_usd, "USD")
                   : mepForPeriod
-                  ? formatCurrency(summary.total_usd * mepForPeriod, "ARS")
-                  : formatCurrency(summary.total_usd, "USD")
+                    ? formatCurrency(summary.total_usd * mepForPeriod, "ARS")
+                    : formatCurrency(summary.total_usd, "USD")
               }
               hint={`${formatPercent(summary.variation_pct)} vs. mes anterior`}
               hintColor={summary.variation_pct >= 0 ? "green" : "red"}
@@ -548,37 +617,35 @@ export function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {[...filteredMonthlySeries]
-                      .reverse()
-                      .map((point) => (
-                        <tr
-                          key={point.month}
-                          className="border-b border-vault-border/50 last:border-0 dark:border-[#30363d]/50"
+                    {[...filteredMonthlySeries].reverse().map((point) => (
+                      <tr
+                        key={point.month}
+                        className="border-b border-vault-border/50 last:border-0 dark:border-[#30363d]/50"
+                      >
+                        <td className="py-2 capitalize text-vault-text dark:text-[#e6edf3]">
+                          {formatPeriod(point.month)}
+                        </td>
+                        <td className="py-2 text-right tabular-nums text-vault-green">
+                          {formatCurrency(point.ingresos_ars, "ARS")}
+                        </td>
+                        <td className="py-2 text-right tabular-nums text-vault-red">
+                          {formatCurrency(Math.abs(point.egresos_ars), "ARS")}
+                        </td>
+                        <td
+                          className={`py-2 text-right tabular-nums font-medium ${
+                            point.resultado_ars >= 0 ? "text-vault-green" : "text-vault-red"
+                          }`}
                         >
-                          <td className="py-2 capitalize text-vault-text dark:text-[#e6edf3]">
-                            {formatPeriod(point.month)}
-                          </td>
-                          <td className="py-2 text-right tabular-nums text-vault-green">
-                            {formatCurrency(point.ingresos_ars, "ARS")}
-                          </td>
-                          <td className="py-2 text-right tabular-nums text-vault-red">
-                            {formatCurrency(Math.abs(point.egresos_ars), "ARS")}
-                          </td>
-                          <td
-                            className={`py-2 text-right tabular-nums font-medium ${
-                              point.resultado_ars >= 0 ? "text-vault-green" : "text-vault-red"
-                            }`}
-                          >
-                            {point.resultado_ars >= 0 ? "+" : ""}
-                            {formatCurrency(point.resultado_ars, "ARS")}
-                          </td>
-                          <td className="py-2 text-right tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
-                            {netWorthByMonth.has(point.month)
-                              ? formatCurrency(netWorthByMonth.get(point.month)!, currencyDisplay)
-                              : "—"}
-                          </td>
-                        </tr>
-                      ))}
+                          {point.resultado_ars >= 0 ? "+" : ""}
+                          {formatCurrency(point.resultado_ars, "ARS")}
+                        </td>
+                        <td className="py-2 text-right tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                          {netWorthByMonth.has(point.month)
+                            ? formatCurrency(netWorthByMonth.get(point.month)!, currencyDisplay)
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -623,7 +690,6 @@ export function DashboardPage() {
               })}
             </div>
           </div>
-
         </>
       )}
     </div>

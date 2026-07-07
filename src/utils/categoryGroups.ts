@@ -5,13 +5,27 @@
  * distorsiona el desglose y los porcentajes de "gastos por categoría".
  */
 export const EXPENSE_CATEGORIES = new Set([
-  "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
-  "Tecnología", "Entretenimiento", "Servicios", "Educación", "Viajes",
-  "Suscripciones", "Impuestos", "Varios",
+  "Supermercado",
+  "Restaurantes",
+  "Transporte",
+  "Salud",
+  "Indumentaria",
+  "Tecnología",
+  "Entretenimiento",
+  "Servicios",
+  "Educación",
+  "Viajes",
+  "Suscripciones",
+  "Impuestos",
+  "Varios",
 ]);
 
 export const INCOME_CATEGORIES = new Set([
-  "Ingreso operativo", "Rendimiento", "Cambio de moneda", "Pago deuda", "Transferencia interna",
+  "Ingreso operativo",
+  "Rendimiento",
+  "Cambio de moneda",
+  "Pago deuda",
+  "Transferencia interna",
 ]);
 
 export interface CategoryTotal {
@@ -30,7 +44,12 @@ export interface CategoryTotal {
  * ingresos (ambos según `amount_ars`, cuyo signo es consistente con `amount_usd`).
  */
 export function sumByCategory(
-  transactions: { category: string | null; amount_ars: number; amount_usd: number | null; currency: "ARS" | "USD" }[],
+  transactions: {
+    category: string | null;
+    amount_ars: number;
+    amount_usd: number | null;
+    currency: "ARS" | "USD";
+  }[],
   categorySet: Set<string>,
   sign: "negative" | "positive" = "negative"
 ): CategoryTotal[] {
@@ -72,7 +91,12 @@ export interface CategoryCreditDebit {
  * la misma fila, en vez de perder el crédito por filtrar por signo.
  */
 export function sumCreditDebitByCategory(
-  transactions: { category: string | null; amount_ars: number; amount_usd: number | null; currency: "ARS" | "USD" }[],
+  transactions: {
+    category: string | null;
+    amount_ars: number;
+    amount_usd: number | null;
+    currency: "ARS" | "USD";
+  }[],
   categorySet: Set<string>
 ): CategoryCreditDebit[] {
   const map = new Map<string, CategoryCreditDebit>();

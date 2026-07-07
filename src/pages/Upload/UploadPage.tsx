@@ -89,10 +89,7 @@ export function UploadPage() {
     }
   };
 
-  const accountMap = useMemo(
-    () => new Map(accounts?.map((a) => [a.id, a]) ?? []),
-    [accounts]
-  );
+  const accountMap = useMemo(() => new Map(accounts?.map((a) => [a.id, a]) ?? []), [accounts]);
 
   // Agrupar historial por período (YYYY-MM), más reciente primero
   const periodGroups = useMemo(() => {

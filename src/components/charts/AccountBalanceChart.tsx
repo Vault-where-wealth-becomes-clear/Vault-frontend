@@ -55,7 +55,10 @@ function ChartTooltip({
           const line = lineByKey.get(p.dataKey);
           if (!line) return null;
           return (
-            <p key={p.dataKey} className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#8b949e]">
+            <p
+              key={p.dataKey}
+              className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#8b949e]"
+            >
               <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
               {line.label}:{" "}
               <span className="font-medium text-vault-text dark:text-[#e6edf3]">
@@ -82,7 +85,9 @@ export function AccountBalanceChart({ points, lines }: AccountBalanceChartProps)
           tickLine={false}
         />
         <YAxis
-          tickFormatter={(v: number) => new Intl.NumberFormat("es-AR", { notation: "compact" }).format(v)}
+          tickFormatter={(v: number) =>
+            new Intl.NumberFormat("es-AR", { notation: "compact" }).format(v)
+          }
           tick={{ fill: "#94a3b8", fontSize: 10 }}
           axisLine={false}
           tickLine={false}
@@ -91,7 +96,9 @@ export function AccountBalanceChart({ points, lines }: AccountBalanceChartProps)
         <Tooltip content={<ChartTooltip lines={lines} />} />
         <Legend
           wrapperStyle={{ fontSize: 11 }}
-          formatter={(value: string) => <span className="text-vault-muted2 dark:text-[#8b949e]">{value}</span>}
+          formatter={(value: string) => (
+            <span className="text-vault-muted2 dark:text-[#8b949e]">{value}</span>
+          )}
         />
         {lines.map((line, i) => (
           <Line

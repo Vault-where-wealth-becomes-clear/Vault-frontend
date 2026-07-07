@@ -60,7 +60,10 @@ function CategorySelect({
         <div className="absolute left-0 top-full z-20 mt-1 max-h-52 w-44 overflow-y-auto rounded-lg border border-vault-border bg-white shadow-lg dark:border-[#30363d] dark:bg-[#161b22]">
           <button
             type="button"
-            onClick={() => { onChange(""); setOpen(false); }}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
             className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#21262d]"
           >
             <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#9E9E9E]" />
@@ -72,12 +75,18 @@ function CategorySelect({
               <button
                 key={cat}
                 type="button"
-                onClick={() => { onChange(cat); setOpen(false); }}
+                onClick={() => {
+                  onChange(cat);
+                  setOpen(false);
+                }}
                 className={`flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
                   cat === value ? "bg-vault-s2 dark:bg-[#21262d]" : ""
                 }`}
               >
-                <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: c }} />
+                <span
+                  className="h-2 w-2 flex-shrink-0 rounded-full"
+                  style={{ backgroundColor: c }}
+                />
                 <span className="text-vault-text dark:text-[#e6edf3]">{cat}</span>
               </button>
             );
@@ -154,7 +163,13 @@ export function UploadTransactionsPage() {
         else arsConsumos += Math.abs(txn.amount_ars);
       }
     }
-    return { arsConsumos, usdConsumos, arsImpuestos, usdImpuestos, arsTotal: arsConsumos + arsImpuestos };
+    return {
+      arsConsumos,
+      usdConsumos,
+      arsImpuestos,
+      usdImpuestos,
+      arsTotal: arsConsumos + arsImpuestos,
+    };
   }, [isCreditCard, transactions, edits]);
 
   // For libro diario: sort ASC and compute running saldo
@@ -238,12 +253,7 @@ export function UploadTransactionsPage() {
         </div>
 
         {changedCount > 0 && (
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="btn-primary"
-          >
+          <button type="button" onClick={handleSave} disabled={saving} className="btn-primary">
             {saving ? "Guardando..." : `Guardar cambios (${changedCount})`}
           </button>
         )}
@@ -353,7 +363,11 @@ export function UploadTransactionsPage() {
                   <tr
                     key={txn.id}
                     className={`border-b border-vault-border/50 last:border-b-0 transition-colors dark:border-[#30363d]/50 ${
-                      isEdited ? "bg-vault-accent/5" : i % 2 !== 0 ? "bg-vault-s2/40 dark:bg-[#161b22]/40" : ""
+                      isEdited
+                        ? "bg-vault-accent/5"
+                        : i % 2 !== 0
+                          ? "bg-vault-s2/40 dark:bg-[#161b22]/40"
+                          : ""
                     }`}
                   >
                     <td className="whitespace-nowrap px-4 py-2.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
@@ -363,7 +377,9 @@ export function UploadTransactionsPage() {
                       })}
                     </td>
                     <td className="max-w-[260px] px-4 py-2.5">
-                      <p className="truncate text-vault-text dark:text-[#e6edf3]">{txn.description}</p>
+                      <p className="truncate text-vault-text dark:text-[#e6edf3]">
+                        {txn.description}
+                      </p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
                       <span className="text-vault-text dark:text-[#e6edf3]">
@@ -421,10 +437,13 @@ export function UploadTransactionsPage() {
                     <td className="px-4 py-2 text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
                       Saldo anterior
                     </td>
-                    <td /><td />
-                    <td className={`whitespace-nowrap px-4 py-2 text-right tabular-nums text-xs font-semibold ${
-                      openingBalance >= 0 ? "text-vault-green" : "text-vault-red"
-                    }`}>
+                    <td />
+                    <td />
+                    <td
+                      className={`whitespace-nowrap px-4 py-2 text-right tabular-nums text-xs font-semibold ${
+                        openingBalance >= 0 ? "text-vault-green" : "text-vault-red"
+                      }`}
+                    >
                       {formatCurrency(Math.abs(openingBalance), currency)}
                     </td>
                     <td />
@@ -439,7 +458,11 @@ export function UploadTransactionsPage() {
                   <tr
                     key={txn.id}
                     className={`border-b border-vault-border/50 last:border-b-0 transition-colors dark:border-[#30363d]/50 ${
-                      isEdited ? "bg-vault-accent/5" : i % 2 !== 0 ? "bg-vault-s2/40 dark:bg-[#161b22]/40" : ""
+                      isEdited
+                        ? "bg-vault-accent/5"
+                        : i % 2 !== 0
+                          ? "bg-vault-s2/40 dark:bg-[#161b22]/40"
+                          : ""
                     }`}
                   >
                     <td className="whitespace-nowrap px-4 py-2.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
@@ -449,7 +472,9 @@ export function UploadTransactionsPage() {
                       })}
                     </td>
                     <td className="max-w-[220px] px-4 py-2.5">
-                      <p className="truncate text-vault-text dark:text-[#e6edf3]">{txn.description}</p>
+                      <p className="truncate text-vault-text dark:text-[#e6edf3]">
+                        {txn.description}
+                      </p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-vault-red">
                       {isDebe ? formatCurrency(Math.abs(amount), currency) : ""}
@@ -457,7 +482,9 @@ export function UploadTransactionsPage() {
                     <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-vault-green">
                       {!isDebe ? formatCurrency(Math.abs(amount), currency) : ""}
                     </td>
-                    <td className={`whitespace-nowrap px-4 py-2.5 text-right tabular-nums font-medium ${saldo >= 0 ? "text-vault-green" : "text-vault-red"}`}>
+                    <td
+                      className={`whitespace-nowrap px-4 py-2.5 text-right tabular-nums font-medium ${saldo >= 0 ? "text-vault-green" : "text-vault-red"}`}
+                    >
                       {formatCurrency(Math.abs(saldo), currency)}
                     </td>
                     <td className="px-4 py-2">

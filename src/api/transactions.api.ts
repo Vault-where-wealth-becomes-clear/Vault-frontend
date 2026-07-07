@@ -3,13 +3,28 @@ import { apiClient } from "./client";
 
 export const STANDARD_CATEGORIES = [
   // Gastos
-  "Supermercado", "Restaurantes", "Transporte", "Salud", "Indumentaria",
-  "Tecnología", "Entretenimiento", "Servicios", "Educación", "Viajes",
-  "Suscripciones", "Impuestos", "Varios",
+  "Supermercado",
+  "Restaurantes",
+  "Transporte",
+  "Salud",
+  "Indumentaria",
+  "Tecnología",
+  "Entretenimiento",
+  "Servicios",
+  "Educación",
+  "Viajes",
+  "Suscripciones",
+  "Impuestos",
+  "Varios",
   // Ingresos y movimientos
-  "Ingreso operativo", "Rendimiento", "Cambio de moneda", "Pago deuda", "Transferencia interna",
+  "Ingreso operativo",
+  "Rendimiento",
+  "Cambio de moneda",
+  "Pago deuda",
+  "Transferencia interna",
   // Transitorio
-  "Reintegro", "Sin categoría",
+  "Reintegro",
+  "Sin categoría",
 ];
 
 export interface Transaction {
