@@ -5,6 +5,8 @@ import { useUploads } from "@/api/uploads.api";
 import { useAccounts, getAccountDisplayName, type AccountType } from "@/api/accounts.api";
 import { useTransactions, type Transaction } from "@/api/transactions.api";
 import { useExchangeRates } from "@/api/exchangeRates.api";
+import { useAccountCartera } from "@/api/cartera.api";
+import { CarteraComposicion } from "@/components/cartera/CarteraComposicion";
 import { CategoryLedger } from "@/components/transactions/CategoryLedger";
 import { getCategoryColor } from "@/utils/categoryColors";
 import {
@@ -29,6 +31,125 @@ function fmtDate(dateStr: string): string {
 }
 
 const CREDIT_CARD_TYPES = new Set<AccountType>(["credit_card_ars", "credit_card_usd"]);
+
+/**
+ * Bloque de cuenta comitente dentro de "Por entidad" — la composición fija del cierre
+ * de ESE mes puntual (a diferencia de la página Cartera, que mira la evolución). Si no
+ * hay snapshot para el mes exacto (`cartera.month !== period`), no se interpola ni se
+ * muestra un mes distinto como si fuera este — regla del Módulo 4 (ver
+ * 04_cuenta_comitente.md).
+ */
+function MonthlyCarteraBlock({
+  accountId,
+  accountName,
+  period,
+}: {
+  accountId: string;
+  accountName: string;
+  period: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: cartera, isLoading } = useAccountCartera(accountId, 1, period);
+  const hasThisMonth = !!cartera && cartera.month === period;
+
+  return (
+    <div className="border-b border-vault-border/40 last:border-0 dark:border-[#30363d]/40">
+      <button
+        type="button"
+        onClick={() => hasThisMonth && setExpanded((e) => !e)}
+        className={`flex w-full items-center gap-2 py-2 text-left ${!hasThisMonth ? "cursor-default" : ""}`}
+      >
+        <span
+          className={`min-w-0 flex-1 text-xs ${hasThisMonth ? "text-vault-muted2 dark:text-[#8b949e]" : "text-vault-muted2/50 dark:text-[#8b949e]/50"}`}
+        >
+          {accountName}
+        </span>
+        {isLoading ? (
+          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#8b949e]/50">
+            Cargando...
+          </span>
+        ) : !hasThisMonth ? (
+          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#8b949e]/50">
+            Sin snapshot este mes
+          </span>
+        ) : (
+          <span className="flex-shrink-0 rounded-full border border-vault-accent/40 bg-vault-accent/10 px-2 py-0.5 text-[10px] font-semibold text-vault-accent">
+            Nivel {cartera.nivel_detectado}
+          </span>
+        )}
+        {hasThisMonth && (
+          <span
+            className="flex-shrink-0 text-xs text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+            style={{ transform: expanded ? "rotate(90deg)" : "none" }}
+          >
+            ›
+          </span>
+        )}
+      </button>
+
+      {hasThisMonth && expanded && (
+        <div className="mb-2 pl-1">
+          <CarteraComposicion posiciones={cartera.posiciones} nivelDetectado={cartera.nivel_detectado} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Resultado de cartera como línea aparte del flujo bancario (nunca mezclado con
+ * ingresos/egresos, ver reglas_inviolables #13 en la skill). Nivel 2+: rendimientos
+ * netos + resultado realizado (resultado real). Nivel 1: variación de valor vs. el mes
+ * anterior — se etiqueta distinto ("Δ Cartera") porque no es un resultado realizado,
+ * solo valuación. Si no hay ninguno de los dos (primer mes con datos), no muestra nada.
+ */
+function MonthlyCarteraFlujoLine({
+  accountId,
+  accountName,
+  period,
+}: {
+  accountId: string;
+  accountName: string;
+  period: string;
+}) {
+  const { data: cartera } = useAccountCartera(accountId, 2, period);
+  if (!cartera || cartera.month !== period) return null;
+
+  const resultadoRealizado = cartera.posiciones.reduce(
+    (sum, p) => sum + (p.resultado_realizado_ars ?? 0),
+    0
+  );
+  const rendimientos = cartera.rendimientos_netos_ars ?? 0;
+
+  if (cartera.nivel_detectado >= 2) {
+    const total = resultadoRealizado + rendimientos;
+    return (
+      <div className="flex items-center justify-between gap-3 py-1 text-xs">
+        <span className="text-vault-muted2 dark:text-[#8b949e]">Resultado cartera — {accountName}</span>
+        <span
+          className={`tabular-nums font-medium ${total >= 0 ? "text-vault-green" : "text-vault-red"}`}
+        >
+          {total >= 0 ? "+" : ""}
+          {formatCurrency(total, "ARS")}
+        </span>
+      </div>
+    );
+  }
+
+  const anchor = cartera.evolucion.at(-1);
+  if (anchor?.delta_ars == null) return null;
+  return (
+    <div className="flex items-center justify-between gap-3 py-1 text-xs">
+      <span className="text-vault-muted2 dark:text-[#8b949e]">Δ Cartera — {accountName}</span>
+      <span
+        className={`tabular-nums font-medium ${anchor.delta_ars >= 0 ? "text-vault-green" : "text-vault-red"}`}
+      >
+        {anchor.delta_ars >= 0 ? "+" : ""}
+        {formatCurrency(anchor.delta_ars, "ARS")}
+      </span>
+    </div>
+  );
+}
 
 interface CreditCardBreakdown {
   consumosArs: number;
@@ -202,6 +323,10 @@ export function MonthlyPage() {
   const { data: uploads } = useUploads();
   const { data: accounts } = useAccounts();
   const { data: exchangeRates } = useExchangeRates();
+  const brokerAccounts = useMemo(
+    () => (accounts ?? []).filter((a) => a.account_type === "broker"),
+    [accounts]
+  );
 
   const months = useMemo(() => {
     const done = uploads?.filter((u) => u.status === "done") ?? [];
@@ -386,9 +511,13 @@ export function MonthlyPage() {
 
     return Array.from(byInstitution.entries())
       .map(([institution, accs]) => {
-        // Entity total in ARS: exclude credit cards, only count accounts with data
-        // USD accounts converted via mepForPeriod; fallback to per-txn amount_ars
-        const nonCCWithData = accs.filter((a) => !a.isCreditCard && a.hasData);
+        // Entity total in ARS: exclude credit cards y cuenta comitente (cartera tiene
+        // su propio resultado, se muestra aparte en Flujo del período — no se mezcla
+        // acá), solo cuentas con datos. USD accounts converted via mepForPeriod;
+        // fallback to per-txn amount_ars
+        const nonCCWithData = accs.filter(
+          (a) => !a.isCreditCard && a.accountType !== "broker" && a.hasData
+        );
         const totalDeltaArs = nonCCWithData.reduce((sum, a) => {
           if (a.currency === "USD" && mepForPeriod) {
             return sum + a.deltaUsd * mepForPeriod;
@@ -534,6 +663,19 @@ export function MonthlyPage() {
                         <CategoryLedger transactions={flujoMovements} />
                       </div>
                     )}
+
+                    {brokerAccounts.length > 0 && (
+                      <div className="mt-3 border-t border-vault-border/50 pt-2 dark:border-[#30363d]/50">
+                        {brokerAccounts.map((account) => (
+                          <MonthlyCarteraFlujoLine
+                            key={account.id}
+                            accountId={account.id}
+                            accountName={getAccountDisplayName(account)}
+                            period={period}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -575,6 +717,16 @@ export function MonthlyPage() {
                             {isEntityOpen && (
                               <div className="mb-2 ml-1 border-l-2 border-vault-border pl-3 dark:border-[#30363d]">
                                 {entity.accounts.map((account) => {
+                                  if (account.accountType === "broker") {
+                                    return (
+                                      <MonthlyCarteraBlock
+                                        key={account.id}
+                                        accountId={account.id}
+                                        accountName={account.name}
+                                        period={period}
+                                      />
+                                    );
+                                  }
                                   const isAccountOpen = expandedAccounts.has(account.id);
                                   return (
                                     <div

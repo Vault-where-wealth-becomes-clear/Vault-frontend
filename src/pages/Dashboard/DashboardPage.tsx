@@ -20,15 +20,10 @@ import { formatPeriod } from "@/utils/formatDate";
 import { computeUploadClosingBalance, groupTransactionsByUpload } from "@/utils/accountBalance";
 
 const ADVANCED_SECTIONS: {
-  key: "cartera" | "proyeccion" | "compromisos";
+  key: "proyeccion" | "compromisos";
   label: string;
   cta: string;
 }[] = [
-  {
-    key: "cartera",
-    label: "Cartera de inversiones",
-    cta: "Pedí este análisis la próxima vez que subas un extracto de broker",
-  },
   {
     key: "proyeccion",
     label: "Proyección a 3 meses",
@@ -66,6 +61,9 @@ export function DashboardPage() {
     summary?.period
   );
   const { data: fullDashboard } = useFullDashboard(period);
+  // Cartera de inversiones vive por cuenta comitente (ver Mis cuentas) — acá solo se
+  // muestra el agregado del período más reciente que ya expone monthly-series.
+  const latestCarteraUsd = monthlySeries?.at(-1)?.cartera_usd ?? null;
   const { data: exchangeRates } = useExchangeRates();
   const { data: accounts } = useAccounts();
   const exportXlsx = useExportXlsx();
@@ -605,6 +603,21 @@ export function DashboardPage() {
           <div className="card-vault">
             <h2 className="section-label mb-4">Análisis avanzado</h2>
             <div className="grid grid-cols-3 gap-4">
+              <Link
+                to="/accounts"
+                className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm transition-colors hover:border-vault-accent dark:bg-[#21262d]"
+              >
+                <p className="mb-1 font-medium">Cartera de inversiones</p>
+                {latestCarteraUsd != null ? (
+                  <p className="text-xs text-vault-green">
+                    {formatCurrency(latestCarteraUsd, "USD")} · Ver detalle en Mis cuentas →
+                  </p>
+                ) : (
+                  <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    Pedí este análisis la próxima vez que subas un extracto de broker
+                  </p>
+                )}
+              </Link>
               {ADVANCED_SECTIONS.map((section) => {
                 const data = fullDashboard?.[section.key];
                 return (

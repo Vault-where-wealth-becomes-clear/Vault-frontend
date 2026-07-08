@@ -82,7 +82,6 @@ export interface FullDashboard {
   flujo_mensual: Record<string, unknown> | null;
   categorizacion: Record<string, unknown> | null;
   flujo_periodo: Record<string, unknown> | null;
-  cartera: Record<string, unknown> | null;
   tablero_general: Record<string, unknown> | null;
   proyeccion: Record<string, unknown> | null;
   compromisos: Record<string, unknown> | null;

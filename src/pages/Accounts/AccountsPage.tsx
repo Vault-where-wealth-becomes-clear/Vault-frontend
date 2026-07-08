@@ -14,6 +14,7 @@ import {
 import { useSubmitUpload, useUploadStatus, useAccountUploads, useUploads, useDeleteUpload, type UploadStatus } from "@/api/uploads.api";
 import { useCreateManualTransaction, useTransactions, type Transaction } from "@/api/transactions.api";
 import { computeUploadClosingBalance, groupTransactionsByUpload } from "@/utils/accountBalance";
+import { CarteraSummaryCard } from "./CarteraSummaryCard";
 import type { SkillModule } from "@/components/upload/ModuleSelector";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { extractErrorMessage } from "@/utils/apiError";
@@ -58,6 +59,16 @@ const ENTITY_COLORS: Record<string, { bg: string; text: string }> = {
 
 function getEntityColor(name: string): { bg: string; text: string } {
   return ENTITY_COLORS[name] ?? { bg: "#475569", text: "#ffffff" };
+}
+
+function groupByInstitution(list: Account[]): Map<string, Account[]> {
+  const map = new Map<string, Account[]>();
+  list.forEach((account) => {
+    const key = account.institution || "Sin entidad";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(account);
+  });
+  return map;
 }
 
 function resolveAccountType(base: BaseType, currency: CurrencyType): AccountType {
@@ -241,17 +252,24 @@ export function AccountsPage() {
   const [manualSuccess, setManualSuccess] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
 
-  const groupedAccounts = useMemo(() => {
-    const map = new Map<string, Account[]>();
-    (accounts ?? []).forEach((account) => {
-      const key = account.institution || "Sin entidad";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(account);
-    });
-    return map;
-  }, [accounts]);
+  // Cuenta comitente separada de las cuentas generales (banco/billetera): se valúa por
+  // posiciones de cartera, no por saldo de caja, así que necesita su propia sección en
+  // vez de mezclarse con checking/savings_box/credit_card/cash/crypto por institución.
+  const generalAccounts = useMemo(
+    () => (accounts ?? []).filter((a) => a.account_type !== "broker"),
+    [accounts]
+  );
+  const comitenteAccounts = useMemo(
+    () => (accounts ?? []).filter((a) => a.account_type === "broker"),
+    [accounts]
+  );
+  const generalGroups = useMemo(() => groupByInstitution(generalAccounts), [generalAccounts]);
+  const comitenteGroups = useMemo(() => groupByInstitution(comitenteAccounts), [comitenteAccounts]);
 
-  const allGroupKeys = useMemo(() => Array.from(groupedAccounts.keys()), [groupedAccounts]);
+  const allGroupKeys = useMemo(
+    () => [...generalGroups.keys(), ...comitenteGroups.keys()],
+    [generalGroups, comitenteGroups]
+  );
 
   // Saldo final del último período cargado por cuenta (no account.current_balance:
   // ese campo lo pisa el último upload PROCESADO, no el cronológicamente más
@@ -297,21 +315,25 @@ export function AccountsPage() {
   }, [entityParam]);
 
   useEffect(() => {
-    if (!entityParam || !groupedAccounts.has(entityParam)) return;
+    if (!entityParam) return;
+    if (!generalGroups.has(entityParam) && !comitenteGroups.has(entityParam)) return;
     const timer = setTimeout(() => {
       groupRefs.current.get(entityParam)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
     return () => clearTimeout(timer);
-  }, [entityParam, groupedAccounts]);
+  }, [entityParam, generalGroups, comitenteGroups]);
 
   // Derived form visibility
   const showEntidad = baseType !== "cash";
   const entityOptions = ENTITY_OPTIONS[baseType] ?? [];
   const showIssuer = baseType === "credit_card";
-  const showReference = baseType !== "broker" && baseType !== "crypto";
-  const showMoneda = baseType !== "credit_card";
+  const showReference = baseType !== "crypto";
+  const showMoneda = baseType !== "credit_card" && baseType !== "broker";
   const showSaldoActual =
-    baseType !== "credit_card" && baseType !== "checking" && baseType !== "savings_box";
+    baseType !== "credit_card" &&
+    baseType !== "checking" &&
+    baseType !== "savings_box" &&
+    baseType !== "broker";
 
   const referencePlaceholder =
     baseType === "credit_card"
@@ -320,7 +342,9 @@ export function AccountsPage() {
         ? "Ej: sueldo, ahorro..."
         : baseType === "cash"
           ? "Ej: billetera, casa..."
-          : "";
+          : baseType === "broker"
+            ? "Ej: cuenta ARS, cuenta USD..."
+            : "";
 
   const isGroupExpanded = (key: string) => expandedGroups.has("all") || expandedGroups.has(key);
 
@@ -467,6 +491,119 @@ export function AccountsPage() {
     }
   };
 
+  const renderAccountGroups = (groups: Map<string, Account[]>) =>
+    Array.from(groups.entries()).map(([groupKey, groupAccounts]) => {
+      const expanded = isGroupExpanded(groupKey);
+      const { bg, text } = getEntityColor(groupKey);
+      const initials = groupKey === "Sin entidad" ? "?" : groupKey.slice(0, 2).toUpperCase();
+
+      return (
+        <div
+          key={groupKey}
+          ref={(el) => {
+            if (el) groupRefs.current.set(groupKey, el);
+            else groupRefs.current.delete(groupKey);
+          }}
+          className="overflow-hidden rounded-lg border border-vault-border dark:border-[#30363d]"
+        >
+          {/* Group header */}
+          <button
+            type="button"
+            onClick={() => toggleGroup(groupKey)}
+            className="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d]"
+          >
+            <div
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[11px] font-bold"
+              style={{ backgroundColor: bg, color: text }}
+            >
+              {initials}
+            </div>
+            <span className="flex-1 text-left font-medium text-vault-text dark:text-[#e6edf3]">
+              {groupKey}
+            </span>
+            <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+              {groupAccounts.length} {groupAccounts.length === 1 ? "cuenta" : "cuentas"}
+            </span>
+            <span
+              className="inline-block text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+              style={{ transform: expanded ? "rotate(90deg)" : "none" }}
+            >
+              ›
+            </span>
+          </button>
+
+          {/* Group body */}
+          {expanded && (
+            <div className="border-t border-vault-border dark:border-[#30363d]">
+              <ul>
+                {groupAccounts.map((account) => (
+                  <li
+                    key={account.id}
+                    onClick={() => handleAccountClick(account)}
+                    className={`flex cursor-pointer items-center justify-between gap-3 border-b border-vault-border/50 py-2.5 pr-3.5 text-sm transition-colors last:border-b-0 dark:border-[#30363d]/50 ${
+                      selectedAccount?.id === account.id && rightPanel === "upload"
+                        ? "bg-[#eff6ff] dark:bg-[#1d2d50]"
+                        : "hover:bg-vault-s2 dark:hover:bg-[#21262d]"
+                    }`}
+                    style={{ paddingLeft: "52px" }}
+                  >
+                    <div>
+                      <p className="font-medium text-vault-text dark:text-[#e6edf3]">
+                        {getAccountDisplayName(account)}
+                      </p>
+                      <p className="flex items-center text-xs text-vault-muted2 dark:text-[#8b949e]">
+                        {ACCOUNT_TYPE_LABELS[account.account_type]}
+                        {account.account_type === "cash" && (
+                          <span
+                            className="ml-1 dark:bg-[#1d2d50] dark:text-[#93c5fd]"
+                            style={{
+                              fontSize: 10,
+                              background: "#eff6ff",
+                              color: "#1e3a8a",
+                              borderRadius: 4,
+                              padding: "1px 6px",
+                            }}
+                          >
+                            {account.currency}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    {(() => {
+                      const displayBalance = getAccountDisplayBalance(
+                        account,
+                        latestClosingBalanceByAccount
+                      );
+                      return (
+                        displayBalance !== null && (
+                          <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                            {formatCurrency(displayBalance, account.currency)}
+                          </span>
+                        )
+                      );
+                    })()}
+                  </li>
+                ))}
+              </ul>
+              {groupKey !== "Sin entidad" && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openNewAccountForm(groupKey);
+                  }}
+                  className="flex w-full items-center gap-1.5 border-t border-vault-border/50 py-2 pr-3.5 text-xs text-vault-muted2 transition-colors hover:text-vault-accent dark:border-[#30363d]/50 dark:text-[#8b949e]"
+                  style={{ paddingLeft: "52px" }}
+                >
+                  + Agregar cuenta en {groupKey}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    });
+
   return (
     <div className="p-7">
       <div className="mb-6">
@@ -506,119 +643,18 @@ export function AccountsPage() {
               <span className="text-sm">Agregá tu primera cuenta</span>
             </button>
           ) : (
-            <div className="flex flex-col gap-2">
-              {Array.from(groupedAccounts.entries()).map(([groupKey, groupAccounts]) => {
-                const expanded = isGroupExpanded(groupKey);
-                const { bg, text } = getEntityColor(groupKey);
-                const initials =
-                  groupKey === "Sin entidad" ? "?" : groupKey.slice(0, 2).toUpperCase();
-
-                return (
-                  <div
-                    key={groupKey}
-                    ref={(el) => {
-                      if (el) groupRefs.current.set(groupKey, el);
-                      else groupRefs.current.delete(groupKey);
-                    }}
-                    className="overflow-hidden rounded-lg border border-vault-border dark:border-[#30363d]"
-                  >
-                    {/* Group header */}
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(groupKey)}
-                      className="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d]"
-                    >
-                      <div
-                        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[11px] font-bold"
-                        style={{ backgroundColor: bg, color: text }}
-                      >
-                        {initials}
-                      </div>
-                      <span className="flex-1 text-left font-medium text-vault-text dark:text-[#e6edf3]">
-                        {groupKey}
-                      </span>
-                      <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-                        {groupAccounts.length} {groupAccounts.length === 1 ? "cuenta" : "cuentas"}
-                      </span>
-                      <span
-                        className="inline-block text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
-                        style={{ transform: expanded ? "rotate(90deg)" : "none" }}
-                      >
-                        ›
-                      </span>
-                    </button>
-
-                    {/* Group body */}
-                    {expanded && (
-                      <div className="border-t border-vault-border dark:border-[#30363d]">
-                        <ul>
-                          {groupAccounts.map((account) => (
-                            <li
-                              key={account.id}
-                              onClick={() => handleAccountClick(account)}
-                              className={`flex cursor-pointer items-center justify-between gap-3 border-b border-vault-border/50 py-2.5 pr-3.5 text-sm transition-colors last:border-b-0 dark:border-[#30363d]/50 ${
-                                selectedAccount?.id === account.id && rightPanel === "upload"
-                                  ? "bg-[#eff6ff] dark:bg-[#1d2d50]"
-                                  : "hover:bg-vault-s2 dark:hover:bg-[#21262d]"
-                              }`}
-                              style={{ paddingLeft: "52px" }}
-                            >
-                              <div>
-                                <p className="font-medium text-vault-text dark:text-[#e6edf3]">
-                                  {getAccountDisplayName(account)}
-                                </p>
-                                <p className="flex items-center text-xs text-vault-muted2 dark:text-[#8b949e]">
-                                  {ACCOUNT_TYPE_LABELS[account.account_type]}
-                                  {account.account_type === "cash" && (
-                                    <span
-                                      className="ml-1 dark:bg-[#1d2d50] dark:text-[#93c5fd]"
-                                      style={{
-                                        fontSize: 10,
-                                        background: "#eff6ff",
-                                        color: "#1e3a8a",
-                                        borderRadius: 4,
-                                        padding: "1px 6px",
-                                      }}
-                                    >
-                                      {account.currency}
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-                              {(() => {
-                                const displayBalance = getAccountDisplayBalance(
-                                  account,
-                                  latestClosingBalanceByAccount
-                                );
-                                return (
-                                  displayBalance !== null && (
-                                    <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
-                                      {formatCurrency(displayBalance, account.currency)}
-                                    </span>
-                                  )
-                                );
-                              })()}
-                            </li>
-                          ))}
-                        </ul>
-                        {groupKey !== "Sin entidad" && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openNewAccountForm(groupKey);
-                            }}
-                            className="flex w-full items-center gap-1.5 border-t border-vault-border/50 py-2 pr-3.5 text-xs text-vault-muted2 transition-colors hover:text-vault-accent dark:border-[#30363d]/50 dark:text-[#8b949e]"
-                            style={{ paddingLeft: "52px" }}
-                          >
-                            + Agregar cuenta en {groupKey}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="flex flex-col gap-4">
+              {generalGroups.size > 0 && (
+                <div className="flex flex-col gap-2">{renderAccountGroups(generalGroups)}</div>
+              )}
+              {comitenteGroups.size > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    Cuenta comitente
+                  </p>
+                  {renderAccountGroups(comitenteGroups)}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -800,8 +836,11 @@ export function AccountsPage() {
 
             {/* Content area */}
             <div className="flex-1 overflow-y-auto px-4 py-3">
-              {/* Default: últimas transacciones */}
-              {accountSubView === "default" && (
+              {/* Default: cuenta comitente muestra la cartera, el resto últimas transacciones */}
+              {accountSubView === "default" && selectedAccount.account_type === "broker" && (
+                <CarteraSummaryCard accountId={selectedAccount.id} />
+              )}
+              {accountSubView === "default" && selectedAccount.account_type !== "broker" && (
                 <>
                   <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
                     Últimas transacciones
@@ -823,18 +862,18 @@ export function AccountsPage() {
                       ))}
                     </ul>
                   )}
-                  {activeStatus && (
-                    <div className="mt-3 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2.5 text-xs dark:bg-[#21262d]">
-                      Último envío:{" "}
-                      <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
-                        {STATUS_LABELS[activeStatus.status]}
-                      </span>
-                      {activeStatus.status === "review" && (
-                        <Link to={`/uploads/${activeStatus.upload_id}/review`} className="ml-2 text-vault-accent hover:underline">Revisar →</Link>
-                      )}
-                    </div>
-                  )}
                 </>
+              )}
+              {accountSubView === "default" && activeStatus && (
+                <div className="mt-3 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2.5 text-xs dark:bg-[#21262d]">
+                  Último envío:{" "}
+                  <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
+                    {STATUS_LABELS[activeStatus.status]}
+                  </span>
+                  {activeStatus.status === "review" && (
+                    <Link to={`/uploads/${activeStatus.upload_id}/review`} className="ml-2 text-vault-accent hover:underline">Revisar →</Link>
+                  )}
+                </div>
               )}
 
               {/* Upload form */}

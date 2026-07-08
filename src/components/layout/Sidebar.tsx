@@ -148,6 +148,11 @@ export function Sidebar() {
           )}
         </div>
 
+        <NavLink to="/cartera" className={({ isActive }) => navLinkClass(isActive)}>
+          <span className="w-4 text-center">◆</span>
+          Cartera
+        </NavLink>
+
         {/* Mis cuentas con desplegable */}
         <div className="mb-0.5">
           <div className="flex items-center">
