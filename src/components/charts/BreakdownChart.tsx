@@ -34,7 +34,9 @@ function DonutTooltip({
       style={{ fontSize: 12 }}
     >
       <p className="mb-1.5 font-semibold text-vault-text dark:text-[#e6edf3]">{item.category}</p>
-      <p className="text-vault-text dark:text-[#e6edf3]">{formatCurrency(item.amount_ars, "ARS")}</p>
+      <p className="text-vault-text dark:text-[#e6edf3]">
+        {formatCurrency(item.amount_ars, "ARS")}
+      </p>
       {usd != null && (
         <p className="text-vault-muted2 dark:text-[#8b949e]">{formatCurrency(usd, "USD")}</p>
       )}
@@ -69,7 +71,11 @@ export function BreakdownChart({ data, mepRate }: BreakdownChartProps) {
               style={{ cursor: "pointer" }}
             >
               {sorted.map((entry, i) => (
-                <Cell key={entry.category} fill={getCategoryColor(entry.category, i)} stroke="none" />
+                <Cell
+                  key={entry.category}
+                  fill={getCategoryColor(entry.category, i)}
+                  stroke="none"
+                />
               ))}
             </Pie>
             <Tooltip content={<DonutTooltip mepRate={mepRate} />} />

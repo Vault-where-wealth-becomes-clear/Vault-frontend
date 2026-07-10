@@ -64,7 +64,8 @@ export function CategoryLedger({ transactions }: CategoryLedgerProps) {
         </thead>
         <tbody>
           {sorted.map((t) => {
-            const amt = t.currency === "USD" ? Number(t.amount_usd) || 0 : Number(t.amount_ars) || 0;
+            const amt =
+              t.currency === "USD" ? Number(t.amount_usd) || 0 : Number(t.amount_ars) || 0;
             return (
               <tr
                 key={t.id}
@@ -88,7 +89,10 @@ export function CategoryLedger({ transactions }: CategoryLedgerProps) {
         </tbody>
         <tfoot>
           <tr className="border-t border-vault-border/50 font-medium dark:border-[#30363d]/50">
-            <td colSpan={2} className="py-1.5 pl-1 text-right text-vault-muted2 dark:text-[#8b949e]">
+            <td
+              colSpan={2}
+              className="py-1.5 pl-1 text-right text-vault-muted2 dark:text-[#8b949e]"
+            >
               Total
             </td>
             <td className="py-1.5 text-right tabular-nums text-vault-red">

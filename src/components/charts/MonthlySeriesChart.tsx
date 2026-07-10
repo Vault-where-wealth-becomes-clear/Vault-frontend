@@ -44,9 +44,15 @@ function ChartTooltip({
       {payload
         .filter((p) => p.value !== null && p.value !== undefined)
         .map((p) => (
-          <p key={p.dataKey} className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#8b949e]">
+          <p
+            key={p.dataKey}
+            className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#8b949e]"
+          >
             <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
-            {p.name}: <span className="font-medium text-vault-text dark:text-[#e6edf3]">{formatCurrency(p.value as number, "USD")}</span>
+            {p.name}:{" "}
+            <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+              {formatCurrency(p.value as number, "USD")}
+            </span>
           </p>
         ))}
     </div>
@@ -75,7 +81,9 @@ export function MonthlySeriesChart({ data }: MonthlySeriesChartProps) {
         <Tooltip content={<ChartTooltip />} />
         <Legend
           wrapperStyle={{ fontSize: 11 }}
-          formatter={(value: string) => <span className="text-vault-muted2 dark:text-[#8b949e]">{value}</span>}
+          formatter={(value: string) => (
+            <span className="text-vault-muted2 dark:text-[#8b949e]">{value}</span>
+          )}
         />
         {SERIES.map((s) => (
           <Line

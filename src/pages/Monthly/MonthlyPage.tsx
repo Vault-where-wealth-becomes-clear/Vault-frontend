@@ -182,7 +182,8 @@ function computeCreditCardBreakdown(
   let creditosArs = 0;
 
   for (const t of transactions) {
-    const nativeAmount = t.currency === "USD" ? Number(t.amount_usd) || 0 : Number(t.amount_ars) || 0;
+    const nativeAmount =
+      t.currency === "USD" ? Number(t.amount_usd) || 0 : Number(t.amount_ars) || 0;
 
     if (t.category === "Impuestos") {
       if (t.currency === "ARS") {
@@ -345,7 +346,9 @@ export function MonthlyPage() {
   }, [uploads]);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(() => searchParams.get("period"));
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(() =>
+    searchParams.get("period")
+  );
   const [expandedEntities, setExpandedEntities] = useState<Set<string>>(new Set());
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [expandedBreakdownCategory, setExpandedBreakdownCategory] = useState<string | null>(null);
@@ -429,8 +432,7 @@ export function MonthlyPage() {
     [...uploads]
       .filter(
         (u) =>
-          (u.status === "done" || u.status === "review") &&
-          u.period_month.slice(0, 7) === period
+          (u.status === "done" || u.status === "review") && u.period_month.slice(0, 7) === period
       )
       .sort((a, b) => a.uploaded_at.localeCompare(b.uploaded_at))
       .forEach((u) => {
@@ -476,8 +478,7 @@ export function MonthlyPage() {
       const totalSpentNative = txns
         .filter((t) => (isUsd ? Number(t.amount_usd) : Number(t.amount_ars)) < 0)
         .reduce(
-          (sum, t) =>
-            sum + Math.abs(isUsd ? Number(t.amount_usd) || 0 : Number(t.amount_ars) || 0),
+          (sum, t) => sum + Math.abs(isUsd ? Number(t.amount_usd) || 0 : Number(t.amount_ars) || 0),
           0
         );
 
@@ -736,10 +737,14 @@ export function MonthlyPage() {
                                       {/* Account row — native currency; dimmed when no data */}
                                       <button
                                         type="button"
-                                        onClick={() => account.hasData ? toggleAccount(account.id) : undefined}
+                                        onClick={() =>
+                                          account.hasData ? toggleAccount(account.id) : undefined
+                                        }
                                         className={`flex w-full items-center gap-2 py-2 text-left ${!account.hasData ? "cursor-default" : ""}`}
                                       >
-                                        <span className={`min-w-0 flex-1 text-xs ${account.hasData ? "text-vault-muted2 dark:text-[#8b949e]" : "text-vault-muted2/50 dark:text-[#8b949e]/50"}`}>
+                                        <span
+                                          className={`min-w-0 flex-1 text-xs ${account.hasData ? "text-vault-muted2 dark:text-[#8b949e]" : "text-vault-muted2/50 dark:text-[#8b949e]/50"}`}
+                                        >
                                           {account.name}
                                         </span>
                                         {!account.hasData ? (
@@ -750,13 +755,19 @@ export function MonthlyPage() {
                                           <span className="flex-shrink-0 text-xs text-vault-muted2 dark:text-[#8b949e]">
                                             Total del período:{" "}
                                             <span className="font-medium text-vault-red">
-                                              {formatCurrency(account.creditCardBreakdown.totalArs, "ARS")}
+                                              {formatCurrency(
+                                                account.creditCardBreakdown.totalArs,
+                                                "ARS"
+                                              )}
                                             </span>
                                             {account.creditCardBreakdown.totalUsd > 0 && (
                                               <>
                                                 {" + "}
                                                 <span className="font-medium text-vault-red">
-                                                  {formatCurrency(account.creditCardBreakdown.totalUsd, "USD")}
+                                                  {formatCurrency(
+                                                    account.creditCardBreakdown.totalUsd,
+                                                    "USD"
+                                                  )}
                                                 </span>
                                               </>
                                             )}
@@ -764,9 +775,15 @@ export function MonthlyPage() {
                                         ) : (
                                           <>
                                             <span className="flex-shrink-0 text-xs text-vault-muted2 dark:text-[#8b949e]">
-                                              {formatCurrency(account.openingNative, account.currency)}{" "}
+                                              {formatCurrency(
+                                                account.openingNative,
+                                                account.currency
+                                              )}{" "}
                                               →{" "}
-                                              {formatCurrency(account.closingNative, account.currency)}
+                                              {formatCurrency(
+                                                account.closingNative,
+                                                account.currency
+                                              )}
                                             </span>
                                             <span
                                               className={`flex-shrink-0 tabular-nums text-xs font-semibold ${
@@ -776,7 +793,10 @@ export function MonthlyPage() {
                                               }`}
                                             >
                                               {account.deltaNative >= 0 ? "+" : ""}
-                                              {formatCurrency(account.deltaNative, account.currency)}
+                                              {formatCurrency(
+                                                account.deltaNative,
+                                                account.currency
+                                              )}
                                             </span>
                                           </>
                                         )}
@@ -800,43 +820,60 @@ export function MonthlyPage() {
                                       )}
 
                                       {/* Desglose del período — tarjetas de crédito (Regla 2) */}
-                                      {account.hasData && isAccountOpen && account.isCreditCard && account.creditCardBreakdown && (
-                                        <div className="mb-2 grid grid-cols-2 gap-2 rounded-vault bg-vault-s2/40 px-3 py-2 text-xs dark:bg-[#21262d]/40 sm:grid-cols-4">
-                                          <div className="flex flex-col gap-0.5">
-                                            <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
-                                              Consumos ARS
-                                            </span>
-                                            <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
-                                              {formatCurrency(account.creditCardBreakdown.consumosArs, "ARS")}
-                                            </span>
+                                      {account.hasData &&
+                                        isAccountOpen &&
+                                        account.isCreditCard &&
+                                        account.creditCardBreakdown && (
+                                          <div className="mb-2 grid grid-cols-2 gap-2 rounded-vault bg-vault-s2/40 px-3 py-2 text-xs dark:bg-[#21262d]/40 sm:grid-cols-4">
+                                            <div className="flex flex-col gap-0.5">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                                Consumos ARS
+                                              </span>
+                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                                                {formatCurrency(
+                                                  account.creditCardBreakdown.consumosArs,
+                                                  "ARS"
+                                                )}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                                Consumos USD
+                                              </span>
+                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                                                {formatCurrency(
+                                                  account.creditCardBreakdown.consumosUsd,
+                                                  "USD"
+                                                )}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                                Impuestos ARS
+                                              </span>
+                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                                                {formatCurrency(
+                                                  account.creditCardBreakdown.impuestosArs,
+                                                  "ARS"
+                                                )}
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                                Créditos ARS
+                                              </span>
+                                              <span className="tabular-nums font-medium text-vault-green">
+                                                {account.creditCardBreakdown.creditosArs > 0
+                                                  ? "-"
+                                                  : ""}
+                                                {formatCurrency(
+                                                  account.creditCardBreakdown.creditosArs,
+                                                  "ARS"
+                                                )}
+                                              </span>
+                                            </div>
                                           </div>
-                                          <div className="flex flex-col gap-0.5">
-                                            <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
-                                              Consumos USD
-                                            </span>
-                                            <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
-                                              {formatCurrency(account.creditCardBreakdown.consumosUsd, "USD")}
-                                            </span>
-                                          </div>
-                                          <div className="flex flex-col gap-0.5">
-                                            <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
-                                              Impuestos ARS
-                                            </span>
-                                            <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
-                                              {formatCurrency(account.creditCardBreakdown.impuestosArs, "ARS")}
-                                            </span>
-                                          </div>
-                                          <div className="flex flex-col gap-0.5">
-                                            <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
-                                              Créditos ARS
-                                            </span>
-                                            <span className="tabular-nums font-medium text-vault-green">
-                                              {account.creditCardBreakdown.creditosArs > 0 ? "-" : ""}
-                                              {formatCurrency(account.creditCardBreakdown.creditosArs, "ARS")}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      )}
+                                        )}
 
                                       {/* Transactions — libro diario (bank) or simple list (credit card) */}
                                       {account.hasData && isAccountOpen && (
@@ -850,28 +887,31 @@ export function MonthlyPage() {
                                             <table className="w-full min-w-[420px] text-xs">
                                               <thead>
                                                 <tr className="border-b border-vault-border/40 dark:border-[#30363d]/40">
-                                                  {["Fecha", "Descripción", "Pesos", "Dólares"].map((h, i) => (
-                                                    <th
-                                                      key={h}
-                                                      className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e] ${
-                                                        i === 0
-                                                          ? "pl-3 text-left"
-                                                          : i === 1
-                                                          ? "text-left"
-                                                          : i === 3
-                                                          ? "pr-3 text-right"
-                                                          : "text-right"
-                                                      }`}
-                                                    >
-                                                      {h}
-                                                    </th>
-                                                  ))}
+                                                  {["Fecha", "Descripción", "Pesos", "Dólares"].map(
+                                                    (h, i) => (
+                                                      <th
+                                                        key={h}
+                                                        className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e] ${
+                                                          i === 0
+                                                            ? "pl-3 text-left"
+                                                            : i === 1
+                                                              ? "text-left"
+                                                              : i === 3
+                                                                ? "pr-3 text-right"
+                                                                : "text-right"
+                                                        }`}
+                                                      >
+                                                        {h}
+                                                      </th>
+                                                    )
+                                                  )}
                                                 </tr>
                                               </thead>
                                               <tbody>
                                                 {account.creditCardBreakdown &&
                                                   (account.creditCardBreakdown.remanenteArs > 0 ||
-                                                    account.creditCardBreakdown.remanenteUsd > 0) && (
+                                                    account.creditCardBreakdown.remanenteUsd >
+                                                      0) && (
                                                     <tr className="border-b border-vault-border/20 italic dark:border-[#30363d]/20">
                                                       <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#8b949e]">
                                                         —
@@ -886,13 +926,23 @@ export function MonthlyPage() {
                                                         </span>
                                                       </td>
                                                       <td className="py-1.5 text-right tabular-nums font-medium text-vault-red">
-                                                        {account.creditCardBreakdown.remanenteArs > 0
-                                                          ? formatCurrency(account.creditCardBreakdown.remanenteArs, "ARS")
+                                                        {account.creditCardBreakdown.remanenteArs >
+                                                        0
+                                                          ? formatCurrency(
+                                                              account.creditCardBreakdown
+                                                                .remanenteArs,
+                                                              "ARS"
+                                                            )
                                                           : ""}
                                                       </td>
                                                       <td className="py-1.5 pr-3 text-right tabular-nums font-medium text-vault-red">
-                                                        {account.creditCardBreakdown.remanenteUsd > 0
-                                                          ? formatCurrency(account.creditCardBreakdown.remanenteUsd, "USD")
+                                                        {account.creditCardBreakdown.remanenteUsd >
+                                                        0
+                                                          ? formatCurrency(
+                                                              account.creditCardBreakdown
+                                                                .remanenteUsd,
+                                                              "USD"
+                                                            )
                                                           : ""}
                                                       </td>
                                                     </tr>
@@ -915,13 +965,16 @@ export function MonthlyPage() {
                                                             className="ml-1.5 rounded bg-vault-accent/10 px-1 py-0.5 text-[10px] font-medium text-vault-accent"
                                                             title="Número de cuota de esta compra"
                                                           >
-                                                            cuota {t.current_installment}/{t.total_installments}
+                                                            cuota {t.current_installment}/
+                                                            {t.total_installments}
                                                           </span>
                                                         )}
                                                       </td>
                                                       <td
                                                         className={`py-1.5 text-right tabular-nums font-medium ${
-                                                          ars >= 0 ? "text-vault-green" : "text-vault-red"
+                                                          ars >= 0
+                                                            ? "text-vault-green"
+                                                            : "text-vault-red"
                                                         }`}
                                                       >
                                                         {t.currency === "ARS"
@@ -930,7 +983,9 @@ export function MonthlyPage() {
                                                       </td>
                                                       <td
                                                         className={`py-1.5 pr-3 text-right tabular-nums font-medium ${
-                                                          usd >= 0 ? "text-vault-green" : "text-vault-red"
+                                                          usd >= 0
+                                                            ? "text-vault-green"
+                                                            : "text-vault-red"
                                                         }`}
                                                       >
                                                         {t.currency === "USD"
@@ -944,15 +999,24 @@ export function MonthlyPage() {
                                               {account.creditCardBreakdown && (
                                                 <tfoot>
                                                   <tr className="border-t border-vault-border/40 dark:border-[#30363d]/40">
-                                                    <td colSpan={2} className="py-1.5 pl-3 font-semibold text-vault-text dark:text-[#e6edf3]">
+                                                    <td
+                                                      colSpan={2}
+                                                      className="py-1.5 pl-3 font-semibold text-vault-text dark:text-[#e6edf3]"
+                                                    >
                                                       Total del período
                                                     </td>
                                                     <td className="py-1.5 text-right tabular-nums font-semibold text-vault-red">
-                                                      {formatCurrency(account.creditCardBreakdown.totalArs, "ARS")}
+                                                      {formatCurrency(
+                                                        account.creditCardBreakdown.totalArs,
+                                                        "ARS"
+                                                      )}
                                                     </td>
                                                     <td className="py-1.5 pr-3 text-right tabular-nums font-semibold text-vault-red">
                                                       {account.creditCardBreakdown.totalUsd > 0
-                                                        ? formatCurrency(account.creditCardBreakdown.totalUsd, "USD")
+                                                        ? formatCurrency(
+                                                            account.creditCardBreakdown.totalUsd,
+                                                            "USD"
+                                                          )
                                                         : ""}
                                                     </td>
                                                   </tr>
@@ -964,24 +1028,28 @@ export function MonthlyPage() {
                                             <table className="w-full min-w-[500px] text-xs">
                                               <thead>
                                                 <tr className="border-b border-vault-border/40 dark:border-[#30363d]/40">
-                                                  {["Fecha", "Descripción", "Débito", "Crédito", "Saldo"].map(
-                                                    (h, i) => (
-                                                      <th
-                                                        key={h}
-                                                        className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e] ${
-                                                          i === 0
-                                                            ? "pl-3 text-left"
-                                                            : i === 1
+                                                  {[
+                                                    "Fecha",
+                                                    "Descripción",
+                                                    "Débito",
+                                                    "Crédito",
+                                                    "Saldo",
+                                                  ].map((h, i) => (
+                                                    <th
+                                                      key={h}
+                                                      className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e] ${
+                                                        i === 0
+                                                          ? "pl-3 text-left"
+                                                          : i === 1
                                                             ? "text-left"
                                                             : i === 4
-                                                            ? "pr-3 text-right"
-                                                            : "text-right"
-                                                        }`}
-                                                      >
-                                                        {h}
-                                                      </th>
-                                                    )
-                                                  )}
+                                                              ? "pr-3 text-right"
+                                                              : "text-right"
+                                                      }`}
+                                                    >
+                                                      {h}
+                                                    </th>
+                                                  ))}
                                                 </tr>
                                               </thead>
                                               <tbody>
@@ -999,7 +1067,10 @@ export function MonthlyPage() {
                                                     —
                                                   </td>
                                                   <td className="py-1.5 pr-3 text-right tabular-nums font-semibold text-vault-text dark:text-[#e6edf3]">
-                                                    {formatCurrency(account.openingNative, account.currency)}
+                                                    {formatCurrency(
+                                                      account.openingNative,
+                                                      account.currency
+                                                    )}
                                                   </td>
                                                 </tr>
                                                 {(() => {
@@ -1041,7 +1112,10 @@ export function MonthlyPage() {
                                                               : "text-vault-red"
                                                           }`}
                                                         >
-                                                          {formatCurrency(balance, account.currency)}
+                                                          {formatCurrency(
+                                                            balance,
+                                                            account.currency
+                                                          )}
                                                         </td>
                                                       </tr>
                                                     );
@@ -1078,7 +1152,10 @@ export function MonthlyPage() {
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
                             Débito total
                           </p>
-                          <p className="tabular-nums font-light text-vault-red" style={{ fontSize: 24 }}>
+                          <p
+                            className="tabular-nums font-light text-vault-red"
+                            style={{ fontSize: 24 }}
+                          >
                             {formatCurrency(debitoTotalArs, "ARS")}
                             {debitoTotalUsd > 0 && (
                               <span className="ml-1.5 text-sm text-vault-muted2 dark:text-[#8b949e]">
@@ -1091,7 +1168,10 @@ export function MonthlyPage() {
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
                             Crédito total
                           </p>
-                          <p className="tabular-nums font-light text-vault-green" style={{ fontSize: 24 }}>
+                          <p
+                            className="tabular-nums font-light text-vault-green"
+                            style={{ fontSize: 24 }}
+                          >
                             {formatCurrency(creditoTotalArs, "ARS")}
                             {creditoTotalUsd > 0 && (
                               <span className="ml-1.5 text-sm text-vault-muted2 dark:text-[#8b949e]">

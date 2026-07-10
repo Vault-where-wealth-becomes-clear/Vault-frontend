@@ -9,8 +9,15 @@ import {
   type Upload,
   type UploadStatus,
 } from "@/api/uploads.api";
+import {
+  useExchangeRates,
+  useRecalculatePeriod,
+  useSetExchangeRate,
+} from "@/api/exchangeRates.api";
+import { useMepQuote } from "@/api/mepQuote.api";
 import type { SkillModule } from "@/components/upload/ModuleSelector";
 import { extractErrorMessage } from "@/utils/apiError";
+import { formatDateTime } from "@/utils/formatDate";
 
 function getCurrentMonth(): string {
   const now = new Date();
@@ -54,6 +61,10 @@ export function UploadPage() {
   const { data: accounts, isLoading: isLoadingAccounts } = useAccounts();
   const { data: uploads } = useUploads();
   const submitUpload = useSubmitUpload();
+  const { data: exchangeRates } = useExchangeRates();
+  const setExchangeRate = useSetExchangeRate();
+  const recalculatePeriod = useRecalculatePeriod();
+  const { data: mepQuote, isLoading: isLoadingMep, isError: isMepError } = useMepQuote();
   const deleteUpload = useDeleteUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -63,8 +74,22 @@ export function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
+  const [mepRateInput, setMepRateInput] = useState("");
+  const [mepEditedByUser, setMepEditedByUser] = useState(false);
 
   const { data: activeStatus } = useUploadStatus(activeUploadId);
+
+  const monthPrefix = selectedMonth;
+  const declaredRate = exchangeRates?.find((r) => r.period_month.startsWith(monthPrefix));
+
+  useEffect(() => {
+    if (declaredRate || mepEditedByUser || !mepQuote) return;
+    setMepRateInput(String(mepQuote.venta));
+  }, [declaredRate, mepEditedByUser, mepQuote]);
+
+  useEffect(() => {
+    setMepEditedByUser(false);
+  }, [monthPrefix]);
 
   const selectedAccount = accounts?.find((a) => a.id === accountId);
   const requestedModules: SkillModule[] = selectedAccount
@@ -76,9 +101,19 @@ export function UploadPage() {
     if (!file || !accountId) return;
     setError(null);
     try {
+      const periodMonth = `${selectedMonth}-01`;
+      if (!declaredRate) {
+        const rateValue = Number(mepRateInput);
+        if (rateValue > 0) {
+          await setExchangeRate.mutateAsync({ periodMonth, mepRate: rateValue });
+        }
+      }
+      if (declaredRate || Number(mepRateInput) > 0) {
+        await recalculatePeriod.mutateAsync(periodMonth);
+      }
       const uploadId = await submitUpload.mutateAsync({
         accountId,
-        periodMonth: `${selectedMonth}-01`,
+        periodMonth,
         file,
         requestedModules,
       });
@@ -89,10 +124,7 @@ export function UploadPage() {
     }
   };
 
-  const accountMap = useMemo(
-    () => new Map(accounts?.map((a) => [a.id, a]) ?? []),
-    [accounts]
-  );
+  const accountMap = useMemo(() => new Map(accounts?.map((a) => [a.id, a]) ?? []), [accounts]);
 
   // Agrupar historial por período (YYYY-MM), más reciente primero
   const periodGroups = useMemo(() => {
@@ -180,6 +212,55 @@ export function UploadPage() {
                   className="input-vault"
                 />
               </div>
+            </div>
+
+            <div className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm">
+              {declaredRate ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-vault-muted2 dark:text-[#8b949e]">TC MEP declarado</span>
+                  <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                    ${declaredRate.mep_rate.toFixed(2)}
+                  </span>
+                </div>
+              ) : isLoadingMep ? (
+                <div className="h-4 w-40 animate-pulse rounded bg-vault-border dark:bg-[#30363d]" />
+              ) : isMepError && !mepQuote ? (
+                <p className="text-xs text-vault-yellow">
+                  No se pudo obtener el TC MEP automáticamente. Ingresalo manualmente abajo.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                      TC MEP (auto)
+                      {mepQuote?.fuente === "cache" && (
+                        <span
+                          title="Valor desactualizado — no se pudo refrescar"
+                          className="ml-1.5 text-vault-yellow"
+                        >
+                          ⚠ desactualizado
+                        </span>
+                      )}
+                    </label>
+                    {mepQuote && (
+                      <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                        Actualizado: {formatDateTime(mepQuote.fechaActualizacion)}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={mepRateInput}
+                    onChange={(e) => {
+                      setMepRateInput(e.target.value);
+                      setMepEditedByUser(true);
+                    }}
+                    placeholder="1250.00"
+                    className="input-vault"
+                  />
+                </div>
+              )}
             </div>
 
             <div>
