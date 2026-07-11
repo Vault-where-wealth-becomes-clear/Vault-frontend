@@ -52,7 +52,7 @@ export function ReviewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#8b949e]">
+      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#99a3b0]">
         Cargando transacciones a revisar...
       </div>
     );
@@ -62,7 +62,7 @@ export function ReviewPage() {
     <div className="p-7">
       <div className="mb-6">
         <h1 className="page-title">Revisar transacciones</h1>
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           La IA no pudo categorizar estas transacciones con suficiente confianza. Asignales una
           categoría para terminar de procesar el extracto.
         </p>
@@ -76,7 +76,7 @@ export function ReviewPage() {
 
       {!transactions || transactions.length === 0 ? (
         <div className="card-vault">
-          <p className="mb-4 text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="mb-4 text-sm text-vault-muted2 dark:text-[#99a3b0]">
             No quedan transacciones pendientes de revisión para este extracto.
           </p>
           <button
@@ -95,10 +95,10 @@ export function ReviewPage() {
               className="card-vault flex flex-wrap items-center justify-between gap-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                <p className="text-sm font-medium text-vault-text dark:text-[#e6eaf0]">
                   {txn.description}
                 </p>
-                <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                   {formatDate(txn.date)} · {formatCurrency(txn.amount_ars, "ARS")}
                   {txn.confidence !== null && ` · confianza ${(txn.confidence * 100).toFixed(0)}%`}
                 </p>
@@ -121,7 +121,7 @@ export function ReviewPage() {
                 ))}
               </select>
 
-              <label className="flex items-center gap-1.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
+              <label className="flex items-center gap-1.5 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                 <input
                   type="checkbox"
                   checked={rememberByTxn[txn.id] ?? false}

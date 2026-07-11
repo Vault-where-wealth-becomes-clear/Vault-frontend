@@ -44,8 +44,8 @@ function CategorySelect({
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1.5 rounded border px-2 py-1 text-xs transition-colors ${
           color
-            ? "text-vault-text dark:text-[#e6edf3]"
-            : "border-vault-border text-vault-muted2 dark:border-[#30363d] dark:text-[#8b949e]"
+            ? "text-vault-text dark:text-[#e6eaf0]"
+            : "border-vault-border text-vault-muted2 dark:border-[#68727f] dark:text-[#99a3b0]"
         }`}
         style={color ? { backgroundColor: `${color}18`, borderColor: `${color}45` } : undefined}
       >
@@ -57,17 +57,17 @@ function CategorySelect({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-20 mt-1 max-h-52 w-44 overflow-y-auto rounded-lg border border-vault-border bg-white shadow-lg dark:border-[#30363d] dark:bg-[#161b22]">
+        <div className="absolute left-0 top-full z-20 mt-1 max-h-52 w-44 overflow-y-auto rounded-lg border border-vault-border bg-white shadow-lg dark:border-[#68727f] dark:bg-[#474e58]">
           <button
             type="button"
             onClick={() => {
               onChange("");
               setOpen(false);
             }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#21262d]"
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#505862]"
           >
             <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[#9E9E9E]" />
-            <span className="text-vault-muted2 dark:text-[#8b949e]">Sin categoría</span>
+            <span className="text-vault-muted2 dark:text-[#99a3b0]">Sin categoría</span>
           </button>
           {options.map((cat) => {
             const c = getCategoryColor(cat);
@@ -79,15 +79,15 @@ function CategorySelect({
                   onChange(cat);
                   setOpen(false);
                 }}
-                className={`flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
-                  cat === value ? "bg-vault-s2 dark:bg-[#21262d]" : ""
+                className={`flex w-full items-center gap-2 px-3 py-2 text-xs hover:bg-vault-s2 dark:hover:bg-[#505862] ${
+                  cat === value ? "bg-vault-s2 dark:bg-[#505862]" : ""
                 }`}
               >
                 <span
                   className="h-2 w-2 flex-shrink-0 rounded-full"
                   style={{ backgroundColor: c }}
                 />
-                <span className="text-vault-text dark:text-[#e6edf3]">{cat}</span>
+                <span className="text-vault-text dark:text-[#e6eaf0]">{cat}</span>
               </button>
             );
           })}
@@ -220,12 +220,12 @@ export function UploadTransactionsPage() {
   const currency = isUsd ? "USD" : "ARS";
 
   const thClass =
-    "px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]";
+    "px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]";
   const thClassRight = thClass + " text-right";
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#8b949e]">
+      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#99a3b0]">
         Cargando transacciones...
       </div>
     );
@@ -238,14 +238,14 @@ export function UploadTransactionsPage() {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:text-[#8b949e]"
+            className="flex h-7 w-7 items-center justify-center rounded-vault border border-vault-border text-vault-muted2 hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd] dark:text-[#99a3b0]"
             aria-label="Volver"
           >
             ‹
           </button>
           <div>
             <h1 className="page-title capitalize">{periodLabel}</h1>
-            <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+            <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
               {account && <span className="mr-2">{getAccountDisplayName(account)} ·</span>}
               {transactions?.length ?? 0} transacciones
             </p>
@@ -268,7 +268,7 @@ export function UploadTransactionsPage() {
       {upload?.status === "review" && (
         <div className="mb-4 flex items-center gap-3 rounded-vault border border-vault-yellow/30 bg-vault-yellow/5 px-4 py-3 text-sm">
           <span className="font-medium text-vault-yellow">Pendiente de revisión</span>
-          <span className="text-vault-muted2 dark:text-[#8b949e]">
+          <span className="text-vault-muted2 dark:text-[#99a3b0]">
             Corregí las categorías y luego confirmá.
           </span>
           <button
@@ -280,7 +280,7 @@ export function UploadTransactionsPage() {
             {confirming ? "Confirmando..." : "Confirmar revisión"}
           </button>
           {changedCount > 0 && (
-            <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+            <span className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
               (guardá los cambios primero)
             </span>
           )}
@@ -289,20 +289,20 @@ export function UploadTransactionsPage() {
 
       {ccSummary && (
         <div className="mb-4 grid grid-cols-4 gap-3">
-          <div className="rounded-vault border border-vault-border bg-white px-4 py-3 dark:border-[#30363d] dark:bg-[#161b22]">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+          <div className="rounded-vault border border-vault-border bg-white px-4 py-3 dark:border-[#68727f] dark:bg-[#474e58]">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
               Consumos ARS
             </p>
-            <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+            <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6eaf0]">
               {formatCurrency(ccSummary.arsConsumos, "ARS")}
             </p>
           </div>
           {ccSummary.usdConsumos > 0 && (
-            <div className="rounded-vault border border-vault-border bg-white px-4 py-3 dark:border-[#30363d] dark:bg-[#161b22]">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+            <div className="rounded-vault border border-vault-border bg-white px-4 py-3 dark:border-[#68727f] dark:bg-[#474e58]">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                 Consumos USD
               </p>
-              <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+              <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6eaf0]">
                 {formatCurrency(ccSummary.usdConsumos, "USD")}
               </p>
             </div>
@@ -313,25 +313,25 @@ export function UploadTransactionsPage() {
                 Impuestos y percepciones
               </p>
               {ccSummary.arsImpuestos > 0 && (
-                <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+                <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6eaf0]">
                   {formatCurrency(ccSummary.arsImpuestos, "ARS")}
                 </p>
               )}
               {ccSummary.usdImpuestos > 0 && (
-                <p className="text-sm tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                <p className="text-sm tabular-nums text-vault-muted2 dark:text-[#99a3b0]">
                   {formatCurrency(ccSummary.usdImpuestos, "USD")}
                 </p>
               )}
             </div>
           )}
-          <div className="rounded-vault border border-vault-accent/30 bg-vault-accent/5 px-4 py-3 dark:border-vault-accent/20">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-accent/70">
+          <div className="rounded-vault border border-vault-accent/30 dark:border-[#5b7bc4]/30 bg-vault-accent/5 px-4 py-3 dark:border-vault-accent/20 dark:border-[#5b7bc4]/20">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-vault-accent/70 dark:text-[#93c5fd]/70">
               Total ARS
             </p>
-            <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6edf3]">
+            <p className="text-base font-medium tabular-nums text-vault-text dark:text-[#e6eaf0]">
               {formatCurrency(ccSummary.arsTotal, "ARS")}
             </p>
-            <p className="mt-0.5 text-[10px] text-vault-muted2 dark:text-[#8b949e]">
+            <p className="mt-0.5 text-[10px] text-vault-muted2 dark:text-[#99a3b0]">
               consumos + impuestos
             </p>
           </div>
@@ -340,14 +340,14 @@ export function UploadTransactionsPage() {
 
       <div className="card-vault overflow-hidden p-0">
         {!transactions || transactions.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <div className="flex items-center justify-center py-12 text-sm text-vault-muted2 dark:text-[#99a3b0]">
             No hay transacciones para este extracto.
           </div>
         ) : isCreditCard ? (
           /* ── Formato tarjeta: Fecha | Descripción | Monto | Moneda | Categoría ── */
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-vault-border dark:border-[#30363d]">
+              <tr className="border-b border-vault-border dark:border-[#68727f]">
                 <th className={thClass}>Fecha</th>
                 <th className={thClass}>Descripción</th>
                 <th className={thClassRight}>Monto</th>
@@ -362,27 +362,27 @@ export function UploadTransactionsPage() {
                 return (
                   <tr
                     key={txn.id}
-                    className={`border-b border-vault-border/50 last:border-b-0 transition-colors dark:border-[#30363d]/50 ${
+                    className={`border-b border-vault-border/50 last:border-b-0 transition-colors dark:border-[#68727f]/50 ${
                       isEdited
                         ? "bg-vault-accent/5"
                         : i % 2 !== 0
-                          ? "bg-vault-s2/40 dark:bg-[#161b22]/40"
+                          ? "bg-vault-s2/40 dark:bg-[#474e58]/40"
                           : ""
                     }`}
                   >
-                    <td className="whitespace-nowrap px-4 py-2.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       {new Date(txn.date + "T12:00:00").toLocaleDateString("es-AR", {
                         day: "2-digit",
                         month: "short",
                       })}
                     </td>
                     <td className="max-w-[260px] px-4 py-2.5">
-                      <p className="truncate text-vault-text dark:text-[#e6edf3]">
+                      <p className="truncate text-vault-text dark:text-[#e6eaf0]">
                         {txn.description}
                       </p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums">
-                      <span className="text-vault-text dark:text-[#e6edf3]">
+                      <span className="text-vault-text dark:text-[#e6eaf0]">
                         {txn.currency === "USD" && txn.amount_usd != null
                           ? formatCurrency(Math.abs(txn.amount_usd), "USD")
                           : formatCurrency(Math.abs(txn.amount_ars), "ARS")}
@@ -392,8 +392,8 @@ export function UploadTransactionsPage() {
                       <span
                         className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
                           txn.currency === "USD"
-                            ? "bg-vault-accent/10 text-vault-accent"
-                            : "bg-vault-s2 text-vault-muted2 dark:bg-[#21262d] dark:text-[#8b949e]"
+                            ? "bg-vault-accent/10 text-vault-accent dark:text-[#93c5fd]"
+                            : "bg-vault-s2 text-vault-muted2 dark:bg-[#505862] dark:text-[#99a3b0]"
                         }`}
                       >
                         {txn.currency}
@@ -415,7 +415,7 @@ export function UploadTransactionsPage() {
           /* ── Formato libro diario: Fecha | Descripción | Debe | Haber | Saldo | Categoría ── */
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-vault-border dark:border-[#30363d]">
+              <tr className="border-b border-vault-border dark:border-[#68727f]">
                 <th className={thClass}>Fecha</th>
                 <th className={thClass}>Descripción</th>
                 <th className={thClassRight}>Débito</th>
@@ -430,11 +430,11 @@ export function UploadTransactionsPage() {
                   ? (upload?.opening_balance_usd ?? 0)
                   : (upload?.opening_balance_ars ?? 0);
                 return openingBalance !== 0 ? (
-                  <tr className="border-b border-vault-border/50 dark:border-[#30363d]/50 bg-vault-s2/50 dark:bg-[#21262d]/40">
-                    <td className="whitespace-nowrap px-4 py-2 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                  <tr className="border-b border-vault-border/50 dark:border-[#68727f]/50 bg-vault-s2/50 dark:bg-[#505862]/40">
+                    <td className="whitespace-nowrap px-4 py-2 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       —
                     </td>
-                    <td className="px-4 py-2 text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    <td className="px-4 py-2 text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                       Saldo anterior
                     </td>
                     <td />
@@ -457,22 +457,22 @@ export function UploadTransactionsPage() {
                 return (
                   <tr
                     key={txn.id}
-                    className={`border-b border-vault-border/50 last:border-b-0 transition-colors dark:border-[#30363d]/50 ${
+                    className={`border-b border-vault-border/50 last:border-b-0 transition-colors dark:border-[#68727f]/50 ${
                       isEdited
                         ? "bg-vault-accent/5"
                         : i % 2 !== 0
-                          ? "bg-vault-s2/40 dark:bg-[#161b22]/40"
+                          ? "bg-vault-s2/40 dark:bg-[#474e58]/40"
                           : ""
                     }`}
                   >
-                    <td className="whitespace-nowrap px-4 py-2.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       {new Date(txn.date + "T12:00:00").toLocaleDateString("es-AR", {
                         day: "2-digit",
                         month: "short",
                       })}
                     </td>
                     <td className="max-w-[220px] px-4 py-2.5">
-                      <p className="truncate text-vault-text dark:text-[#e6edf3]">
+                      <p className="truncate text-vault-text dark:text-[#e6eaf0]">
                         {txn.description}
                       </p>
                     </td>

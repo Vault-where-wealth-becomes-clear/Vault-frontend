@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-vault-bg text-vault-text font-sans antialiased dark:bg-[#0d1117] dark:text-[#e6edf3];
+    @apply bg-vault-bg text-vault-text font-sans antialiased dark:bg-[#383d46] dark:text-[#e6eaf0];
     font-size: 14px;
     font-weight: 400;
   }
@@ -19,14 +19,14 @@
 @layer components {
   /* Títulos de página */
   .page-title {
-    @apply text-[22px] text-vault-text leading-tight dark:text-[#e6edf3];
+    @apply text-[22px] text-vault-text leading-tight dark:text-[#e6eaf0];
     font-weight: 300;
     letter-spacing: -0.01em;
   }
 
   /* Subtítulos de sección */
   .section-label {
-    @apply text-[11px] uppercase dark:text-[#6e7681];
+    @apply text-[11px] uppercase dark:text-[#7a8390];
     font-weight: 500;
     letter-spacing: 0.08em;
     color: #94a3b8;
@@ -34,7 +34,7 @@
 
   /* Números grandes: patrimonio etc */
   .number-hero {
-    @apply text-[36px] text-vault-text leading-none dark:text-[#e6edf3];
+    @apply text-[36px] text-vault-text leading-none dark:text-[#e6eaf0];
     font-weight: 300;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -49,20 +49,20 @@
   .btn-ghost {
     @apply inline-flex items-center justify-center rounded-lg border border-vault-border2
       bg-transparent px-4 py-2.5 text-sm font-medium text-vault-text transition-colors
-      hover:border-vault-accent/60 hover:text-vault-accent disabled:cursor-not-allowed disabled:opacity-40
-      dark:border-[#30363d] dark:text-[#e6edf3];
+      hover:border-vault-accent/60 dark:hover:border-[#5b7bc4]/60 hover:text-vault-accent dark:hover:text-[#93c5fd] disabled:cursor-not-allowed disabled:opacity-40
+      dark:border-[#68727f] dark:text-[#e6eaf0];
   }
 
   .input-vault {
     @apply w-full rounded-lg border border-vault-border2 bg-white px-3.5 py-2.5 text-sm
       text-vault-text placeholder:text-vault-muted outline-none transition-colors
-      focus:border-vault-accent focus:ring-2 focus:ring-vault-accent/10
-      dark:bg-[#21262d] dark:border-[#30363d] dark:text-[#e6edf3];
+      focus:border-vault-accent dark:focus:border-[#5b7bc4] focus:ring-2 focus:ring-vault-accent/10
+      dark:bg-[#505862] dark:border-[#68727f] dark:text-[#e6eaf0];
   }
 
   .card-vault {
     @apply rounded-xl border border-vault-border bg-vault-s1 p-6
       shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]
-      dark:bg-[#161b22] dark:border-[#30363d] dark:text-[#e6edf3];
+      dark:bg-[#474e58] dark:border-[#68727f] dark:text-[#e6eaf0];
   }
 }

@@ -80,7 +80,7 @@ export function ProfilePage() {
     <div className="p-7">
       <div className="mb-6">
         <h1 className="page-title">Mi perfil</h1>
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Tu cuenta, preferencias y datos personales.
         </p>
       </div>
@@ -89,12 +89,12 @@ export function ProfilePage() {
       <div className="card-vault mb-5 max-w-md">
         <h2 className="mb-3 section-label">Mi cuenta</h2>
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
-            Email: <span className="text-vault-text dark:text-[#e6edf3]">{user?.email}</span>
+          <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
+            Email: <span className="text-vault-text dark:text-[#e6eaf0]">{user?.email}</span>
           </p>
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Plan:{" "}
-            <span className="text-vault-text dark:text-[#e6edf3]">
+            <span className="text-vault-text dark:text-[#e6eaf0]">
               {PLAN_LABELS[user?.plan ?? "free"]}
             </span>
           </p>
@@ -102,16 +102,16 @@ export function ProfilePage() {
           {/* Contraseña */}
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+              <span className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
                 Contraseña:{" "}
-                <span className="text-vault-text dark:text-[#e6edf3]">
+                <span className="text-vault-text dark:text-[#e6eaf0]">
                   {showPassword ? "No disponible — usá cambiar contraseña" : "••••••••"}
                 </span>
               </span>
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="ml-2 flex-shrink-0 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
+                className="ml-2 flex-shrink-0 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#99a3b0]"
                 title={showPassword ? "Ocultar" : "Mostrar"}
               >
                 {showPassword ? "○" : "●"}
@@ -126,14 +126,14 @@ export function ProfilePage() {
                   setPasswordError(null);
                   setPasswordSuccess(false);
                 }}
-                className="mt-2 text-xs text-vault-accent transition-colors hover:underline"
+                className="mt-2 text-xs text-vault-accent dark:text-[#93c5fd] transition-colors hover:underline"
               >
                 Cambiar contraseña
               </button>
             ) : (
               <form
                 onSubmit={handleChangePassword}
-                className="mt-3 flex flex-col gap-2 rounded-lg border border-vault-border p-3 dark:border-[#30363d]"
+                className="mt-3 flex flex-col gap-2 rounded-lg border border-vault-border p-3 dark:border-[#68727f]"
               >
                 <input
                   type="password"
@@ -179,7 +179,7 @@ export function ProfilePage() {
                       setNewPassword("");
                       setConfirmPassword("");
                     }}
-                    className="ml-auto text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
+                    className="ml-auto text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#99a3b0]"
                   >
                     Cancelar
                   </button>
@@ -195,13 +195,13 @@ export function ProfilePage() {
         <button
           type="button"
           onClick={() => setRulesOpen((v) => !v)}
-          className={`flex w-full cursor-pointer items-center justify-between px-4 py-4 transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
-            rulesOpen ? "border-b border-vault-border dark:border-[#30363d]" : ""
+          className={`flex w-full cursor-pointer items-center justify-between px-4 py-4 transition-colors hover:bg-vault-s2 dark:hover:bg-[#505862] ${
+            rulesOpen ? "border-b border-vault-border dark:border-[#68727f]" : ""
           }`}
         >
           <h2 className="section-label">Reglas de categorización</h2>
           <span
-            className="inline-block text-sm text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+            className="inline-block text-sm text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
             style={{ transform: rulesOpen ? "rotate(90deg)" : "none" }}
           >
             ›
@@ -220,7 +220,7 @@ export function ProfilePage() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex w-full items-center gap-2.5 rounded-lg border border-vault-border bg-[#f1f5f9] px-3.5 py-2.5 text-sm font-medium text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:bg-[#21262d] dark:text-[#8b949e] dark:hover:text-[#e6edf3]"
+          className="flex w-full items-center gap-2.5 rounded-lg border border-vault-border bg-[#e9edf3] px-3.5 py-2.5 text-sm font-medium text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#68727f] dark:bg-[#505862] dark:text-[#99a3b0] dark:hover:text-[#e6eaf0]"
         >
           <span>{theme === "dark" ? "☀" : "☽"}</span>
           {theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
@@ -233,7 +233,7 @@ export function ProfilePage() {
         style={{ marginTop: "32px" }}
       >
         <h2 className="mb-2 section-label text-vault-red">⚠ Zona de riesgo</h2>
-        <p className="mb-3 text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="mb-3 text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Esta acción elimina permanentemente tu cuenta, todas tus cuentas financieras, movimientos
           históricos y archivos subidos. No existe forma de recuperar estos datos.
         </p>
@@ -254,14 +254,14 @@ export function ProfilePage() {
           </button>
         ) : (
           <div className="rounded-vault border border-vault-red/20 bg-vault-red/5 px-3.5 py-3">
-            <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">
+            <p className="mb-3 text-xs text-vault-text dark:text-[#e6eaf0]">
               Esto elimina tu cuenta y todos tus datos de forma permanente. No se puede deshacer.
             </p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
               >
                 Cancelar
               </button>

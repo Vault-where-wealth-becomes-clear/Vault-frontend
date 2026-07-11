@@ -98,23 +98,23 @@ export function CarteraComposicion({
               onClick={() => setExpandedTipo(isOpen ? null : group.tipo)}
               className="flex w-full items-center gap-2 py-1 text-left text-xs"
             >
-              <span className="w-24 flex-shrink-0 truncate text-vault-muted2 dark:text-[#8b949e]">
+              <span className="w-24 flex-shrink-0 truncate text-vault-muted2 dark:text-[#99a3b0]">
                 {TIPO_LABELS[group.tipo] ?? group.tipo}
               </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-vault-s2 dark:bg-[#21262d]">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-vault-s2 dark:bg-[#505862]">
                 <div
                   className="h-full rounded-full bg-vault-accent"
                   style={{ width: `${Math.min(pct * 100, 100)}%` }}
                 />
               </div>
-              <span className="w-24 flex-shrink-0 text-right tabular-nums text-vault-text dark:text-[#e6edf3]">
+              <span className="w-24 flex-shrink-0 text-right tabular-nums text-vault-text dark:text-[#e6eaf0]">
                 {formatDisplay(groupDisplayValue, displayCurrency)}
               </span>
-              <span className="w-10 flex-shrink-0 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+              <span className="w-10 flex-shrink-0 text-right tabular-nums text-vault-muted2 dark:text-[#99a3b0]">
                 {(pct * 100).toFixed(0)}%
               </span>
               <span
-                className="flex-shrink-0 text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+                className="flex-shrink-0 text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
                 style={{ transform: isOpen ? "rotate(90deg)" : "none" }}
               >
                 ›
@@ -122,10 +122,10 @@ export function CarteraComposicion({
             </button>
 
             {isOpen && (
-              <div className="mb-2 ml-2 overflow-x-auto border-l-2 border-vault-border pl-3 dark:border-[#30363d]">
+              <div className="mb-2 ml-2 overflow-x-auto border-l-2 border-vault-border pl-3 dark:border-[#68727f]">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-vault-border/50 text-left text-vault-muted2 dark:border-[#30363d]/50 dark:text-[#8b949e]">
+                    <tr className="border-b border-vault-border/50 text-left text-vault-muted2 dark:border-[#68727f]/50 dark:text-[#99a3b0]">
                       <th className="py-1 pr-2 font-normal">Ticker</th>
                       <th className="py-1 pr-2 font-normal">Detalle</th>
                       <th className="py-1 pr-2 font-normal">Cantidad</th>
@@ -147,19 +147,19 @@ export function CarteraComposicion({
                       return (
                         <tr
                           key={`${pos.instrumento}-${i}`}
-                          className="border-b border-vault-border/30 last:border-0 dark:border-[#30363d]/30"
+                          className="border-b border-vault-border/30 last:border-0 dark:border-[#68727f]/30"
                         >
-                          <td className="py-1.5 pr-2 text-vault-text dark:text-[#e6edf3]">
+                          <td className="py-1.5 pr-2 text-vault-text dark:text-[#e6eaf0]">
                             {ticker ?? "—"}
                           </td>
-                          <td className="py-1.5 pr-2 text-vault-muted2 dark:text-[#8b949e]">
+                          <td className="py-1.5 pr-2 text-vault-muted2 dark:text-[#99a3b0]">
                             {detalle}
                           </td>
                           <td className="py-1.5 pr-2 tabular-nums">{pos.cantidad}</td>
                           <td className="py-1.5 pr-2 tabular-nums">
                             {formatDisplay(precioDisplay, displayCurrency)}
                           </td>
-                          <td className="py-1.5 pr-2 tabular-nums text-vault-text dark:text-[#e6edf3]">
+                          <td className="py-1.5 pr-2 tabular-nums text-vault-text dark:text-[#e6eaf0]">
                             {formatDisplay(totalDisplay, displayCurrency)}
                           </td>
                           <td className="py-1.5 pr-2 tabular-nums">

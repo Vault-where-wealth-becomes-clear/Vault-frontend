@@ -40,7 +40,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isBootstrapping) {
     return (
-      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#8b949e]">
+      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#99a3b0]">
         Restaurando sesión...
       </div>
     );

@@ -30,17 +30,17 @@ function DonutTooltip({
   const usd = item.amount_usd ?? (mepRate ? item.amount_ars / mepRate : null);
   return (
     <div
-      className="rounded-lg border border-vault-border bg-white px-3 py-2.5 shadow-lg dark:border-[#30363d] dark:bg-[#161b22]"
+      className="rounded-lg border border-vault-border bg-white px-3 py-2.5 shadow-lg dark:border-[#68727f] dark:bg-[#474e58]"
       style={{ fontSize: 12 }}
     >
-      <p className="mb-1.5 font-semibold text-vault-text dark:text-[#e6edf3]">{item.category}</p>
-      <p className="text-vault-text dark:text-[#e6edf3]">
+      <p className="mb-1.5 font-semibold text-vault-text dark:text-[#e6eaf0]">{item.category}</p>
+      <p className="text-vault-text dark:text-[#e6eaf0]">
         {formatCurrency(item.amount_ars, "ARS")}
       </p>
       {usd != null && (
-        <p className="text-vault-muted2 dark:text-[#8b949e]">{formatCurrency(usd, "USD")}</p>
+        <p className="text-vault-muted2 dark:text-[#99a3b0]">{formatCurrency(usd, "USD")}</p>
       )}
-      <p className="mt-1 text-vault-muted2 dark:text-[#8b949e]">{item.pct_of_total.toFixed(1)}%</p>
+      <p className="mt-1 text-vault-muted2 dark:text-[#99a3b0]">{item.pct_of_total.toFixed(1)}%</p>
     </div>
   );
 }
@@ -86,21 +86,21 @@ export function BreakdownChart({ data, mepRate }: BreakdownChartProps) {
       <div className="min-w-[180px] text-center sm:text-left">
         {selected ? (
           <>
-            <p className="text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+            <p className="text-sm font-medium text-vault-text dark:text-[#e6eaf0]">
               {selected.category}
             </p>
             <p
-              className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6edf3]"
+              className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6eaf0]"
               style={{ fontSize: 28 }}
             >
               {formatCurrency(selected.amount_ars, "ARS")}
             </p>
-            <p className="mt-0.5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+            <p className="mt-0.5 text-sm text-vault-muted2 dark:text-[#99a3b0]">
               {selected.pct_of_total.toFixed(1)}% del total
             </p>
           </>
         ) : (
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Tocá una sección para ver el detalle.
           </p>
         )}

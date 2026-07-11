@@ -179,17 +179,17 @@ function PieTooltip({
   const p = payload[0].payload;
   return (
     <div
-      className="rounded-lg border border-vault-border bg-white px-3 py-2 shadow-lg dark:border-[#30363d] dark:bg-[#161b22]"
+      className="rounded-lg border border-vault-border bg-white px-3 py-2 shadow-lg dark:border-[#68727f] dark:bg-[#474e58]"
       style={{ fontSize: 12 }}
     >
-      <p className="mb-1 font-semibold text-vault-text dark:text-[#e6edf3]">{p.category}</p>
-      <p className="text-vault-text dark:text-[#e6edf3]">{formatCurrency(p.amount_ars, "ARS")}</p>
+      <p className="mb-1 font-semibold text-vault-text dark:text-[#e6eaf0]">{p.category}</p>
+      <p className="text-vault-text dark:text-[#e6eaf0]">{formatCurrency(p.amount_ars, "ARS")}</p>
       {p.amount_usd > 0 && (
-        <p className="text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-vault-muted2 dark:text-[#99a3b0]">
           {formatCurrency(p.amount_usd, "USD")}
         </p>
       )}
-      <p className="text-vault-muted2 dark:text-[#8b949e]">{p.pct.toFixed(1)}%</p>
+      <p className="text-vault-muted2 dark:text-[#99a3b0]">{p.pct.toFixed(1)}%</p>
     </div>
   );
 }
@@ -359,7 +359,7 @@ export function InstallmentsPage() {
       {/* ── Header ── */}
       <div className="mb-6">
         <h1 className="page-title">Historial de gastos</h1>
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Acumulado histórico por categoría — tocá una categoría para ver el detalle por mes.
         </p>
       </div>
@@ -367,18 +367,18 @@ export function InstallmentsPage() {
       {!hasTransactions && !isLoading && (
         <div className="card-vault mb-5 flex flex-col items-center py-10 text-center">
           <span
-            className="text-vault-muted2 dark:text-[#8b949e]"
+            className="text-vault-muted2 dark:text-[#99a3b0]"
             style={{ fontSize: 32, marginBottom: 12 }}
           >
             ◷
           </span>
           <p
-            className="text-vault-text dark:text-[#e6edf3]"
+            className="text-vault-text dark:text-[#e6eaf0]"
             style={{ fontSize: 16, fontWeight: 300, marginBottom: 8 }}
           >
             No hay movimientos registrados
           </p>
-          <p className="mb-6 max-w-xs text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="mb-6 max-w-xs text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Subí tu primer extracto o registrá un movimiento manual para empezar a ver tu historial.
           </p>
           <div className="flex gap-3">
@@ -396,13 +396,13 @@ export function InstallmentsPage() {
       <div className="card-vault mb-5">
         <h2 className="section-label mb-4">Gastos acumulados</h2>
         {isLoading ? (
-          <div className="flex h-24 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <div className="flex h-24 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Cargando...
           </div>
         ) : acumuladoTotal > 0 ? (
           <>
             <p
-              className="mb-5 tabular-nums font-light text-vault-text dark:text-[#e6edf3]"
+              className="mb-5 tabular-nums font-light text-vault-text dark:text-[#e6eaf0]"
               style={{ fontSize: 36 }}
             >
               {formatCurrency(acumuladoTotal, "ARS")}
@@ -446,28 +446,28 @@ export function InstallmentsPage() {
                       <button
                         type="button"
                         onClick={() => toggleCategory(item.category)}
-                        className="flex w-full items-center gap-2 border-b border-vault-border/50 py-2.5 text-left text-xs transition-colors hover:bg-vault-s2/30 dark:border-[#30363d]/50"
+                        className="flex w-full items-center gap-2 border-b border-vault-border/50 py-2.5 text-left text-xs transition-colors hover:bg-vault-s2/30 dark:border-[#68727f]/50"
                       >
                         <span
                           className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
                           style={{ background: color }}
                         />
-                        <span className="flex-1 text-vault-text dark:text-[#e6edf3]">
+                        <span className="flex-1 text-vault-text dark:text-[#e6eaf0]">
                           {item.category}
                         </span>
-                        <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                        <span className="tabular-nums text-vault-text dark:text-[#e6eaf0]">
                           {formatCurrency(item.amount_ars, "ARS")}
                         </span>
                         {item.amount_usd > 0 && (
-                          <span className="tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                          <span className="tabular-nums text-vault-muted2 dark:text-[#99a3b0]">
                             {formatCurrency(item.amount_usd, "USD")}
                           </span>
                         )}
-                        <span className="w-10 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                        <span className="w-10 text-right tabular-nums text-vault-muted2 dark:text-[#99a3b0]">
                           {item.pct.toFixed(1)}%
                         </span>
                         <span
-                          className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#8b949e]"
+                          className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#99a3b0]"
                           style={{ transform: isExpanded ? "rotate(90deg)" : "none" }}
                         >
                           ›
@@ -476,9 +476,9 @@ export function InstallmentsPage() {
 
                       {/* Nivel 1: totales por mes */}
                       {isExpanded && (
-                        <div className="border-b border-vault-border/50 bg-vault-s2/30 px-2 pb-2 pt-1.5 dark:border-[#30363d]/50 dark:bg-[#21262d]/30">
+                        <div className="border-b border-vault-border/50 bg-vault-s2/30 px-2 pb-2 pt-1.5 dark:border-[#68727f]/50 dark:bg-[#505862]/30">
                           {monthlyForCategory.length === 0 ? (
-                            <p className="py-2 text-center text-xs text-vault-muted2 dark:text-[#8b949e]">
+                            <p className="py-2 text-center text-xs text-vault-muted2 dark:text-[#99a3b0]">
                               Sin movimientos para esta categoría.
                             </p>
                           ) : (
@@ -489,21 +489,21 @@ export function InstallmentsPage() {
                                   <button
                                     type="button"
                                     onClick={() => toggleMonth(m.month)}
-                                    className="flex w-full items-center gap-2 rounded py-1.5 text-left text-xs transition-colors hover:bg-vault-s2/60 dark:hover:bg-[#21262d]/60"
+                                    className="flex w-full items-center gap-2 rounded py-1.5 text-left text-xs transition-colors hover:bg-vault-s2/60 dark:hover:bg-[#505862]/60"
                                   >
-                                    <span className="flex-1 capitalize text-vault-text dark:text-[#e6edf3]">
+                                    <span className="flex-1 capitalize text-vault-text dark:text-[#e6eaf0]">
                                       {formatMonthLabel(m.month)}
                                     </span>
-                                    <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                                    <span className="tabular-nums text-vault-text dark:text-[#e6eaf0]">
                                       {formatCurrency(m.amount_ars, "ARS")}
                                     </span>
                                     {m.amount_usd > 0 && (
-                                      <span className="tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                                      <span className="tabular-nums text-vault-muted2 dark:text-[#99a3b0]">
                                         {formatCurrency(m.amount_usd, "USD")}
                                       </span>
                                     )}
                                     <span
-                                      className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#8b949e]"
+                                      className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#99a3b0]"
                                       style={{
                                         transform: monthExpanded ? "rotate(90deg)" : "none",
                                       }}
@@ -514,7 +514,7 @@ export function InstallmentsPage() {
 
                                   {/* Nivel 2: libro diario (débito/crédito) */}
                                   {monthExpanded && (
-                                    <div className="mb-1 rounded-vault bg-white px-2 pb-2 pt-1 dark:bg-[#161b22]">
+                                    <div className="mb-1 rounded-vault bg-white px-2 pb-2 pt-1 dark:bg-[#474e58]">
                                       <CategoryLedger transactions={ledgerTransactions} />
                                     </div>
                                   )}
@@ -531,7 +531,7 @@ export function InstallmentsPage() {
             </div>
           </>
         ) : (
-          <div className="flex h-20 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <div className="flex h-20 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Sin gastos registrados.
           </div>
         )}
@@ -542,13 +542,13 @@ export function InstallmentsPage() {
         <button
           type="button"
           onClick={() => setCategoriesOpen((v) => !v)}
-          className={`flex w-full cursor-pointer items-center justify-between px-4 py-4 transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${
-            categoriesOpen ? "border-b border-vault-border dark:border-[#30363d]" : ""
+          className={`flex w-full cursor-pointer items-center justify-between px-4 py-4 transition-colors hover:bg-vault-s2 dark:hover:bg-[#505862] ${
+            categoriesOpen ? "border-b border-vault-border dark:border-[#68727f]" : ""
           }`}
         >
           <h2 className="section-label">Mis categorías</h2>
           <span
-            className="inline-block text-sm text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+            className="inline-block text-sm text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
             style={{ transform: categoriesOpen ? "rotate(90deg)" : "none" }}
           >
             ›
@@ -576,7 +576,7 @@ export function InstallmentsPage() {
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteCat(cat)}
-                      className="absolute right-5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                      className="absolute right-5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#99a3b0]"
                       title="Eliminar"
                     >
                       ×
@@ -584,13 +584,13 @@ export function InstallmentsPage() {
                     <button
                       type="button"
                       onClick={() => openEdit(cat, true)}
-                      className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-s2 hover:text-vault-text group-hover:opacity-100 dark:text-[#8b949e]"
+                      className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-s2 hover:text-vault-text group-hover:opacity-100 dark:text-[#99a3b0]"
                       title="Editar"
                     >
                       ✎
                     </button>
                     <span style={{ fontSize: 20 }}>{getEmoji(cat)}</span>
-                    <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">
+                    <span className="text-xs font-medium text-vault-text dark:text-[#e6eaf0]">
                       {cat}
                     </span>
                     <span
@@ -611,7 +611,7 @@ export function InstallmentsPage() {
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteCat(cat.name)}
-                      className="absolute right-5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#8b949e]"
+                      className="absolute right-5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[11px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-red/10 hover:text-vault-red group-hover:opacity-100 dark:text-[#99a3b0]"
                       title="Eliminar"
                     >
                       ×
@@ -619,13 +619,13 @@ export function InstallmentsPage() {
                     <button
                       type="button"
                       onClick={() => openEdit(cat.name, false)}
-                      className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-s2 hover:text-vault-text group-hover:opacity-100 dark:text-[#8b949e]"
+                      className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-vault-muted2 opacity-0 transition-all hover:bg-vault-s2 hover:text-vault-text group-hover:opacity-100 dark:text-[#99a3b0]"
                       title="Editar"
                     >
                       ✎
                     </button>
                     <span style={{ fontSize: 20 }}>{getEmoji(cat.name)}</span>
-                    <span className="text-xs font-medium text-vault-text dark:text-[#e6edf3]">
+                    <span className="text-xs font-medium text-vault-text dark:text-[#e6eaf0]">
                       {cat.name}
                     </span>
                     <span
@@ -639,7 +639,7 @@ export function InstallmentsPage() {
             <button
               type="button"
               onClick={() => setCreateModalOpen(true)}
-              className="rounded-vault border border-vault-accent/40 bg-vault-accent/10 px-3 py-1.5 text-xs font-medium text-vault-accent hover:bg-vault-accent/20"
+              className="rounded-vault border border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 px-3 py-1.5 text-xs font-medium text-vault-accent dark:text-[#93c5fd] hover:bg-vault-accent/20"
             >
               + Nueva categoría
             </button>
@@ -654,13 +654,13 @@ export function InstallmentsPage() {
           onClick={() => setConfirmDeleteCat(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#68727f] dark:bg-[#474e58]"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6eaf0]">
               Eliminar "{confirmDeleteCat}"
             </h3>
-            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#99a3b0]">
               {deleteImpact > 0 ? (
                 <>
                   <span className="font-medium text-vault-yellow">
@@ -676,7 +676,7 @@ export function InstallmentsPage() {
               <button
                 type="button"
                 onClick={() => setConfirmDeleteCat(null)}
-                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
               >
                 Cancelar
               </button>
@@ -699,14 +699,14 @@ export function InstallmentsPage() {
           onClick={() => setCreateModalOpen(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#68727f] dark:bg-[#474e58]"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-4 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+            <h3 className="mb-4 text-base font-medium text-vault-text dark:text-[#e6eaf0]">
               Nueva categoría
             </h3>
             <div className="mb-3">
-              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                 Nombre
               </label>
               <input
@@ -724,18 +724,18 @@ export function InstallmentsPage() {
               />
             </div>
             <div className="mb-3">
-              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                 Color
               </label>
               <input
                 type="color"
                 value={newCatColor}
                 onChange={(e) => setNewCatColor(e.target.value)}
-                className="h-9 w-full cursor-pointer rounded-vault border border-vault-border p-1 dark:border-[#30363d]"
+                className="h-9 w-full cursor-pointer rounded-vault border border-vault-border p-1 dark:border-[#68727f]"
               />
             </div>
             <div className="mb-5">
-              <label className="mb-2 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              <label className="mb-2 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                 Ícono — <span className="text-base">{newCatEmoji}</span>
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 4 }}>
@@ -744,7 +744,7 @@ export function InstallmentsPage() {
                     key={emoji}
                     type="button"
                     onClick={() => setNewCatEmoji(emoji)}
-                    className={`flex items-center justify-center rounded-lg py-1 text-base transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${newCatEmoji === emoji ? "bg-vault-accent/10 ring-1 ring-vault-accent/40" : ""}`}
+                    className={`flex items-center justify-center rounded-lg py-1 text-base transition-colors hover:bg-vault-s2 dark:hover:bg-[#505862] ${newCatEmoji === emoji ? "bg-vault-accent/10 ring-1 ring-vault-accent/40" : ""}`}
                   >
                     {emoji}
                   </button>
@@ -755,7 +755,7 @@ export function InstallmentsPage() {
               <button
                 type="button"
                 onClick={() => setCreateModalOpen(false)}
-                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
               >
                 Cancelar
               </button>
@@ -779,15 +779,15 @@ export function InstallmentsPage() {
           onClick={() => setEditingCat(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#68727f] dark:bg-[#474e58]"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-4 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+            <h3 className="mb-4 text-base font-medium text-vault-text dark:text-[#e6eaf0]">
               Editar "{editingCat.name}"
             </h3>
             {!editingCat.isDefault && (
               <div className="mb-3">
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                   Nombre
                 </label>
                 <input
@@ -800,18 +800,18 @@ export function InstallmentsPage() {
               </div>
             )}
             <div className="mb-3">
-              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                 Color
               </label>
               <input
                 type="color"
                 value={editColor}
                 onChange={(e) => setEditColor(e.target.value)}
-                className="h-9 w-full cursor-pointer rounded-vault border border-vault-border p-1 dark:border-[#30363d]"
+                className="h-9 w-full cursor-pointer rounded-vault border border-vault-border p-1 dark:border-[#68727f]"
               />
             </div>
             <div className="mb-5">
-              <label className="mb-2 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              <label className="mb-2 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                 Ícono — <span className="text-base">{editEmoji}</span>
               </label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 4 }}>
@@ -820,7 +820,7 @@ export function InstallmentsPage() {
                     key={emoji}
                     type="button"
                     onClick={() => setEditEmoji(emoji)}
-                    className={`flex items-center justify-center rounded-lg py-1 text-base transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d] ${editEmoji === emoji ? "bg-vault-accent/10 ring-1 ring-vault-accent/40" : ""}`}
+                    className={`flex items-center justify-center rounded-lg py-1 text-base transition-colors hover:bg-vault-s2 dark:hover:bg-[#505862] ${editEmoji === emoji ? "bg-vault-accent/10 ring-1 ring-vault-accent/40" : ""}`}
                   >
                     {emoji}
                   </button>
@@ -831,7 +831,7 @@ export function InstallmentsPage() {
               <button
                 type="button"
                 onClick={() => setEditingCat(null)}
-                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
               >
                 Cancelar
               </button>

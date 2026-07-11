@@ -18,7 +18,7 @@ export function SettingsPage() {
     <div className="p-7">
       <div className="mb-6">
         <h1 className="page-title">Configuración</h1>
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Preferencias generales de la aplicación.
         </p>
       </div>
@@ -41,7 +41,7 @@ export function SettingsPage() {
             Guardar
           </button>
         </div>
-        <p className="mt-2 text-xs text-vault-muted2 dark:text-[#8b949e]">
+        <p className="mt-2 text-xs text-vault-muted2 dark:text-[#99a3b0]">
           El idioma afecta los formatos de fecha y moneda.
         </p>
       </div>
@@ -63,7 +63,7 @@ export function SettingsPage() {
             Guardar
           </button>
         </div>
-        <p className="mt-2 text-xs text-vault-muted2 dark:text-[#8b949e]">
+        <p className="mt-2 text-xs text-vault-muted2 dark:text-[#99a3b0]">
           Todos los totales del tablero se mostrarán en esta moneda.
         </p>
       </div>
@@ -78,14 +78,14 @@ export function SettingsPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                <p className="text-sm font-medium text-vault-text dark:text-[#e6eaf0]">
                   Alertas de patrimonio
                 </p>
-                <span className="rounded-full bg-vault-s2 px-2 py-0.5 text-[10px] font-medium text-vault-muted2 dark:bg-[#21262d] dark:text-[#8b949e]">
+                <span className="rounded-full bg-vault-s2 px-2 py-0.5 text-[10px] font-medium text-vault-muted2 dark:bg-[#505862] dark:text-[#99a3b0]">
                   Próximamente
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
+              <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                 Cuando tu patrimonio cae más del 10%
               </p>
             </div>
@@ -94,7 +94,7 @@ export function SettingsPage() {
               disabled
               onClick={() => setNotifPatrimonio((v) => !v)}
               className={`relative mt-0.5 h-5 w-9 flex-shrink-0 cursor-not-allowed rounded-full transition-colors opacity-40 ${
-                notifPatrimonio ? "bg-vault-accent" : "bg-vault-border2 dark:bg-[#484f58]"
+                notifPatrimonio ? "bg-vault-accent" : "bg-vault-border2 dark:bg-[#7c8795]"
               }`}
             >
               <span
@@ -108,14 +108,14 @@ export function SettingsPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                <p className="text-sm font-medium text-vault-text dark:text-[#e6eaf0]">
                   Recordatorio mensual
                 </p>
-                <span className="rounded-full bg-vault-s2 px-2 py-0.5 text-[10px] font-medium text-vault-muted2 dark:bg-[#21262d] dark:text-[#8b949e]">
+                <span className="rounded-full bg-vault-s2 px-2 py-0.5 text-[10px] font-medium text-vault-muted2 dark:bg-[#505862] dark:text-[#99a3b0]">
                   Próximamente
                 </span>
               </div>
-              <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
+              <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                 Para subir tu extracto del mes
               </p>
             </div>
@@ -124,7 +124,7 @@ export function SettingsPage() {
               disabled
               onClick={() => setNotifRecordatorio((v) => !v)}
               className={`relative mt-0.5 h-5 w-9 flex-shrink-0 cursor-not-allowed rounded-full transition-colors opacity-40 ${
-                notifRecordatorio ? "bg-vault-accent" : "bg-vault-border2 dark:bg-[#484f58]"
+                notifRecordatorio ? "bg-vault-accent" : "bg-vault-border2 dark:bg-[#7c8795]"
               }`}
             >
               <span
@@ -140,11 +140,11 @@ export function SettingsPage() {
       {/* PRIVACIDAD Y DATOS */}
       <div className="card-vault mb-5 max-w-md">
         <h2 className="mb-3 section-label">Privacidad y datos</h2>
-        <p className="mb-3 text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="mb-3 text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Vault no comparte ni vende tus datos. Los PDFs se eliminan del servidor una vez
           procesados.
         </p>
-        <a href="#" className="text-sm text-vault-accent transition-colors hover:underline">
+        <a href="#" className="text-sm text-vault-accent dark:text-[#93c5fd] transition-colors hover:underline">
           Ver política de privacidad
         </a>
       </div>
@@ -152,7 +152,7 @@ export function SettingsPage() {
       {/* ZONA PELIGROSA */}
       <div className="card-vault max-w-md border-vault-red/30">
         <h2 className="mb-3 section-label text-vault-red">Zona peligrosa</h2>
-        <p className="mb-4 text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="mb-4 text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Elimina todos tus uploads, transacciones y snapshots financieros. Tus cuentas y
           configuración se conservan.
         </p>
@@ -181,7 +181,7 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="rounded-vault border border-vault-border px-3.5 py-2 text-sm text-vault-muted2 hover:text-vault-text dark:text-[#8b949e]"
+                className="rounded-vault border border-vault-border px-3.5 py-2 text-sm text-vault-muted2 hover:text-vault-text dark:text-[#99a3b0]"
               >
                 Cancelar
               </button>

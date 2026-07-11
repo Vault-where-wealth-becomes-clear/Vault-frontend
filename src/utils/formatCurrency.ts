@@ -1,8 +1,18 @@
+import { usePrivacyStore } from "@/store/privacy.store";
+
+/** Máscara fija (no depende de la cantidad de dígitos del monto real, para no
+ * filtrar información por el largo del string) usada por cualquier pantalla
+ * cuando el usuario activó "tapar importes". */
+export const HIDDEN_AMOUNT = "*****";
+
 export function formatCurrency(
   amount: number,
   currency: "ARS" | "USD" = "ARS",
   compact = false
 ): string {
+  if (usePrivacyStore.getState().hideAmounts) {
+    return HIDDEN_AMOUNT;
+  }
   const opts: Intl.NumberFormatOptions = {
     style: "currency",
     currency,

@@ -149,8 +149,8 @@ const STATUS_LABELS: Record<UploadStatus, string> = {
 };
 
 const STATUS_COLORS: Record<UploadStatus, string> = {
-  pending: "text-vault-muted2 dark:text-[#8b949e]",
-  processing: "text-vault-accent",
+  pending: "text-vault-muted2 dark:text-[#99a3b0]",
+  processing: "text-vault-accent dark:text-[#93c5fd]",
   review: "text-vault-yellow",
   done: "text-vault-green",
   error: "text-vault-red",
@@ -515,13 +515,13 @@ export function AccountsPage() {
             if (el) groupRefs.current.set(groupKey, el);
             else groupRefs.current.delete(groupKey);
           }}
-          className="overflow-hidden rounded-lg border border-vault-border dark:border-[#30363d]"
+          className="overflow-hidden rounded-lg border border-vault-border dark:border-[#68727f]"
         >
           {/* Group header */}
           <button
             type="button"
             onClick={() => toggleGroup(groupKey)}
-            className="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d]"
+            className="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors hover:bg-vault-s2 dark:hover:bg-[#505862]"
           >
             <div
               className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[11px] font-bold"
@@ -529,14 +529,14 @@ export function AccountsPage() {
             >
               {initials}
             </div>
-            <span className="flex-1 text-left font-medium text-vault-text dark:text-[#e6edf3]">
+            <span className="flex-1 text-left font-medium text-vault-text dark:text-[#e6eaf0]">
               {groupKey}
             </span>
-            <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+            <span className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
               {groupAccounts.length} {groupAccounts.length === 1 ? "cuenta" : "cuentas"}
             </span>
             <span
-              className="inline-block text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+              className="inline-block text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
               style={{ transform: expanded ? "rotate(90deg)" : "none" }}
             >
               ›
@@ -545,31 +545,31 @@ export function AccountsPage() {
 
           {/* Group body */}
           {expanded && (
-            <div className="border-t border-vault-border dark:border-[#30363d]">
+            <div className="border-t border-vault-border dark:border-[#68727f]">
               <ul>
                 {groupAccounts.map((account) => (
                   <li
                     key={account.id}
                     onClick={() => handleAccountClick(account)}
-                    className={`flex cursor-pointer items-center justify-between gap-3 border-b border-vault-border/50 py-2.5 pr-3.5 text-sm transition-colors last:border-b-0 dark:border-[#30363d]/50 ${
+                    className={`flex cursor-pointer items-center justify-between gap-3 border-b border-vault-border/50 py-2.5 pr-3.5 text-sm transition-colors last:border-b-0 dark:border-[#68727f]/50 ${
                       selectedAccount?.id === account.id && rightPanel === "upload"
-                        ? "bg-[#eff6ff] dark:bg-[#1d2d50]"
-                        : "hover:bg-vault-s2 dark:hover:bg-[#21262d]"
+                        ? "bg-[#e3ecfc] dark:bg-[#24365f]"
+                        : "hover:bg-vault-s2 dark:hover:bg-[#505862]"
                     }`}
                     style={{ paddingLeft: "52px" }}
                   >
                     <div>
-                      <p className="font-medium text-vault-text dark:text-[#e6edf3]">
+                      <p className="font-medium text-vault-text dark:text-[#e6eaf0]">
                         {getAccountDisplayName(account)}
                       </p>
-                      <p className="flex items-center text-xs text-vault-muted2 dark:text-[#8b949e]">
+                      <p className="flex items-center text-xs text-vault-muted2 dark:text-[#99a3b0]">
                         {ACCOUNT_TYPE_LABELS[account.account_type]}
                         {account.account_type === "cash" && (
                           <span
-                            className="ml-1 dark:bg-[#1d2d50] dark:text-[#93c5fd]"
+                            className="ml-1 dark:bg-[#24365f] dark:text-[#93c5fd]"
                             style={{
                               fontSize: 10,
-                              background: "#eff6ff",
+                              background: "#e3ecfc",
                               color: "#1e3a8a",
                               borderRadius: 4,
                               padding: "1px 6px",
@@ -587,7 +587,7 @@ export function AccountsPage() {
                       );
                       return (
                         displayBalance !== null && (
-                          <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                          <span className="tabular-nums text-vault-text dark:text-[#e6eaf0]">
                             {formatCurrency(displayBalance, account.currency)}
                           </span>
                         )
@@ -603,7 +603,7 @@ export function AccountsPage() {
                     e.stopPropagation();
                     openNewAccountForm(groupKey);
                   }}
-                  className="flex w-full items-center gap-1.5 border-t border-vault-border/50 py-2 pr-3.5 text-xs text-vault-muted2 transition-colors hover:text-vault-accent dark:border-[#30363d]/50 dark:text-[#8b949e]"
+                  className="flex w-full items-center gap-1.5 border-t border-vault-border/50 py-2 pr-3.5 text-xs text-vault-muted2 transition-colors hover:text-vault-accent dark:hover:text-[#93c5fd] dark:border-[#68727f]/50 dark:text-[#99a3b0]"
                   style={{ paddingLeft: "52px" }}
                 >
                   + Agregar cuenta en {groupKey}
@@ -619,7 +619,7 @@ export function AccountsPage() {
     <div className="p-7">
       <div className="mb-6">
         <h1 className="page-title">Mis cuentas</h1>
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Registrá tus cuentas bancarias, broker y billeteras digitales para que Vault las consolide
           en tu tablero y calcule tu patrimonio total.
         </p>
@@ -634,19 +634,19 @@ export function AccountsPage() {
               type="button"
               onClick={() => openNewAccountForm()}
               title="Agregar entidad financiera"
-              className="flex h-6 w-6 items-center justify-center rounded-full border border-vault-border2 text-sm text-vault-muted2 dark:text-[#8b949e] transition-colors hover:border-vault-accent hover:text-vault-accent"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-vault-border2 text-sm text-vault-muted2 dark:text-[#99a3b0] transition-colors hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd]"
             >
               +
             </button>
           </div>
 
           {isLoading ? (
-            <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</p>
+            <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">Cargando...</p>
           ) : !accounts || accounts.length === 0 ? (
             <button
               type="button"
               onClick={() => openNewAccountForm()}
-              className="flex w-full flex-col items-center gap-3 py-10 text-vault-muted2 dark:text-[#8b949e] transition-colors hover:text-vault-text"
+              className="flex w-full flex-col items-center gap-3 py-10 text-vault-muted2 dark:text-[#99a3b0] transition-colors hover:text-vault-text"
             >
               <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-vault-border2 text-2xl">
                 +
@@ -660,7 +660,7 @@ export function AccountsPage() {
               )}
               {comitenteGroups.size > 0 && (
                 <div className="flex flex-col gap-2">
-                  <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                  <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                     Cuenta comitente
                   </p>
                   {renderAccountGroups(comitenteGroups)}
@@ -674,15 +674,15 @@ export function AccountsPage() {
         {rightPanel === "upload" && selectedAccount && selectedAccount.account_type === "cash" && (
           <div className="card-vault flex flex-col overflow-hidden p-0">
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
+            <div className="flex items-start justify-between border-b border-vault-border px-4 py-4 dark:border-[#68727f]">
               <div>
                 <p
-                  className="leading-snug text-vault-text dark:text-[#e6edf3]"
+                  className="leading-snug text-vault-text dark:text-[#e6eaf0]"
                   style={{ fontWeight: 300, fontSize: "16px" }}
                 >
                   {getAccountDisplayName(selectedAccount)}
                 </p>
-                <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#8b949e]">Efectivo</p>
+                <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#99a3b0]">Efectivo</p>
               </div>
               <button
                 type="button"
@@ -690,19 +690,19 @@ export function AccountsPage() {
                   setRightPanel("none");
                   setSelectedAccount(null);
                 }}
-                className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
+                className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#99a3b0]"
               >
                 ✕
               </button>
             </div>
 
             {/* Saldo */}
-            <div className="border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+            <div className="border-b border-vault-border px-4 py-4 dark:border-[#68727f]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                 Saldo actual
               </p>
               <p
-                className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6edf3]"
+                className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6eaf0]"
                 style={{ fontSize: 28 }}
               >
                 {formatCurrency(selectedAccount.current_balance, selectedAccount.currency)}
@@ -713,11 +713,11 @@ export function AccountsPage() {
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {accountSubView === "default" && (
                 <>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                     Últimas transacciones
                   </p>
                   {recentTransactions.length === 0 ? (
-                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       Sin transacciones registradas.
                     </p>
                   ) : (
@@ -725,19 +725,19 @@ export function AccountsPage() {
                       {recentTransactions.map((t) => (
                         <li
                           key={t.id}
-                          className="flex items-baseline gap-2 border-b border-vault-border/30 py-1.5 text-xs last:border-0 dark:border-[#30363d]/30"
+                          className="flex items-baseline gap-2 border-b border-vault-border/30 py-1.5 text-xs last:border-0 dark:border-[#68727f]/30"
                         >
-                          <span className="w-[46px] flex-shrink-0 text-vault-muted2 dark:text-[#8b949e]">
+                          <span className="w-[46px] flex-shrink-0 text-vault-muted2 dark:text-[#99a3b0]">
                             {new Date(t.date + "T12:00:00").toLocaleDateString("es-AR", {
                               day: "2-digit",
                               month: "short",
                             })}
                           </span>
-                          <span className="min-w-0 flex-1 truncate text-vault-muted2 dark:text-[#8b949e]">
+                          <span className="min-w-0 flex-1 truncate text-vault-muted2 dark:text-[#99a3b0]">
                             {t.description}
                           </span>
                           <span
-                            className={`flex-shrink-0 tabular-nums font-medium ${t.amount_ars >= 0 ? "text-vault-green" : "text-vault-text dark:text-[#e6edf3]"}`}
+                            className={`flex-shrink-0 tabular-nums font-medium ${t.amount_ars >= 0 ? "text-vault-green" : "text-vault-text dark:text-[#e6eaf0]"}`}
                           >
                             {t.amount_ars >= 0 ? "+" : ""}
                             {formatCurrency(t.amount_ars, selectedAccount.currency)}
@@ -756,14 +756,14 @@ export function AccountsPage() {
                         key={type}
                         type="button"
                         onClick={() => setManualType(type)}
-                        className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${manualType === type ? "bg-vault-accent text-white" : "border border-vault-border2 text-vault-muted2 dark:border-[#484f58] dark:text-[#8b949e]"}`}
+                        className={`flex-1 rounded-lg px-4 py-2 text-sm transition-colors ${manualType === type ? "bg-vault-accent text-white" : "border border-vault-border2 text-vault-muted2 dark:border-[#7c8795] dark:text-[#99a3b0]"}`}
                       >
                         {type === "ingreso" ? "↑ Ingreso" : "↓ Egreso"}
                       </button>
                     ))}
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                       Fecha
                     </label>
                     <input
@@ -775,7 +775,7 @@ export function AccountsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                       Descripción
                     </label>
                     <input
@@ -787,7 +787,7 @@ export function AccountsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                       Categoría
                     </label>
                     <select
@@ -806,7 +806,7 @@ export function AccountsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                       Monto ({selectedAccount.currency})
                     </label>
                     <input
@@ -846,7 +846,7 @@ export function AccountsPage() {
             </div>
 
             {/* Buttons */}
-            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#68727f]">
               <button
                 type="button"
                 onClick={() =>
@@ -854,8 +854,8 @@ export function AccountsPage() {
                 }
                 className={`w-full rounded-vault border py-1.5 text-xs font-medium transition-colors ${
                   accountSubView === "movement"
-                    ? "border-vault-border text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
-                    : "border-vault-accent/40 bg-vault-accent/10 text-vault-accent hover:bg-vault-accent/20"
+                    ? "border-vault-border text-vault-muted2 hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
+                    : "border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 text-vault-accent dark:text-[#93c5fd] hover:bg-vault-accent/20"
                 }`}
               >
                 {accountSubView === "movement" ? "Cancelar" : "+ Registrar movimiento"}
@@ -863,14 +863,14 @@ export function AccountsPage() {
             </div>
 
             {/* Edit section */}
-            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#68727f]">
               <button
                 type="button"
                 onClick={() => {
                   setEditOpen(!editOpen);
                   setConfirmDelete(false);
                 }}
-                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
+                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#99a3b0]"
               >
                 Editar cuenta
                 <span
@@ -883,7 +883,7 @@ export function AccountsPage() {
               {editOpen && (
                 <form onSubmit={handleEditSubmit} className="mt-3 flex flex-col gap-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                       Referencia
                     </label>
                     <input
@@ -894,7 +894,7 @@ export function AccountsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                       Notas
                     </label>
                     <textarea
@@ -928,7 +928,7 @@ export function AccountsPage() {
                     </button>
                   ) : (
                     <div className="rounded-vault border border-vault-red/20 bg-vault-red/5 px-3.5 py-3">
-                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">
+                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6eaf0]">
                         ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede
                         deshacer.
                       </p>
@@ -936,7 +936,7 @@ export function AccountsPage() {
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(false)}
-                          className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                          className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
                         >
                           Cancelar
                         </button>
@@ -965,15 +965,15 @@ export function AccountsPage() {
         {rightPanel === "upload" && selectedAccount && selectedAccount.account_type !== "cash" && (
           <div className="card-vault flex flex-col overflow-hidden p-0">
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
+            <div className="flex items-start justify-between border-b border-vault-border px-4 py-4 dark:border-[#68727f]">
               <div>
                 <p
-                  className="leading-snug text-vault-text dark:text-[#e6edf3]"
+                  className="leading-snug text-vault-text dark:text-[#e6eaf0]"
                   style={{ fontWeight: 300, fontSize: "18px" }}
                 >
                   {getAccountDisplayName(selectedAccount)}
                 </p>
-                <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                <p className="mt-0.5 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                   {ACCOUNT_TYPE_LABELS[selectedAccount.account_type]}
                 </p>
               </div>
@@ -983,7 +983,7 @@ export function AccountsPage() {
                   setRightPanel("none");
                   setSelectedAccount(null);
                 }}
-                className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
+                className="mt-0.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#99a3b0]"
               >
                 ✕
               </button>
@@ -993,8 +993,8 @@ export function AccountsPage() {
                 ahorro): tarjetas de crédito, broker y cripto no tienen un saldo
                 de cuenta que tenga sentido mostrar acá. */}
             {LEDGER_ACCOUNT_TYPES.has(selectedAccount.account_type) && (
-              <div className="border-b border-vault-border px-4 py-4 dark:border-[#30363d]">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+              <div className="border-b border-vault-border px-4 py-4 dark:border-[#68727f]">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                   Saldo final (
                   {latestClosingBalanceByAccount.has(selectedAccount.id)
                     ? "último período cargado"
@@ -1002,7 +1002,7 @@ export function AccountsPage() {
                   )
                 </p>
                 <p
-                  className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6edf3]"
+                  className="mt-1 tabular-nums font-light text-vault-text dark:text-[#e6eaf0]"
                   style={{ fontSize: 28 }}
                 >
                   {latestClosingBalanceByAccount.has(selectedAccount.id)
@@ -1023,11 +1023,11 @@ export function AccountsPage() {
               )}
               {accountSubView === "default" && selectedAccount.account_type !== "broker" && (
                 <>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                     Últimas transacciones
                   </p>
                   {recentTransactions.length === 0 ? (
-                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       Sin transacciones registradas.
                     </p>
                   ) : (
@@ -1035,19 +1035,19 @@ export function AccountsPage() {
                       {recentTransactions.map((t) => (
                         <li
                           key={t.id}
-                          className="flex items-baseline gap-2 border-b border-vault-border/30 py-1.5 text-xs last:border-0 dark:border-[#30363d]/30"
+                          className="flex items-baseline gap-2 border-b border-vault-border/30 py-1.5 text-xs last:border-0 dark:border-[#68727f]/30"
                         >
-                          <span className="w-[46px] flex-shrink-0 text-vault-muted2 dark:text-[#8b949e]">
+                          <span className="w-[46px] flex-shrink-0 text-vault-muted2 dark:text-[#99a3b0]">
                             {new Date(t.date + "T12:00:00").toLocaleDateString("es-AR", {
                               day: "2-digit",
                               month: "short",
                             })}
                           </span>
-                          <span className="min-w-0 flex-1 truncate text-vault-muted2 dark:text-[#8b949e]">
+                          <span className="min-w-0 flex-1 truncate text-vault-muted2 dark:text-[#99a3b0]">
                             {t.description}
                           </span>
                           <span
-                            className={`flex-shrink-0 tabular-nums font-medium ${t.amount_ars >= 0 ? "text-vault-green" : "text-vault-text dark:text-[#e6edf3]"}`}
+                            className={`flex-shrink-0 tabular-nums font-medium ${t.amount_ars >= 0 ? "text-vault-green" : "text-vault-text dark:text-[#e6eaf0]"}`}
                           >
                             {t.amount_ars >= 0 ? "+" : ""}
                             {formatCurrency(t.amount_ars, selectedAccount.currency)}
@@ -1059,13 +1059,13 @@ export function AccountsPage() {
                 </>
               )}
               {accountSubView === "default" && activeStatus && (
-                <div className="mt-3 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2.5 text-xs dark:bg-[#21262d]">
+                <div className="mt-3 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2.5 text-xs dark:bg-[#505862]">
                   Último envío:{" "}
                   <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
                     {STATUS_LABELS[activeStatus.status]}
                   </span>
                   {activeStatus.status === "review" && (
-                    <Link to={`/uploads/${activeStatus.upload_id}/review`} className="ml-2 text-vault-accent hover:underline">Revisar →</Link>
+                    <Link to={`/uploads/${activeStatus.upload_id}/review`} className="ml-2 text-vault-accent dark:text-[#93c5fd] hover:underline">Revisar →</Link>
                   )}
                 </div>
               )}
@@ -1074,7 +1074,7 @@ export function AccountsPage() {
               {accountSubView === "upload" && (
                 <form onSubmit={handleUploadSubmit} className="flex flex-col gap-3">
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                       Mes
                     </label>
                     <input
@@ -1088,7 +1088,7 @@ export function AccountsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                       Archivo
                     </label>
                     <input
@@ -1102,14 +1102,14 @@ export function AccountsPage() {
                       <div className="flex items-center justify-between rounded-lg border border-vault-green/30 bg-vault-green/5 px-3.5 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-vault-green">✓</span>
-                          <span className="max-w-[140px] truncate text-xs text-vault-text dark:text-[#e6edf3]">
+                          <span className="max-w-[140px] truncate text-xs text-vault-text dark:text-[#e6eaf0]">
                             {uploadFile.name}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setUploadFile(null)}
-                          className="ml-2 text-xs text-vault-muted2 hover:text-vault-red dark:text-[#8b949e]"
+                          className="ml-2 text-xs text-vault-muted2 hover:text-vault-red dark:text-[#99a3b0]"
                         >
                           ×
                         </button>
@@ -1127,14 +1127,14 @@ export function AccountsPage() {
                           const f = e.dataTransfer.files?.[0];
                           if (f) setUploadFile(f);
                         }}
-                        className={`flex flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-5 text-center transition-colors ${isDragging ? "border-vault-accent bg-vault-accent/5" : "border-vault-border2 dark:border-[#484f58]"}`}
+                        className={`flex flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-5 text-center transition-colors ${isDragging ? "border-vault-accent dark:border-[#5b7bc4] bg-vault-accent/5" : "border-vault-border2 dark:border-[#7c8795]"}`}
                       >
-                        <span className="text-xl text-vault-muted2 dark:text-[#8b949e]">↑</span>
-                        <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">PDF o XLSX</p>
+                        <span className="text-xl text-vault-muted2 dark:text-[#99a3b0]">↑</span>
+                        <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">PDF o XLSX</p>
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]"
+                          className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd] dark:border-[#7c8795] dark:text-[#99a3b0]"
                         >
                           Seleccionar
                         </button>
@@ -1154,7 +1154,7 @@ export function AccountsPage() {
                     {submitUpload.isPending ? "Subiendo..." : "Subir extracto"}
                   </button>
                   {activeStatus && (
-                    <div className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm dark:bg-[#21262d]">
+                    <div className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm dark:bg-[#505862]">
                       Estado:{" "}
                       <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
                         {STATUS_LABELS[activeStatus.status]}
@@ -1162,7 +1162,7 @@ export function AccountsPage() {
                       {activeStatus.status === "review" && (
                         <Link
                           to={`/uploads/${activeStatus.upload_id}/review`}
-                          className="mt-1 block text-xs text-vault-accent hover:underline"
+                          className="mt-1 block text-xs text-vault-accent dark:text-[#93c5fd] hover:underline"
                         >
                           Revisar transacciones →
                         </Link>
@@ -1183,11 +1183,11 @@ export function AccountsPage() {
               {/* Periods list */}
               {accountSubView === "periods" && (
                 <>
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                     Períodos cargados
                   </p>
                   {!accountUploads || accountUploads.length === 0 ? (
-                    <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       Todavía no hay extractos subidos.
                     </p>
                   ) : (
@@ -1207,8 +1207,8 @@ export function AccountsPage() {
                               : u.status === "error"
                                 ? "text-vault-red"
                                 : u.status === "processing"
-                                  ? "text-vault-accent"
-                                  : "text-vault-muted2 dark:text-[#8b949e]";
+                                  ? "text-vault-accent dark:text-[#93c5fd]"
+                                  : "text-vault-muted2 dark:text-[#99a3b0]";
                         const statusLabel =
                           u.status === "done"
                             ? "Completado"
@@ -1222,10 +1222,10 @@ export function AccountsPage() {
                         return (
                           <li
                             key={u.id}
-                            className="flex items-center justify-between rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 dark:bg-[#21262d]"
+                            className="flex items-center justify-between rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 dark:bg-[#505862]"
                           >
                             <div>
-                              <p className="text-xs font-medium capitalize text-vault-text dark:text-[#e6edf3]">
+                              <p className="text-xs font-medium capitalize text-vault-text dark:text-[#e6eaf0]">
                                 {label}
                               </p>
                               <p className={`text-[11px] ${statusColor}`}>{statusLabel}</p>
@@ -1237,7 +1237,7 @@ export function AccountsPage() {
                                   className={
                                     u.status === "review"
                                       ? "rounded border border-vault-yellow/40 bg-vault-yellow/10 px-2.5 py-0.5 text-[11px] font-medium text-vault-yellow hover:bg-vault-yellow/20"
-                                      : "rounded border border-vault-border px-2.5 py-0.5 text-[11px] text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#30363d] dark:text-[#8b949e]"
+                                      : "rounded border border-vault-border px-2.5 py-0.5 text-[11px] text-vault-muted2 hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd] dark:border-[#68727f] dark:text-[#99a3b0]"
                                   }
                                 >
                                   Ver
@@ -1252,7 +1252,7 @@ export function AccountsPage() {
                                     e.stopPropagation();
                                     setDeleteUploadId(u.id);
                                   }}
-                                  className="flex h-5 w-5 items-center justify-center rounded text-[13px] text-vault-muted2 hover:bg-vault-red/10 hover:text-vault-red dark:text-[#8b949e]"
+                                  className="flex h-5 w-5 items-center justify-center rounded text-[13px] text-vault-muted2 hover:bg-vault-red/10 hover:text-vault-red dark:text-[#99a3b0]"
                                   title="Eliminar extracto"
                                 >
                                   ×
@@ -1269,7 +1269,7 @@ export function AccountsPage() {
             </div>
 
             {/* Buttons */}
-            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#68727f]">
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -1278,7 +1278,7 @@ export function AccountsPage() {
                     setUploadFile(null);
                     setUploadError(null);
                   }}
-                  className={`flex-1 rounded-vault border py-1.5 text-xs font-medium transition-colors ${accountSubView === "upload" ? "border-vault-border text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]" : "border-vault-accent/40 bg-vault-accent/10 text-vault-accent hover:bg-vault-accent/20"}`}
+                  className={`flex-1 rounded-vault border py-1.5 text-xs font-medium transition-colors ${accountSubView === "upload" ? "border-vault-border text-vault-muted2 hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]" : "border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 text-vault-accent dark:text-[#93c5fd] hover:bg-vault-accent/20"}`}
                 >
                   {accountSubView === "upload" ? "Cancelar" : "+ Subir extracto"}
                 </button>
@@ -1287,7 +1287,7 @@ export function AccountsPage() {
                   onClick={() =>
                     setAccountSubView((v) => (v === "periods" ? "default" : "periods"))
                   }
-                  className={`flex-1 rounded-vault border py-1.5 text-xs font-medium transition-colors ${accountSubView === "periods" ? "border-vault-accent/40 bg-vault-accent/10 text-vault-accent" : "border-vault-border2 text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]"}`}
+                  className={`flex-1 rounded-vault border py-1.5 text-xs font-medium transition-colors ${accountSubView === "periods" ? "border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 text-vault-accent dark:text-[#93c5fd]" : "border-vault-border2 text-vault-muted2 hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd] dark:border-[#7c8795] dark:text-[#99a3b0]"}`}
                 >
                   Ver todos los períodos
                 </button>
@@ -1295,14 +1295,14 @@ export function AccountsPage() {
             </div>
 
             {/* Edit section */}
-            <div className="border-t border-vault-border px-4 py-3 dark:border-[#30363d]">
+            <div className="border-t border-vault-border px-4 py-3 dark:border-[#68727f]">
               <button
                 type="button"
                 onClick={() => {
                   setEditOpen(!editOpen);
                   setConfirmDelete(false);
                 }}
-                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
+                className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#99a3b0]"
               >
                 Editar cuenta
                 <span
@@ -1315,7 +1315,7 @@ export function AccountsPage() {
               {editOpen && (
                 <form onSubmit={handleEditSubmit} className="mt-3 flex flex-col gap-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                       Referencia
                     </label>
                     <input
@@ -1326,7 +1326,7 @@ export function AccountsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                       Notas
                     </label>
                     <textarea
@@ -1360,7 +1360,7 @@ export function AccountsPage() {
                     </button>
                   ) : (
                     <div className="rounded-vault border border-vault-red/20 bg-vault-red/5 px-3.5 py-3">
-                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6edf3]">
+                      <p className="mb-3 text-xs text-vault-text dark:text-[#e6eaf0]">
                         ¿Confirmás que querés eliminar esta cuenta? Esta acción no se puede
                         deshacer.
                       </p>
@@ -1368,7 +1368,7 @@ export function AccountsPage() {
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(false)}
-                          className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                          className="flex-1 rounded border border-vault-border py-1.5 text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
                         >
                           Cancelar
                         </button>
@@ -1401,7 +1401,7 @@ export function AccountsPage() {
               <button
                 type="button"
                 onClick={() => setRightPanel("none")}
-                className="text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#8b949e]"
+                className="text-xs text-vault-muted2 transition-colors hover:text-vault-text dark:text-[#99a3b0]"
               >
                 ✕
               </button>
@@ -1409,7 +1409,7 @@ export function AccountsPage() {
 
             <form onSubmit={handleCreateSubmit} className="flex flex-col gap-3">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                   Tipo
                 </label>
                 <select
@@ -1427,7 +1427,7 @@ export function AccountsPage() {
 
               {showEntidad && (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                     Entidad
                   </label>
                   <select
@@ -1450,7 +1450,7 @@ export function AccountsPage() {
 
               {showIssuer && (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                     Emisor
                   </label>
                   <select
@@ -1468,7 +1468,7 @@ export function AccountsPage() {
 
               {showReference && (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                     Referencia
                   </label>
                   <input
@@ -1483,7 +1483,7 @@ export function AccountsPage() {
 
               {showMoneda && (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                     Moneda
                   </label>
                   <select
@@ -1499,7 +1499,7 @@ export function AccountsPage() {
 
               {showSaldoActual && (
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                  <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                     Saldo actual
                   </label>
                   <input
@@ -1513,7 +1513,7 @@ export function AccountsPage() {
               )}
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                   Notas (opcional)
                 </label>
                 <textarea
@@ -1547,15 +1547,15 @@ export function AccountsPage() {
           onClick={() => setDeleteUploadId(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#68727f] dark:bg-[#474e58]"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6eaf0]">
               Eliminar extracto
             </h3>
-            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#99a3b0]">
               Vas a eliminar el extracto de{" "}
-              <span className="font-medium capitalize text-vault-text dark:text-[#e6edf3]">
+              <span className="font-medium capitalize text-vault-text dark:text-[#e6eaf0]">
                 {deleteUploadLabel}
               </span>
               . Esto borrará todas las transacciones asociadas. ¿Confirmar?
@@ -1564,7 +1564,7 @@ export function AccountsPage() {
               <button
                 type="button"
                 onClick={() => setDeleteUploadId(null)}
-                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
               >
                 Cancelar
               </button>

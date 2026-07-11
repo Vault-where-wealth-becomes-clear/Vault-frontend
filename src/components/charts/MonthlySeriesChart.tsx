@@ -35,10 +35,10 @@ function ChartTooltip({
   if (!active || !payload?.length) return null;
   return (
     <div
-      className="rounded-lg border border-vault-border bg-white px-3 py-2.5 shadow-lg dark:border-[#30363d] dark:bg-[#161b22]"
+      className="rounded-lg border border-vault-border bg-white px-3 py-2.5 shadow-lg dark:border-[#68727f] dark:bg-[#474e58]"
       style={{ fontSize: 12 }}
     >
-      <p className="mb-1.5 font-semibold capitalize text-vault-text dark:text-[#e6edf3]">
+      <p className="mb-1.5 font-semibold capitalize text-vault-text dark:text-[#e6eaf0]">
         {label ? formatPeriod(label) : ""}
       </p>
       {payload
@@ -46,11 +46,11 @@ function ChartTooltip({
         .map((p) => (
           <p
             key={p.dataKey}
-            className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#8b949e]"
+            className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#99a3b0]"
           >
             <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
             {p.name}:{" "}
-            <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+            <span className="font-medium text-vault-text dark:text-[#e6eaf0]">
               {formatCurrency(p.value as number, "USD")}
             </span>
           </p>
@@ -82,7 +82,7 @@ export function MonthlySeriesChart({ data }: MonthlySeriesChartProps) {
         <Legend
           wrapperStyle={{ fontSize: 11 }}
           formatter={(value: string) => (
-            <span className="text-vault-muted2 dark:text-[#8b949e]">{value}</span>
+            <span className="text-vault-muted2 dark:text-[#99a3b0]">{value}</span>
           )}
         />
         {SERIES.map((s) => (

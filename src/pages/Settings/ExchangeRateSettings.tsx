@@ -79,21 +79,21 @@ export function ExchangeRateSettings() {
           type="button"
           onClick={() => setShowInfo((v) => !v)}
           title="De dónde sale el TC automático"
-          className="flex h-4 w-4 items-center justify-center rounded-full border border-vault-border2 text-[10px] text-vault-muted2 transition-colors hover:border-vault-accent hover:text-vault-accent dark:text-[#8b949e]"
+          className="flex h-4 w-4 items-center justify-center rounded-full border border-vault-border2 text-[10px] text-vault-muted2 transition-colors hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd] dark:text-[#99a3b0]"
         >
           ⓘ
         </button>
       </div>
       {showInfo && (
-        <p className="mb-3 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 text-xs text-vault-muted2 dark:border-[#30363d] dark:bg-[#21262d] dark:text-[#8b949e]">
-          Se obtiene de <span className="text-vault-text dark:text-[#e6edf3]">dolarapi.com</span>;
+        <p className="mb-3 rounded-vault border border-vault-border bg-vault-s2 px-3 py-2 text-xs text-vault-muted2 dark:border-[#68727f] dark:bg-[#505862] dark:text-[#99a3b0]">
+          Se obtiene de <span className="text-vault-text dark:text-[#e6eaf0]">dolarapi.com</span>;
           si falla, de{" "}
-          <span className="text-vault-text dark:text-[#e6edf3]">api.argentinadatos.com</span>; si
+          <span className="text-vault-text dark:text-[#e6eaf0]">api.argentinadatos.com</span>; si
           ambas fallan, se usa el último valor cacheado (hasta 1 hora). Siempre podés
           sobreescribirlo a mano.
         </p>
       )}
-      <p className="mb-3 text-xs text-vault-muted2 dark:text-[#8b949e]">
+      <p className="mb-3 text-xs text-vault-muted2 dark:text-[#99a3b0]">
         Se usa para convertir tus movimientos en ARS a USD en el tablero. Sin un TC declarado para
         el período, los totales en USD no son confiables.
       </p>
@@ -109,8 +109,8 @@ export function ExchangeRateSettings() {
           {autoFetching ? "Obteniendo..." : "Obtener MEP actual"}
         </button>
         {autoResult && (
-          <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
-            <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+          <span className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
+            <span className="tabular-nums text-vault-text dark:text-[#e6eaf0]">
               ${autoResult.value.toFixed(2)}
             </span>
             {" · "}
@@ -127,7 +127,7 @@ export function ExchangeRateSettings() {
 
       <form onSubmit={handleSubmit} className="mb-4 flex items-end gap-2">
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
             Período
           </label>
           <input
@@ -139,7 +139,7 @@ export function ExchangeRateSettings() {
           />
         </div>
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
             TC MEP
           </label>
           <input
@@ -176,29 +176,29 @@ export function ExchangeRateSettings() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</p>
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">Cargando...</p>
       ) : !rates || rates.length === 0 ? (
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Todavía no declaraste ningún TC.
         </p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {rates.map((rate) => (
             <li key={rate.id} className="flex items-center justify-between text-xs">
-              <span className="capitalize text-vault-muted2 dark:text-[#8b949e]">
+              <span className="capitalize text-vault-muted2 dark:text-[#99a3b0]">
                 {formatPeriod(rate.period_month)}
               </span>
               <span className="flex items-center gap-2">
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                     rate.source === "api"
-                      ? "bg-vault-accent/10 text-vault-accent"
-                      : "bg-vault-s2 text-vault-muted2 dark:bg-[#21262d] dark:text-[#8b949e]"
+                      ? "bg-vault-accent/10 text-vault-accent dark:text-[#93c5fd]"
+                      : "bg-vault-s2 text-vault-muted2 dark:bg-[#505862] dark:text-[#99a3b0]"
                   }`}
                 >
                   {rate.source === "api" ? "Automático" : "Manual"}
                 </span>
-                <span className="tabular-nums text-vault-text dark:text-[#e6edf3]">
+                <span className="tabular-nums text-vault-text dark:text-[#e6eaf0]">
                   ${rate.mep_rate.toFixed(2)}
                 </span>
               </span>

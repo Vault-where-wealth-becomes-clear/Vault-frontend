@@ -22,7 +22,7 @@ export function CategoryLedger({ transactions }: CategoryLedgerProps) {
 
   if (sorted.length === 0) {
     return (
-      <p className="py-3 text-center text-xs text-vault-muted2 dark:text-[#8b949e]">
+      <p className="py-3 text-center text-xs text-vault-muted2 dark:text-[#99a3b0]">
         Sin movimientos.
       </p>
     );
@@ -47,17 +47,17 @@ export function CategoryLedger({ transactions }: CategoryLedgerProps) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[420px] text-xs">
         <thead>
-          <tr className="border-b border-vault-border/40 dark:border-[#30363d]/40">
-            <th className="py-1.5 pl-1 text-left text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e]">
+          <tr className="border-b border-vault-border/40 dark:border-[#68727f]/40">
+            <th className="py-1.5 pl-1 text-left text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#99a3b0]">
               Fecha
             </th>
-            <th className="py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e]">
+            <th className="py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#99a3b0]">
               Descripción
             </th>
-            <th className="py-1.5 text-right text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e]">
+            <th className="py-1.5 text-right text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#99a3b0]">
               Débito
             </th>
-            <th className="py-1.5 pr-1 text-right text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e]">
+            <th className="py-1.5 pr-1 text-right text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#99a3b0]">
               Crédito
             </th>
           </tr>
@@ -69,12 +69,12 @@ export function CategoryLedger({ transactions }: CategoryLedgerProps) {
             return (
               <tr
                 key={t.id}
-                className="border-b border-vault-border/20 last:border-0 dark:border-[#30363d]/20"
+                className="border-b border-vault-border/20 last:border-0 dark:border-[#68727f]/20"
               >
-                <td className="py-1.5 pl-1 text-vault-muted2 dark:text-[#8b949e]">
+                <td className="py-1.5 pl-1 text-vault-muted2 dark:text-[#99a3b0]">
                   {fmtDate(t.date)}
                 </td>
-                <td className="max-w-[220px] truncate py-1.5 text-vault-muted2 dark:text-[#8b949e]">
+                <td className="max-w-[220px] truncate py-1.5 text-vault-muted2 dark:text-[#99a3b0]">
                   {t.description}
                 </td>
                 <td className="py-1.5 text-right tabular-nums text-vault-red">
@@ -88,10 +88,10 @@ export function CategoryLedger({ transactions }: CategoryLedgerProps) {
           })}
         </tbody>
         <tfoot>
-          <tr className="border-t border-vault-border/50 font-medium dark:border-[#30363d]/50">
+          <tr className="border-t border-vault-border/50 font-medium dark:border-[#68727f]/50">
             <td
               colSpan={2}
-              className="py-1.5 pl-1 text-right text-vault-muted2 dark:text-[#8b949e]"
+              className="py-1.5 pl-1 text-right text-vault-muted2 dark:text-[#99a3b0]"
             >
               Total
             </td>

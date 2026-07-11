@@ -35,14 +35,14 @@ export function CategoryRulesSettings() {
   return (
     <div className="card-vault mb-5 max-w-md">
       <h2 className="mb-1 section-label">Reglas de categorización</h2>
-      <p className="mb-3 text-xs text-vault-muted2 dark:text-[#8b949e]">
+      <p className="mb-3 text-xs text-vault-muted2 dark:text-[#99a3b0]">
         Cuando una descripción contiene esta palabra clave, se asigna la categoría automáticamente
         en la próxima carga.
       </p>
 
       <form onSubmit={handleSubmit} className="mb-4 flex items-end gap-2">
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
             Palabra clave
           </label>
           <input
@@ -54,7 +54,7 @@ export function CategoryRulesSettings() {
           />
         </div>
         <div className="flex-1">
-          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+          <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
             Categoría
           </label>
           <select
@@ -84,19 +84,19 @@ export function CategoryRulesSettings() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</p>
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">Cargando...</p>
       ) : !rules || rules.length === 0 ? (
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Todavía no creaste reglas.</p>
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">Todavía no creaste reglas.</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {rules.map((rule) => (
             <li key={rule.id} className="flex items-center justify-between text-xs">
-              <span className="text-vault-text dark:text-[#e6edf3]">
+              <span className="text-vault-text dark:text-[#e6eaf0]">
                 "{rule.keyword}" → {rule.category}
               </span>
               <button
                 onClick={() => deleteRule.mutate(rule.id)}
-                className="text-vault-muted dark:text-[#8b949e] transition-colors hover:text-vault-red"
+                className="text-vault-muted dark:text-[#99a3b0] transition-colors hover:text-vault-red"
               >
                 &#10005;
               </button>

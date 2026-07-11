@@ -50,8 +50,8 @@ const STATUS_LABELS: Record<UploadStatus, string> = {
 };
 
 const STATUS_COLORS: Record<UploadStatus, string> = {
-  pending: "text-vault-muted2 dark:text-[#8b949e]",
-  processing: "text-vault-accent",
+  pending: "text-vault-muted2 dark:text-[#99a3b0]",
+  processing: "text-vault-accent dark:text-[#93c5fd]",
   review: "text-vault-yellow",
   done: "text-vault-green",
   error: "text-vault-red",
@@ -167,7 +167,7 @@ export function UploadPage() {
     <div className="p-7">
       <div className="mb-6">
         <h1 className="page-title">Cargar extracto</h1>
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Subí un PDF o XLSX de tu cuenta para que la IA lo categorice automáticamente.
         </p>
       </div>
@@ -176,7 +176,7 @@ export function UploadPage() {
       <div className="card-vault mb-5">
         <h2 className="section-label mb-4">Subir nuevo extracto</h2>
         {!accounts || accounts.length === 0 ? (
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
             {isLoadingAccounts
               ? "Cargando cuentas..."
               : 'Primero creá una cuenta en "Mis cuentas" para poder cargar un extracto.'}
@@ -185,7 +185,7 @@ export function UploadPage() {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                   Cuenta
                 </label>
                 <select
@@ -205,7 +205,7 @@ export function UploadPage() {
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                   Mes
                 </label>
                 <input
@@ -218,16 +218,16 @@ export function UploadPage() {
               </div>
             </div>
 
-            <div className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm">
+            <div className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#505862] px-3.5 py-2.5 text-sm">
               {declaredRate ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-vault-muted2 dark:text-[#8b949e]">TC MEP declarado</span>
-                  <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                  <span className="text-vault-muted2 dark:text-[#99a3b0]">TC MEP declarado</span>
+                  <span className="tabular-nums font-medium text-vault-text dark:text-[#e6eaf0]">
                     ${declaredRate.mep_rate.toFixed(2)}
                   </span>
                 </div>
               ) : isLoadingMep ? (
-                <div className="h-4 w-40 animate-pulse rounded bg-vault-border dark:bg-[#30363d]" />
+                <div className="h-4 w-40 animate-pulse rounded bg-vault-border dark:bg-[#68727f]" />
               ) : isMepError && !mepQuote ? (
                 <p className="text-xs text-vault-yellow">
                   No se pudo obtener el TC MEP automáticamente. Ingresalo manualmente abajo.
@@ -235,7 +235,7 @@ export function UploadPage() {
               ) : (
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+                    <label className="text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                       TC MEP (auto)
                       {mepQuote?.fuente === "cache" && (
                         <span
@@ -247,7 +247,7 @@ export function UploadPage() {
                       )}
                     </label>
                     {mepQuote && (
-                      <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                      <span className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                         Actualizado: {formatDateTime(mepQuote.fechaActualizacion)}
                       </span>
                     )}
@@ -268,7 +268,7 @@ export function UploadPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+              <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
                 Archivo
               </label>
               <input
@@ -282,14 +282,14 @@ export function UploadPage() {
                 <div className="flex items-center justify-between rounded-lg border border-vault-green/30 bg-vault-green/5 px-3.5 py-2.5">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-vault-green">✓</span>
-                    <span className="truncate text-xs text-vault-text dark:text-[#e6edf3]">
+                    <span className="truncate text-xs text-vault-text dark:text-[#e6eaf0]">
                       {file.name}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setFile(null)}
-                    className="ml-2 text-xs text-vault-muted2 transition-colors hover:text-vault-red dark:text-[#8b949e]"
+                    className="ml-2 text-xs text-vault-muted2 transition-colors hover:text-vault-red dark:text-[#99a3b0]"
                   >
                     ×
                   </button>
@@ -309,18 +309,18 @@ export function UploadPage() {
                   }}
                   className={`flex flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed px-4 py-8 text-center transition-colors ${
                     isDragging
-                      ? "border-vault-accent bg-vault-accent/5"
-                      : "border-vault-border2 dark:border-[#484f58]"
+                      ? "border-vault-accent dark:border-[#5b7bc4] bg-vault-accent/5"
+                      : "border-vault-border2 dark:border-[#7c8795]"
                   }`}
                 >
-                  <span className="text-2xl text-vault-muted2 dark:text-[#8b949e]">↑</span>
-                  <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+                  <span className="text-2xl text-vault-muted2 dark:text-[#99a3b0]">↑</span>
+                  <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
                     Arrastrá tu PDF o XLSX acá
                   </p>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 transition-colors hover:border-vault-accent hover:text-vault-accent dark:border-[#484f58] dark:text-[#8b949e]"
+                    className="mt-1 rounded border border-vault-border2 px-3 py-1 text-xs text-vault-muted2 transition-colors hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd] dark:border-[#7c8795] dark:text-[#99a3b0]"
                   >
                     Seleccionar archivo
                   </button>
@@ -345,7 +345,7 @@ export function UploadPage() {
         )}
 
         {activeStatus && (
-          <div className="mt-4 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm">
+          <div className="mt-4 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#505862] px-3.5 py-2.5 text-sm">
             Estado:{" "}
             <span className={`font-medium ${STATUS_COLORS[activeStatus.status]}`}>
               {STATUS_LABELS[activeStatus.status]}
@@ -356,7 +356,7 @@ export function UploadPage() {
             {activeStatus.status === "review" && (
               <Link
                 to={`/uploads/${activeStatus.upload_id}/review`}
-                className="mt-2 inline-block text-xs font-medium text-vault-accent hover:underline"
+                className="mt-2 inline-block text-xs font-medium text-vault-accent dark:text-[#93c5fd] hover:underline"
               >
                 Revisar transacciones pendientes →
               </Link>
@@ -378,7 +378,7 @@ export function UploadPage() {
       <div className="card-vault">
         <h2 className="section-label mb-4">Historial de uploads</h2>
         {!uploads || uploads.length === 0 ? (
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Todavía no subiste ningún extracto.
           </p>
         ) : (
@@ -388,21 +388,21 @@ export function UploadPage() {
               return (
                 <div
                   key={periodKey}
-                  className="overflow-hidden rounded-lg border border-vault-border dark:border-[#30363d]"
+                  className="overflow-hidden rounded-lg border border-vault-border dark:border-[#68727f]"
                 >
                   <button
                     type="button"
                     onClick={() => togglePeriod(periodKey)}
-                    className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm transition-colors hover:bg-vault-s2 dark:hover:bg-[#21262d]"
+                    className="flex w-full items-center gap-3 px-3.5 py-2.5 text-sm transition-colors hover:bg-vault-s2 dark:hover:bg-[#505862]"
                   >
-                    <span className="flex-1 text-left font-medium capitalize text-vault-text dark:text-[#e6edf3]">
+                    <span className="flex-1 text-left font-medium capitalize text-vault-text dark:text-[#e6eaf0]">
                       {periodLabel(`${periodKey}-01`)}
                     </span>
-                    <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <span className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       {periodUploads.length} {periodUploads.length === 1 ? "extracto" : "extractos"}
                     </span>
                     <span
-                      className="inline-block text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+                      className="inline-block text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
                       style={{ transform: expanded ? "rotate(90deg)" : "none" }}
                     >
                       ›
@@ -410,16 +410,16 @@ export function UploadPage() {
                   </button>
 
                   {expanded && (
-                    <div className="flex flex-col gap-2 border-t border-vault-border p-2 dark:border-[#30363d]">
+                    <div className="flex flex-col gap-2 border-t border-vault-border p-2 dark:border-[#68727f]">
                       {periodUploads.map((upload) => {
                         const account = accountMap.get(upload.account_id);
                         return (
                           <div
                             key={upload.id}
-                            className="flex items-center gap-3 rounded-vault border border-vault-border bg-vault-s2 px-4 py-3 dark:bg-[#21262d]"
+                            className="flex items-center gap-3 rounded-vault border border-vault-border bg-vault-s2 px-4 py-3 dark:bg-[#505862]"
                           >
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                              <p className="truncate text-sm font-medium text-vault-text dark:text-[#e6eaf0]">
                                 {account ? getAccountDisplayName(account) : "—"}
                               </p>
                               {upload.pending_mep && (
@@ -437,7 +437,7 @@ export function UploadPage() {
                                 className={
                                   upload.status === "review"
                                     ? "flex-shrink-0 rounded border border-vault-yellow/40 bg-vault-yellow/10 px-2.5 py-1 text-xs font-medium text-vault-yellow hover:bg-vault-yellow/20"
-                                    : "flex-shrink-0 rounded border border-vault-border px-2.5 py-1 text-xs text-vault-muted2 hover:border-vault-accent hover:text-vault-accent dark:border-[#30363d] dark:text-[#8b949e]"
+                                    : "flex-shrink-0 rounded border border-vault-border px-2.5 py-1 text-xs text-vault-muted2 hover:border-vault-accent dark:hover:border-[#5b7bc4] hover:text-vault-accent dark:hover:text-[#93c5fd] dark:border-[#68727f] dark:text-[#99a3b0]"
                                 }
                               >
                                 {upload.status === "review" ? "Revisar" : "Ver"}
@@ -450,7 +450,7 @@ export function UploadPage() {
                                 type="button"
                                 onClick={() => setDeleteTarget(upload)}
                                 title="Eliminar extracto"
-                                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-sm text-vault-muted2 transition-colors hover:bg-vault-red/10 hover:text-vault-red dark:text-[#8b949e]"
+                                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-sm text-vault-muted2 transition-colors hover:bg-vault-red/10 hover:text-vault-red dark:text-[#99a3b0]"
                               >
                                 ×
                               </button>
@@ -474,22 +474,22 @@ export function UploadPage() {
           onClick={() => setDeleteTarget(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#30363d] dark:bg-[#161b22]"
+            className="w-full max-w-sm rounded-2xl border border-vault-border bg-white p-6 shadow-xl dark:border-[#68727f] dark:bg-[#474e58]"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6edf3]">
+            <h3 className="mb-2 text-base font-medium text-vault-text dark:text-[#e6eaf0]">
               Eliminar extracto
             </h3>
-            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+            <p className="mb-5 text-sm text-vault-muted2 dark:text-[#99a3b0]">
               Vas a eliminar el extracto de{" "}
-              <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+              <span className="font-medium text-vault-text dark:text-[#e6eaf0]">
                 {(() => {
                   const account = accountMap.get(deleteTarget.account_id);
                   return account ? getAccountDisplayName(account) : "—";
                 })()}
               </span>{" "}
               —{" "}
-              <span className="font-medium capitalize text-vault-text dark:text-[#e6edf3]">
+              <span className="font-medium capitalize text-vault-text dark:text-[#e6eaf0]">
                 {periodLabel(deleteTarget.period_month)}
               </span>
               . Esto borrará todas las transacciones asociadas. ¿Confirmar?
@@ -498,7 +498,7 @@ export function UploadPage() {
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#30363d] dark:text-[#8b949e]"
+                className="flex-1 rounded-vault border border-vault-border py-2 text-sm text-vault-muted2 hover:text-vault-text dark:border-[#68727f] dark:text-[#99a3b0]"
               >
                 Cancelar
               </button>

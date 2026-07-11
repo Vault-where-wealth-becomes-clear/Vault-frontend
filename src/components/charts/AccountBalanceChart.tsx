@@ -8,9 +8,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatCurrency } from "@/utils/formatCurrency";
+import { formatCurrency, HIDDEN_AMOUNT } from "@/utils/formatCurrency";
 import { formatPeriod } from "@/utils/formatDate";
 import { getCategoryColor } from "@/utils/categoryColors";
+import { usePrivacyStore } from "@/store/privacy.store";
 
 export interface AccountBalancePoint {
   month: string;
@@ -43,10 +44,10 @@ function ChartTooltip({
   const lineByKey = new Map(lines.map((l) => [l.accountId, l]));
   return (
     <div
-      className="rounded-lg border border-vault-border bg-white px-3 py-2.5 shadow-lg dark:border-[#30363d] dark:bg-[#161b22]"
+      className="rounded-lg border border-vault-border bg-white px-3 py-2.5 shadow-lg dark:border-[#68727f] dark:bg-[#474e58]"
       style={{ fontSize: 12 }}
     >
-      <p className="mb-1.5 font-semibold capitalize text-vault-text dark:text-[#e6edf3]">
+      <p className="mb-1.5 font-semibold capitalize text-vault-text dark:text-[#e6eaf0]">
         {label ? formatPeriod(label) : ""}
       </p>
       {payload
@@ -57,11 +58,11 @@ function ChartTooltip({
           return (
             <p
               key={p.dataKey}
-              className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#8b949e]"
+              className="flex items-center gap-1.5 text-vault-muted2 dark:text-[#99a3b0]"
             >
               <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
               {line.label}:{" "}
-              <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+              <span className="font-medium text-vault-text dark:text-[#e6eaf0]">
                 {formatCurrency(p.value as number, line.currency)}
               </span>
             </p>
@@ -86,7 +87,9 @@ export function AccountBalanceChart({ points, lines }: AccountBalanceChartProps)
         />
         <YAxis
           tickFormatter={(v: number) =>
-            new Intl.NumberFormat("es-AR", { notation: "compact" }).format(v)
+            usePrivacyStore.getState().hideAmounts
+              ? HIDDEN_AMOUNT
+              : new Intl.NumberFormat("es-AR", { notation: "compact" }).format(v)
           }
           tick={{ fill: "#94a3b8", fontSize: 10 }}
           axisLine={false}
@@ -97,7 +100,7 @@ export function AccountBalanceChart({ points, lines }: AccountBalanceChartProps)
         <Legend
           wrapperStyle={{ fontSize: 11 }}
           formatter={(value: string) => (
-            <span className="text-vault-muted2 dark:text-[#8b949e]">{value}</span>
+            <span className="text-vault-muted2 dark:text-[#99a3b0]">{value}</span>
           )}
         />
         {lines.map((line, i) => (

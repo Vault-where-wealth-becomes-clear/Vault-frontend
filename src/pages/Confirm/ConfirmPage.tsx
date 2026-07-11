@@ -53,17 +53,17 @@ export function ConfirmPage() {
       <div className="w-full max-w-sm">
         <div className="mb-10 flex items-center gap-2">
           <img src={vaultLogo} alt="Vault" className="h-8 w-8 rounded-lg" />
-          <span className="text-lg font-semibold text-vault-text dark:text-[#e6edf3]">Vault</span>
+          <span className="text-lg font-semibold text-vault-text dark:text-[#e6eaf0]">Vault</span>
         </div>
 
         <h1 className="mb-1 page-title">Confirma tu cuenta</h1>
-        <p className="mb-8 text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="mb-8 text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Ingresa el código que te llegó por email para activar tu cuenta.
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
               Email
             </label>
             <input
@@ -77,7 +77,7 @@ export function ConfirmPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+            <label className="mb-1.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
               Código
             </label>
             <input
@@ -111,15 +111,15 @@ export function ConfirmPage() {
             type="button"
             onClick={handleResend}
             disabled={isResending}
-            className="text-center text-xs text-vault-accent hover:underline"
+            className="text-center text-xs text-vault-accent dark:text-[#93c5fd] hover:underline"
           >
             {isResending ? "Reenviando..." : "Reenviar código"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-vault-muted dark:text-[#8b949e]">
+        <p className="mt-6 text-center text-xs text-vault-muted dark:text-[#99a3b0]">
           Ya confirmaste?{" "}
-          <Link to="/login" className="text-vault-accent hover:underline">
+          <Link to="/login" className="text-vault-accent dark:text-[#93c5fd] hover:underline">
             Inicia sesión
           </Link>
         </p>

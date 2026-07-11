@@ -20,6 +20,8 @@ import {
 } from "@/components/charts/AccountBalanceChart";
 import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
+import { PrivacyToggle } from "@/components/ui/PrivacyToggle";
+import { usePrivacyStore } from "@/store/privacy.store";
 import { extractErrorMessage } from "@/utils/apiError";
 import { formatCurrency, formatPercent } from "@/utils/formatCurrency";
 import { formatPeriod, formatDateTime } from "@/utils/formatDate";
@@ -85,6 +87,7 @@ export function DashboardPage() {
   const exportXlsx = useExportXlsx();
   const setRate = useSetExchangeRate();
 
+  const hideAmounts = usePrivacyStore((s) => s.hideAmounts);
   const [exportError, setExportError] = useState<string | null>(null);
   const [currencyDisplay, setCurrencyDisplay] = useState<"USD" | "ARS">(() => {
     return (localStorage.getItem("vault_currency_display") as "USD" | "ARS") ?? "USD";
@@ -100,7 +103,6 @@ export function DashboardPage() {
       return new Set();
     }
   });
-
   const toggleCurrency = (currency: "USD" | "ARS") => {
     setCurrencyDisplay(currency);
     localStorage.setItem("vault_currency_display", currency);
@@ -366,14 +368,17 @@ export function DashboardPage() {
 
   if (isLoadingSummary || !summary) {
     return (
-      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#8b949e]">
+      <div className="flex h-full items-center justify-center text-vault-muted2 dark:text-[#99a3b0]">
         Cargando tablero...
       </div>
     );
   }
 
   const isEmpty = !accounts || accounts.length === 0;
-  const insights = [...(summary.insights ?? []), ...(fullDashboard?.insights ?? [])];
+  // Máximo 5 — priorizando los de comparación mes vs. mes anterior (resultado,
+  // gasto, patrimonio), que son los más accionables hoy, por sobre alertas/
+  // proyecciones de más largo plazo.
+  const insights = [...(summary.insights ?? []), ...(fullDashboard?.insights ?? [])].slice(0, 5);
 
   // Breakdown: filter out zero-amount items
   const filteredBreakdown =
@@ -396,7 +401,7 @@ export function DashboardPage() {
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="page-title">Tablero</h1>
-          <p className="text-[14px] font-light text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-[14px] font-light text-vault-muted2 dark:text-[#99a3b0]">
             {summary.period
               ? `Datos de ${formatPeriod(summary.period)}`
               : "Resumen de tu patrimonio y movimientos."}
@@ -413,7 +418,7 @@ export function DashboardPage() {
                   className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                     currencyDisplay === c
                       ? "bg-[#1e3a8a] text-white"
-                      : "bg-transparent text-vault-muted2 dark:text-[#8b949e] hover:text-vault-text"
+                      : "bg-transparent text-vault-muted2 dark:text-[#99a3b0] hover:text-vault-text"
                   }`}
                 >
                   {c}
@@ -432,13 +437,13 @@ export function DashboardPage() {
         <div className="card-vault overflow-hidden p-0">
           <div style={{ padding: "32px 32px 24px" }}>
             <h2
-              className="text-vault-text dark:text-[#e6edf3]"
+              className="text-vault-text dark:text-[#e6eaf0]"
               style={{ fontSize: 22, fontWeight: 300, marginTop: 0, marginBottom: 8 }}
             >
               Tu tablero está listo.
             </h2>
             <p
-              className="text-vault-muted2 dark:text-[#8b949e]"
+              className="text-vault-muted2 dark:text-[#99a3b0]"
               style={{ fontSize: 13, marginTop: 0, marginBottom: 28 }}
             >
               Agregá tu primera cuenta para empezar a ver tu patrimonio real.
@@ -466,7 +471,7 @@ export function DashboardPage() {
                   >
                     <div
                       className={
-                        step.active ? "" : "border border-vault-border dark:border-[#30363d]"
+                        step.active ? "" : "border border-vault-border dark:border-[#68727f]"
                       }
                       style={{
                         width: 40,
@@ -484,23 +489,23 @@ export function DashboardPage() {
                     >
                       <span
                         className={
-                          step.active ? "text-white" : "text-vault-muted2 dark:text-[#8b949e]"
+                          step.active ? "text-white" : "text-vault-muted2 dark:text-[#99a3b0]"
                         }
                       >
                         {step.n}
                       </span>
                     </div>
-                    <p className="text-center text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                    <p className="text-center text-sm font-medium text-vault-text dark:text-[#e6eaf0]">
                       {step.title}
                     </p>
-                    <p className="text-center text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <p className="text-center text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       {step.desc}
                     </p>
                   </div>
                   {i < steps.length - 1 && (
                     <div
                       key={`sep-${i}`}
-                      className="bg-vault-border dark:bg-[#30363d]"
+                      className="bg-vault-border dark:bg-[#68727f]"
                       style={{ width: 48, height: 1, marginTop: 20, flexShrink: 0 }}
                     />
                   )}
@@ -518,9 +523,9 @@ export function DashboardPage() {
         <>
           {/* TC MEP hoy — automático, siempre visible, sin acción del usuario */}
           {mepQuote && (
-            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-vault-muted2 dark:text-[#8b949e]">
+            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-vault-muted2 dark:text-[#99a3b0]">
               <span>TC MEP hoy:</span>
-              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6eaf0]">
                 ${mepQuote.venta.toFixed(2)}
               </span>
               <span>
@@ -532,18 +537,18 @@ export function DashboardPage() {
 
           {/* MEP banner */}
           {currencyDisplay === "ARS" && !mepForPeriod && (
-            <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#161b22] px-4 py-3 text-sm text-vault-muted2 dark:text-[#8b949e] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+            <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#474e58] px-4 py-3 text-sm text-vault-muted2 dark:text-[#99a3b0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
               <span>Sin TC MEP para este período.</span>
               {liveMep ? (
                 <>
-                  <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+                  <span className="font-medium text-vault-text dark:text-[#e6eaf0]">
                     TC MEP: ${liveMep.toFixed(2)}
                   </span>
                   <button
                     type="button"
                     onClick={handleSaveLiveMep}
                     disabled={mepSaving}
-                    className="rounded border border-vault-accent/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent hover:bg-vault-accent/20"
+                    className="rounded border border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent dark:text-[#93c5fd] hover:bg-vault-accent/20"
                   >
                     {mepSaving ? "Guardando..." : "Guardar y usar"}
                   </button>
@@ -553,12 +558,12 @@ export function DashboardPage() {
                   type="button"
                   onClick={handleFetchLiveMep}
                   disabled={mepFetching}
-                  className="rounded border border-vault-accent/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent hover:bg-vault-accent/20"
+                  className="rounded border border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 px-2.5 py-0.5 text-xs text-vault-accent dark:text-[#93c5fd] hover:bg-vault-accent/20"
                 >
                   {mepFetching ? "Obteniendo..." : "Obtener TC MEP actual"}
                 </button>
               )}
-              <Link to="/settings" className="ml-auto text-xs text-vault-accent hover:underline">
+              <Link to="/settings" className="ml-auto text-xs text-vault-accent dark:text-[#93c5fd] hover:underline">
                 Configurar manualmente
               </Link>
             </div>
@@ -577,6 +582,7 @@ export function DashboardPage() {
               }
               hint={`${formatPercent(summary.variation_pct)} vs. mes anterior`}
               hintColor={summary.variation_pct >= 0 ? "green" : "red"}
+              action={<PrivacyToggle />}
             />
           </div>
 
@@ -596,8 +602,8 @@ export function DashboardPage() {
                         onClick={() => toggleAccountVisibility(line.accountId)}
                         className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                           isHidden
-                            ? "border-vault-border2 text-vault-muted2 opacity-50 dark:border-[#30363d] dark:text-[#8b949e]"
-                            : "border-vault-accent/40 bg-vault-accent/10 text-vault-accent"
+                            ? "border-vault-border2 text-vault-muted2 opacity-50 dark:border-[#68727f] dark:text-[#99a3b0]"
+                            : "border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 text-vault-accent dark:text-[#93c5fd]"
                         }`}
                         title={isHidden ? "Mostrar en el gráfico" : "Ocultar del gráfico"}
                       >
@@ -609,11 +615,11 @@ export function DashboardPage() {
               )}
             </div>
             {accountBalanceSeries.points.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
                 Sin extractos procesados aún para mostrar saldos históricos.
               </div>
             ) : visibleAccountBalanceLines.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
                 Todas las cuentas están ocultas — activá alguna arriba para verla en el gráfico.
               </div>
             ) : (
@@ -632,9 +638,9 @@ export function DashboardPage() {
                 {insights.map((insight) => (
                   <li
                     key={insight}
-                    className="flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm text-vault-muted2 dark:text-[#8b949e]"
+                    className="flex items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#505862] px-3.5 py-2.5 text-sm text-vault-muted2 dark:text-[#99a3b0]"
                   >
-                    <span className="mt-0.5 text-vault-accent">&#8226;</span>
+                    <span className="mt-0.5 text-vault-accent dark:text-[#93c5fd]">&#8226;</span>
                     {insight}
                   </li>
                 ))}
@@ -649,20 +655,20 @@ export function DashboardPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-vault-border dark:border-[#30363d]">
-                      <th className="py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                    <tr className="border-b border-vault-border dark:border-[#68727f]">
+                      <th className="py-2 text-left text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                         Mes
                       </th>
-                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                         Ingresos
                       </th>
-                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                         Egresos
                       </th>
-                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                         Resultado
                       </th>
-                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                      <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                         Efectivo neto ({currencyDisplay})
                       </th>
                     </tr>
@@ -671,9 +677,9 @@ export function DashboardPage() {
                     {[...filteredMonthlySeries].reverse().map((point) => (
                       <tr
                         key={point.month}
-                        className="border-b border-vault-border/50 last:border-0 dark:border-[#30363d]/50"
+                        className="border-b border-vault-border/50 last:border-0 dark:border-[#68727f]/50"
                       >
-                        <td className="py-2 capitalize text-vault-text dark:text-[#e6edf3]">
+                        <td className="py-2 capitalize text-vault-text dark:text-[#e6eaf0]">
                           {formatPeriod(point.month)}
                         </td>
                         <td className="py-2 text-right tabular-nums text-vault-green">
@@ -687,10 +693,10 @@ export function DashboardPage() {
                             point.resultado_ars >= 0 ? "text-vault-green" : "text-vault-red"
                           }`}
                         >
-                          {point.resultado_ars >= 0 ? "+" : ""}
+                          {!hideAmounts && point.resultado_ars >= 0 ? "+" : ""}
                           {formatCurrency(point.resultado_ars, "ARS")}
                         </td>
-                        <td className="py-2 text-right tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                        <td className="py-2 text-right tabular-nums font-medium text-vault-text dark:text-[#e6eaf0]">
                           {netWorthByMonth.has(point.month)
                             ? formatCurrency(netWorthByMonth.get(point.month)!, currencyDisplay)
                             : "—"}
@@ -707,11 +713,11 @@ export function DashboardPage() {
           <div className="mb-5 card-vault">
             <h2 className="section-label mb-4">Gastos por categoría</h2>
             {isLoadingBreakdown ? (
-              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
                 Cargando...
               </div>
             ) : filteredBreakdown.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+              <div className="flex h-32 items-center justify-center text-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
                 Todavía no hay movimientos este mes.
               </div>
             ) : (
@@ -725,7 +731,7 @@ export function DashboardPage() {
             <div className="grid grid-cols-3 gap-4">
               <Link
                 to="/cartera"
-                className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm transition-colors hover:border-vault-accent dark:bg-[#21262d]"
+                className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm transition-colors hover:border-vault-accent dark:hover:border-[#5b7bc4] dark:bg-[#505862]"
               >
                 <p className="mb-1 font-medium">Cuenta comitente</p>
                 {latestCarteraUsd != null ? (
@@ -733,7 +739,7 @@ export function DashboardPage() {
                     {formatCurrency(latestCarteraUsd, "USD")} · Ver detalle →
                   </p>
                 ) : (
-                  <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                  <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                     Pedí este análisis la próxima vez que subas un extracto de broker
                   </p>
                 )}
@@ -743,13 +749,13 @@ export function DashboardPage() {
                 return (
                   <div
                     key={section.key}
-                    className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3.5 py-2.5 text-sm"
+                    className="rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#505862] px-3.5 py-2.5 text-sm"
                   >
                     <p className="mb-1 font-medium">{section.label}</p>
                     {data ? (
                       <p className="text-xs text-vault-green">Disponible para este período</p>
                     ) : (
-                      <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">{section.cta}</p>
+                      <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">{section.cta}</p>
                     )}
                   </div>
                 );

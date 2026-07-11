@@ -83,7 +83,7 @@ export function ModuleSelector({ selected, onChange }: ModuleSelectorProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="mb-0.5 block text-xs font-medium text-vault-muted2 dark:text-[#8b949e]">
+      <label className="mb-0.5 block text-xs font-medium text-vault-muted2 dark:text-[#99a3b0]">
         Qué querés analizar
       </label>
       {MODULES.map((module) => {
@@ -92,7 +92,7 @@ export function ModuleSelector({ selected, onChange }: ModuleSelectorProps) {
 
         return (
           <div key={module.id}>
-            <label className="flex cursor-pointer items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#21262d] px-3 py-2.5 text-sm">
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-vault border border-vault-border bg-vault-s2 dark:bg-[#505862] px-3 py-2.5 text-sm">
               <input
                 type="checkbox"
                 checked={isChecked}
@@ -102,12 +102,12 @@ export function ModuleSelector({ selected, onChange }: ModuleSelectorProps) {
               />
               <span>
                 <span className="font-medium">{module.label}</span>
-                <span className="block text-xs text-vault-muted2 dark:text-[#8b949e]">
+                <span className="block text-xs text-vault-muted2 dark:text-[#99a3b0]">
                   {module.desc}
                 </span>
               </span>
             </label>
-            {notice && <p className="mt-1 px-3 text-xs text-vault-accent">{notice}</p>}
+            {notice && <p className="mt-1 px-3 text-xs text-vault-accent dark:text-[#93c5fd]">{notice}</p>}
           </div>
         );
       })}

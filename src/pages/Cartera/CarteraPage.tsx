@@ -44,6 +44,22 @@ export function CarteraPage() {
     return rate?.mep_rate ?? null;
   }, [exchangeRates, effectiveMonth]);
 
+  // TC MEP de un mes cualquiera (exacto o el más reciente anterior) — la evolución
+  // cruza varios meses, cada uno con su propia cotización, a diferencia de
+  // mepRateForMonth que solo resuelve el mes puntual elegido en el selector.
+  const getMepRateForMonth = useMemo(() => {
+    const sorted = [...(exchangeRates ?? [])].sort((a, b) =>
+      a.period_month.localeCompare(b.period_month)
+    );
+    return (month: string): number | null => {
+      const exact = sorted.find((r) => r.period_month.slice(0, 7) === month);
+      if (exact) return exact.mep_rate;
+      const priorOrEqual = sorted.filter((r) => r.period_month.slice(0, 7) <= month);
+      if (priorOrEqual.length > 0) return priorOrEqual[priorOrEqual.length - 1].mep_rate;
+      return sorted[0]?.mep_rate ?? null;
+    };
+  }, [exchangeRates]);
+
   const totalArsSelected = useMemo(
     () => detail?.posiciones.reduce((sum, p) => sum + p.valor_base_ars, 0) ?? null,
     [detail]
@@ -76,14 +92,14 @@ export function CarteraPage() {
   };
 
   if (isLoadingAccounts) {
-    return <div className="p-7 text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</div>;
+    return <div className="p-7 text-sm text-vault-muted2 dark:text-[#99a3b0]">Cargando...</div>;
   }
 
   if (brokerAccounts.length === 0) {
     return (
       <div className="p-7">
         <h1 className="page-title mb-2">Cuenta comitente</h1>
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
           Todavía no registraste ninguna cuenta comitente. Creá una en "Mis cuentas" para
           empezar a ver tu cartera acá.
         </p>
@@ -99,37 +115,61 @@ export function CarteraPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="page-title">Cuenta comitente</h1>
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Evolución y composición de tu cuenta comitente en el tiempo.
           </p>
         </div>
-        {brokerAccounts.length > 1 && (
-          <select
-            value={selectedAccountId}
-            onChange={(e) => handleAccountChange(e.target.value)}
-            className="input-vault w-auto"
-          >
-            {brokerAccounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {getAccountDisplayName(a)}
-              </option>
+        <div className="flex items-center gap-3">
+          {brokerAccounts.length > 1 && (
+            <select
+              value={selectedAccountId}
+              onChange={(e) => handleAccountChange(e.target.value)}
+              className="input-vault w-auto"
+            >
+              {brokerAccounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {getAccountDisplayName(a)}
+                </option>
+              ))}
+            </select>
+          )}
+          <div className="flex overflow-hidden rounded-vault border border-vault-border dark:border-[#68727f]">
+            {(["ARS", "USD"] as const).map((cur) => (
+              <button
+                key={cur}
+                type="button"
+                onClick={() => setDisplayCurrency(cur)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  displayCurrency === cur
+                    ? "bg-vault-accent/10 text-vault-accent dark:text-[#93c5fd]"
+                    : "text-vault-muted2 hover:text-vault-text dark:text-[#99a3b0]"
+                }`}
+              >
+                {cur}
+              </button>
             ))}
-          </select>
-        )}
+          </div>
+        </div>
       </div>
+      {displayCurrency === "USD" && !mepRateForMonth && (
+        <p className="mb-4 -mt-3 text-xs text-vault-yellow">
+          Sin TC MEP declarado para el mes seleccionado — algunos montos en USD no se van a
+          poder calcular.
+        </p>
+      )}
 
       {selectedAccount && (
         <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-          <span className="text-vault-muted2 dark:text-[#8b949e]">
+          <span className="text-vault-muted2 dark:text-[#99a3b0]">
             Entidad financiera:{" "}
-            <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+            <span className="font-medium text-vault-text dark:text-[#e6eaf0]">
               {selectedAccount.institution || "—"}
             </span>
           </span>
           {selectedAccount.name && selectedAccount.name !== selectedAccount.institution && (
-            <span className="text-vault-muted2 dark:text-[#8b949e]">
+            <span className="text-vault-muted2 dark:text-[#99a3b0]">
               Referencia:{" "}
-              <span className="font-medium text-vault-text dark:text-[#e6edf3]">
+              <span className="font-medium text-vault-text dark:text-[#e6eaf0]">
                 {selectedAccount.name}
               </span>
             </span>
@@ -138,10 +178,10 @@ export function CarteraPage() {
       )}
 
       {isLoadingChart ? (
-        <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</p>
+        <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">Cargando...</p>
       ) : !chart ? (
         <div className="card-vault">
-          <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Todavía no subiste ningún archivo para esta cuenta comitente. Subí un snapshot
             de tenencias del broker en "Mis cuentas" para empezar a ver tu cartera acá.
           </p>
@@ -162,7 +202,12 @@ export function CarteraPage() {
 
           <div className="mb-5 card-vault">
             <h2 className="section-label mb-3">Evolución</h2>
-            <CarteraEvolutionChart data={chart.evolucion} />
+            <CarteraEvolutionChart
+              data={chart.evolucion}
+              tipos={tipoColumns}
+              displayCurrency={displayCurrency}
+              getMepRateForMonth={getMepRateForMonth}
+            />
           </div>
 
           {chart.evolucion.length > 1 && tipoColumns.length > 0 && (
@@ -171,7 +216,7 @@ export function CarteraPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-vault-border/50 text-left text-vault-muted2 dark:border-[#30363d]/50 dark:text-[#8b949e]">
+                    <tr className="border-b border-vault-border/50 text-left text-vault-muted2 dark:border-[#68727f]/50 dark:text-[#99a3b0]">
                       <th className="py-1 pr-3 font-normal">Mes</th>
                       {tipoColumns.map((tipo) => (
                         <th key={tipo} className="py-1 pr-3 font-normal">
@@ -184,9 +229,9 @@ export function CarteraPage() {
                     {chart.evolucion.map((point) => (
                       <tr
                         key={point.month}
-                        className="border-b border-vault-border/30 last:border-0 dark:border-[#30363d]/30"
+                        className="border-b border-vault-border/30 last:border-0 dark:border-[#68727f]/30"
                       >
-                        <td className="py-1.5 pr-3 capitalize text-vault-text dark:text-[#e6edf3]">
+                        <td className="py-1.5 pr-3 capitalize text-vault-text dark:text-[#e6eaf0]">
                           {formatPeriod(point.month)}
                         </td>
                         {tipoColumns.map((tipo) => {
@@ -206,7 +251,7 @@ export function CarteraPage() {
           )}
 
           <div className="mb-5 flex items-center gap-2">
-            <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">Mes:</span>
+            <span className="text-xs text-vault-muted2 dark:text-[#99a3b0]">Mes:</span>
             <select
               value={effectiveMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -221,14 +266,14 @@ export function CarteraPage() {
           </div>
 
           {isLoadingDetail ? (
-            <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">Cargando...</p>
+            <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">Cargando...</p>
           ) : detail ? (
             <div className="card-vault">
               <div className="mb-3 flex items-center gap-2">
-                <span className="flex-shrink-0 rounded-full border border-vault-accent/40 bg-vault-accent/10 px-2 py-0.5 text-[10px] font-semibold text-vault-accent">
+                <span className="flex-shrink-0 rounded-full border border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 px-2 py-0.5 text-[10px] font-semibold text-vault-accent dark:text-[#93c5fd]">
                   Nivel {detail.nivel_detectado}
                 </span>
-                <span className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                <span className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                   {NIVEL_LABELS[detail.nivel_detectado]}
                 </span>
               </div>
@@ -236,42 +281,19 @@ export function CarteraPage() {
               {(detail.alertas.length > 0 || detail.insights.length > 0) && (
                 <ul className="mb-3 flex flex-col gap-1">
                   {detail.alertas.map((alerta, i) => (
-                    <li key={`alert-${i}`} className="text-xs text-vault-text dark:text-[#e6edf3]">
+                    <li key={`alert-${i}`} className="text-xs text-vault-text dark:text-[#e6eaf0]">
                       {alerta}
                     </li>
                   ))}
                   {detail.insights.map((insight, i) => (
-                    <li key={`insight-${i}`} className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+                    <li key={`insight-${i}`} className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
                       {insight}
                     </li>
                   ))}
                 </ul>
               )}
 
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="section-label mb-0">Composición</h2>
-                <div className="flex overflow-hidden rounded-vault border border-vault-border dark:border-[#30363d]">
-                  {(["ARS", "USD"] as const).map((cur) => (
-                    <button
-                      key={cur}
-                      type="button"
-                      onClick={() => setDisplayCurrency(cur)}
-                      className={`px-2.5 py-1 text-xs font-medium transition-colors ${
-                        displayCurrency === cur
-                          ? "bg-vault-accent/10 text-vault-accent"
-                          : "text-vault-muted2 hover:text-vault-text dark:text-[#8b949e]"
-                      }`}
-                    >
-                      {cur}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {displayCurrency === "USD" && !mepRateForMonth && (
-                <p className="mb-2 text-xs text-vault-yellow">
-                  Sin TC MEP declarado para este período — los montos en USD no se pueden calcular.
-                </p>
-              )}
+              <h2 className="section-label mb-2">Composición</h2>
               <CarteraComposicion
                 posiciones={detail.posiciones}
                 nivelDetectado={detail.nivel_detectado}
@@ -280,17 +302,21 @@ export function CarteraPage() {
               />
 
               {detail.rendimientos_netos_ars != null && (
-                <p className="mt-3 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                <p className="mt-3 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                   Rendimientos netos del mes:{" "}
-                  <span className="font-medium text-vault-text dark:text-[#e6edf3]">
-                    {formatCurrency(detail.rendimientos_netos_ars, "ARS")}
+                  <span className="font-medium text-vault-text dark:text-[#e6eaf0]">
+                    {displayCurrency === "ARS"
+                      ? formatCurrency(detail.rendimientos_netos_ars, "ARS")
+                      : mepRateForMonth
+                        ? formatCurrency(detail.rendimientos_netos_ars / mepRateForMonth, "USD")
+                        : "—"}
                   </span>
                 </p>
               )}
             </div>
           ) : (
             <div className="card-vault">
-              <p className="text-sm text-vault-muted2 dark:text-[#8b949e]">
+              <p className="text-sm text-vault-muted2 dark:text-[#99a3b0]">
                 Sin snapshot para este mes.
               </p>
             </div>

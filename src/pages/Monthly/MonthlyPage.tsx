@@ -53,33 +53,33 @@ function MonthlyCarteraBlock({
   const hasThisMonth = !!cartera && cartera.month === period;
 
   return (
-    <div className="border-b border-vault-border/40 last:border-0 dark:border-[#30363d]/40">
+    <div className="border-b border-vault-border/40 last:border-0 dark:border-[#68727f]/40">
       <button
         type="button"
         onClick={() => hasThisMonth && setExpanded((e) => !e)}
         className={`flex w-full items-center gap-2 py-2 text-left ${!hasThisMonth ? "cursor-default" : ""}`}
       >
         <span
-          className={`min-w-0 flex-1 text-xs ${hasThisMonth ? "text-vault-muted2 dark:text-[#8b949e]" : "text-vault-muted2/50 dark:text-[#8b949e]/50"}`}
+          className={`min-w-0 flex-1 text-xs ${hasThisMonth ? "text-vault-muted2 dark:text-[#99a3b0]" : "text-vault-muted2/50 dark:text-[#99a3b0]/50"}`}
         >
           {accountName}
         </span>
         {isLoading ? (
-          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#8b949e]/50">
+          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#99a3b0]/50">
             Cargando...
           </span>
         ) : !hasThisMonth ? (
-          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#8b949e]/50">
+          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#99a3b0]/50">
             Sin snapshot este mes
           </span>
         ) : (
-          <span className="flex-shrink-0 rounded-full border border-vault-accent/40 bg-vault-accent/10 px-2 py-0.5 text-[10px] font-semibold text-vault-accent">
+          <span className="flex-shrink-0 rounded-full border border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 px-2 py-0.5 text-[10px] font-semibold text-vault-accent dark:text-[#93c5fd]">
             Nivel {cartera.nivel_detectado}
           </span>
         )}
         {hasThisMonth && (
           <span
-            className="flex-shrink-0 text-xs text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+            className="flex-shrink-0 text-xs text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
             style={{ transform: expanded ? "rotate(90deg)" : "none" }}
           >
             ›
@@ -125,7 +125,7 @@ function MonthlyCarteraFlujoLine({
     const total = resultadoRealizado + rendimientos;
     return (
       <div className="flex items-center justify-between gap-3 py-1 text-xs">
-        <span className="text-vault-muted2 dark:text-[#8b949e]">Resultado cartera — {accountName}</span>
+        <span className="text-vault-muted2 dark:text-[#99a3b0]">Resultado cartera — {accountName}</span>
         <span
           className={`tabular-nums font-medium ${total >= 0 ? "text-vault-green" : "text-vault-red"}`}
         >
@@ -140,7 +140,7 @@ function MonthlyCarteraFlujoLine({
   if (anchor?.delta_ars == null) return null;
   return (
     <div className="flex items-center justify-between gap-3 py-1 text-xs">
-      <span className="text-vault-muted2 dark:text-[#8b949e]">Δ Cartera — {accountName}</span>
+      <span className="text-vault-muted2 dark:text-[#99a3b0]">Δ Cartera — {accountName}</span>
       <span
         className={`tabular-nums font-medium ${anchor.delta_ars >= 0 ? "text-vault-green" : "text-vault-red"}`}
       >
@@ -260,13 +260,13 @@ function CategoryCreditDebitList({
 }) {
   if (items.length === 0) {
     return (
-      <div className="flex h-20 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+      <div className="flex h-20 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
         {emptyLabel}
       </div>
     );
   }
   return (
-    <div className="flex flex-col divide-y divide-vault-border/50 dark:divide-[#30363d]/50">
+    <div className="flex flex-col divide-y divide-vault-border/50 dark:divide-[#68727f]/50">
       {items.map((item, i) => {
         const isExpanded = expandedCategory === item.category;
         return (
@@ -274,19 +274,19 @@ function CategoryCreditDebitList({
             <button
               type="button"
               onClick={() => onToggle(item.category)}
-              className="flex w-full items-center gap-2 py-2 text-left text-xs transition-colors hover:bg-vault-s2/30 dark:hover:bg-[#21262d]/30"
+              className="flex w-full items-center gap-2 py-2 text-left text-xs transition-colors hover:bg-vault-s2/30 dark:hover:bg-[#505862]/30"
             >
               <span
                 className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
                 style={{ background: getCategoryColor(item.category, i) }}
               />
-              <span className="min-w-0 flex-1 truncate text-vault-text dark:text-[#e6edf3]">
+              <span className="min-w-0 flex-1 truncate text-vault-text dark:text-[#e6eaf0]">
                 {item.category}
               </span>
               <span className="flex-shrink-0 tabular-nums text-vault-red">
                 {item.debitoArs > 0 && formatCurrency(item.debitoArs, "ARS")}
                 {item.debitoUsd > 0 && (
-                  <span className="text-vault-muted2 dark:text-[#8b949e]">
+                  <span className="text-vault-muted2 dark:text-[#99a3b0]">
                     {" "}
                     {formatCurrency(item.debitoUsd, "USD")}
                   </span>
@@ -295,21 +295,21 @@ function CategoryCreditDebitList({
               <span className="flex-shrink-0 tabular-nums text-vault-green">
                 {item.creditoArs > 0 && formatCurrency(item.creditoArs, "ARS")}
                 {item.creditoUsd > 0 && (
-                  <span className="text-vault-muted2 dark:text-[#8b949e]">
+                  <span className="text-vault-muted2 dark:text-[#99a3b0]">
                     {" "}
                     {formatCurrency(item.creditoUsd, "USD")}
                   </span>
                 )}
               </span>
               <span
-                className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#8b949e]"
+                className="inline-block w-3 flex-shrink-0 text-vault-muted2 transition-transform duration-150 dark:text-[#99a3b0]"
                 style={{ transform: isExpanded ? "rotate(90deg)" : "none" }}
               >
                 ›
               </span>
             </button>
             {isExpanded && (
-              <div className="rounded-vault bg-vault-s2/30 px-2 pb-2 pt-1 dark:bg-[#21262d]/30">
+              <div className="rounded-vault bg-vault-s2/30 px-2 pb-2 pt-1 dark:bg-[#505862]/30">
                 <CategoryLedger transactions={ledgerTransactions} />
               </div>
             )}
@@ -324,10 +324,6 @@ export function MonthlyPage() {
   const { data: uploads } = useUploads();
   const { data: accounts } = useAccounts();
   const { data: exchangeRates } = useExchangeRates();
-  const brokerAccounts = useMemo(
-    () => (accounts ?? []).filter((a) => a.account_type === "broker"),
-    [accounts]
-  );
 
   const months = useMemo(() => {
     const done = uploads?.filter((u) => u.status === "done") ?? [];
@@ -560,10 +556,10 @@ export function MonthlyPage() {
   return (
     <div className="flex h-full min-h-0">
       {/* Left: month list */}
-      <div className="w-52 flex-shrink-0 overflow-y-auto border-r border-vault-border p-4 dark:border-[#30363d]">
+      <div className="w-52 flex-shrink-0 overflow-y-auto border-r border-vault-border p-4 dark:border-[#68727f]">
         <p className="section-label mb-3">Períodos</p>
         {months.length === 0 ? (
-          <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">
+          <p className="text-xs text-vault-muted2 dark:text-[#99a3b0]">
             {uploads === undefined ? "Cargando..." : "Sin extractos procesados aún."}
           </p>
         ) : (
@@ -575,8 +571,8 @@ export function MonthlyPage() {
                   onClick={() => handleMonthSelect(m)}
                   className={`w-full rounded-lg px-3 py-2 text-left text-sm capitalize transition-colors ${
                     period === m
-                      ? "bg-[#eff6ff] font-medium text-[#1e3a8a] dark:bg-[#1d2d50] dark:text-[#93c5fd]"
-                      : "text-vault-muted2 hover:bg-[#f1f5f9] hover:text-vault-text dark:text-[#c9d1d9] dark:hover:bg-[#21262d] dark:hover:text-[#e6edf3]"
+                      ? "bg-[#e3ecfc] font-medium text-[#1e3a8a] dark:bg-[#24365f] dark:text-[#93c5fd]"
+                      : "text-vault-muted2 hover:bg-[#e9edf3] hover:text-vault-text dark:text-[#b9c2cc] dark:hover:bg-[#505862] dark:hover:text-[#e6eaf0]"
                   }`}
                 >
                   {formatPeriod(m)}
@@ -590,15 +586,25 @@ export function MonthlyPage() {
       {/* Right: content */}
       <div className="flex-1 overflow-y-auto p-7">
         {!period ? (
-          <div className="flex h-full items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+          <div className="flex h-full items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
             Seleccioná un mes para ver el detalle.
           </div>
         ) : (
           <>
-            <h1 className="page-title mb-6 capitalize">{formatPeriod(period)}</h1>
+            <div className="mb-6 flex items-center gap-3">
+              <h1 className="page-title capitalize">{formatPeriod(period)}</h1>
+              {mepForPeriod != null && (
+                <span
+                  className="rounded-full border border-vault-accent/40 dark:border-[#5b7bc4]/40 bg-vault-accent/10 px-2.5 py-1 text-xs font-medium text-vault-accent dark:text-[#93c5fd]"
+                  title="Tipo de cambio MEP usado para convertir este período"
+                >
+                  TC {formatCurrency(mepForPeriod, "ARS")}
+                </span>
+              )}
+            </div>
 
             {isLoadingSummary ? (
-              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+              <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
                 Cargando...
               </div>
             ) : (
@@ -617,7 +623,7 @@ export function MonthlyPage() {
                           expandedFlujo === "ingresos" ? "ring-1 ring-vault-green/40" : ""
                         }`}
                       >
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                           Ingresos
                         </span>
                         <span className="tabular-nums text-lg font-semibold text-vault-green">
@@ -633,7 +639,7 @@ export function MonthlyPage() {
                           expandedFlujo === "egresos" ? "ring-1 ring-vault-red/40" : ""
                         }`}
                       >
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                           Egresos
                         </span>
                         <span className="tabular-nums text-lg font-semibold text-vault-red">
@@ -645,7 +651,7 @@ export function MonthlyPage() {
                           flujo.resultado_ars >= 0 ? "bg-vault-green/5" : "bg-vault-red/5"
                         }`}
                       >
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                           Resultado
                         </span>
                         <span
@@ -660,21 +666,8 @@ export function MonthlyPage() {
                     </div>
 
                     {expandedFlujo && (
-                      <div className="mt-3 rounded-vault bg-vault-s2/30 px-2 pb-2 pt-1.5 dark:bg-[#21262d]/30">
+                      <div className="mt-3 rounded-vault bg-vault-s2/30 px-2 pb-2 pt-1.5 dark:bg-[#505862]/30">
                         <CategoryLedger transactions={flujoMovements} />
-                      </div>
-                    )}
-
-                    {brokerAccounts.length > 0 && (
-                      <div className="mt-3 border-t border-vault-border/50 pt-2 dark:border-[#30363d]/50">
-                        {brokerAccounts.map((account) => (
-                          <MonthlyCarteraFlujoLine
-                            key={account.id}
-                            accountId={account.id}
-                            accountName={getAccountDisplayName(account)}
-                            period={period}
-                          />
-                        ))}
                       </div>
                     )}
                   </div>
@@ -684,7 +677,7 @@ export function MonthlyPage() {
                 {entityData.length > 0 && (
                   <div className="mb-5 card-vault">
                     <h2 className="section-label mb-1">Por entidad</h2>
-                    <div className="flex flex-col divide-y divide-vault-border dark:divide-[#30363d]">
+                    <div className="flex flex-col divide-y divide-vault-border dark:divide-[#68727f]">
                       {entityData.map((entity) => {
                         const isEntityOpen = expandedEntities.has(entity.institution);
                         return (
@@ -695,7 +688,7 @@ export function MonthlyPage() {
                               onClick={() => toggleEntity(entity.institution)}
                               className="flex w-full items-center gap-3 py-3 text-left"
                             >
-                              <span className="min-w-0 flex-1 text-sm font-medium text-vault-text dark:text-[#e6edf3]">
+                              <span className="min-w-0 flex-1 text-sm font-medium text-vault-text dark:text-[#e6eaf0]">
                                 {entity.institution}
                               </span>
                               <span
@@ -707,7 +700,7 @@ export function MonthlyPage() {
                                 {formatCurrency(entity.totalDeltaArs, "ARS")}
                               </span>
                               <span
-                                className="flex-shrink-0 text-sm text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+                                className="flex-shrink-0 text-sm text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
                                 style={{ transform: isEntityOpen ? "rotate(90deg)" : "none" }}
                               >
                                 ›
@@ -716,23 +709,32 @@ export function MonthlyPage() {
 
                             {/* Accounts */}
                             {isEntityOpen && (
-                              <div className="mb-2 ml-1 border-l-2 border-vault-border pl-3 dark:border-[#30363d]">
+                              <div className="mb-2 ml-1 border-l-2 border-vault-border pl-3 dark:border-[#68727f]">
                                 {entity.accounts.map((account) => {
                                   if (account.accountType === "broker") {
+                                    // Resultado/Δ de cartera vive acá, no en "Flujo del período" —
+                                    // una revaluación de mercado no es flujo de fondos (misma
+                                    // regla que "Efectivo neto" en el Tablero general).
                                     return (
-                                      <MonthlyCarteraBlock
-                                        key={account.id}
-                                        accountId={account.id}
-                                        accountName={account.name}
-                                        period={period}
-                                      />
+                                      <div key={account.id}>
+                                        <MonthlyCarteraFlujoLine
+                                          accountId={account.id}
+                                          accountName={account.name}
+                                          period={period}
+                                        />
+                                        <MonthlyCarteraBlock
+                                          accountId={account.id}
+                                          accountName={account.name}
+                                          period={period}
+                                        />
+                                      </div>
                                     );
                                   }
                                   const isAccountOpen = expandedAccounts.has(account.id);
                                   return (
                                     <div
                                       key={account.id}
-                                      className="border-b border-vault-border/40 last:border-0 dark:border-[#30363d]/40"
+                                      className="border-b border-vault-border/40 last:border-0 dark:border-[#68727f]/40"
                                     >
                                       {/* Account row — native currency; dimmed when no data */}
                                       <button
@@ -743,16 +745,16 @@ export function MonthlyPage() {
                                         className={`flex w-full items-center gap-2 py-2 text-left ${!account.hasData ? "cursor-default" : ""}`}
                                       >
                                         <span
-                                          className={`min-w-0 flex-1 text-xs ${account.hasData ? "text-vault-muted2 dark:text-[#8b949e]" : "text-vault-muted2/50 dark:text-[#8b949e]/50"}`}
+                                          className={`min-w-0 flex-1 text-xs ${account.hasData ? "text-vault-muted2 dark:text-[#99a3b0]" : "text-vault-muted2/50 dark:text-[#99a3b0]/50"}`}
                                         >
                                           {account.name}
                                         </span>
                                         {!account.hasData ? (
-                                          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#8b949e]/50">
+                                          <span className="flex-shrink-0 text-xs text-vault-muted2/50 dark:text-[#99a3b0]/50">
                                             Sin extracto cargado
                                           </span>
                                         ) : account.isCreditCard && account.creditCardBreakdown ? (
-                                          <span className="flex-shrink-0 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                                          <span className="flex-shrink-0 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                                             Total del período:{" "}
                                             <span className="font-medium text-vault-red">
                                               {formatCurrency(
@@ -774,7 +776,7 @@ export function MonthlyPage() {
                                           </span>
                                         ) : (
                                           <>
-                                            <span className="flex-shrink-0 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                                            <span className="flex-shrink-0 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                                               {formatCurrency(
                                                 account.openingNative,
                                                 account.currency
@@ -802,7 +804,7 @@ export function MonthlyPage() {
                                         )}
                                         {account.hasData && (
                                           <span
-                                            className="flex-shrink-0 text-xs text-vault-muted2 transition-transform duration-200 dark:text-[#8b949e]"
+                                            className="flex-shrink-0 text-xs text-vault-muted2 transition-transform duration-200 dark:text-[#99a3b0]"
                                             style={{
                                               transform: isAccountOpen ? "rotate(90deg)" : "none",
                                             }}
@@ -824,12 +826,12 @@ export function MonthlyPage() {
                                         isAccountOpen &&
                                         account.isCreditCard &&
                                         account.creditCardBreakdown && (
-                                          <div className="mb-2 grid grid-cols-2 gap-2 rounded-vault bg-vault-s2/40 px-3 py-2 text-xs dark:bg-[#21262d]/40 sm:grid-cols-4">
+                                          <div className="mb-2 grid grid-cols-2 gap-2 rounded-vault bg-vault-s2/40 px-3 py-2 text-xs dark:bg-[#505862]/40 sm:grid-cols-4">
                                             <div className="flex flex-col gap-0.5">
-                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#99a3b0]">
                                                 Consumos ARS
                                               </span>
-                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6eaf0]">
                                                 {formatCurrency(
                                                   account.creditCardBreakdown.consumosArs,
                                                   "ARS"
@@ -837,10 +839,10 @@ export function MonthlyPage() {
                                               </span>
                                             </div>
                                             <div className="flex flex-col gap-0.5">
-                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#99a3b0]">
                                                 Consumos USD
                                               </span>
-                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6eaf0]">
                                                 {formatCurrency(
                                                   account.creditCardBreakdown.consumosUsd,
                                                   "USD"
@@ -848,10 +850,10 @@ export function MonthlyPage() {
                                               </span>
                                             </div>
                                             <div className="flex flex-col gap-0.5">
-                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#99a3b0]">
                                                 Impuestos ARS
                                               </span>
-                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                                              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6eaf0]">
                                                 {formatCurrency(
                                                   account.creditCardBreakdown.impuestosArs,
                                                   "ARS"
@@ -859,7 +861,7 @@ export function MonthlyPage() {
                                               </span>
                                             </div>
                                             <div className="flex flex-col gap-0.5">
-                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#8b949e]">
+                                              <span className="text-[10px] uppercase tracking-wide text-vault-muted2 dark:text-[#99a3b0]">
                                                 Créditos ARS
                                               </span>
                                               <span className="tabular-nums font-medium text-vault-green">
@@ -877,21 +879,21 @@ export function MonthlyPage() {
 
                                       {/* Transactions — libro diario (bank) or simple list (credit card) */}
                                       {account.hasData && isAccountOpen && (
-                                        <div className="mb-2 overflow-x-auto rounded-vault bg-vault-s2/40 dark:bg-[#21262d]/40">
+                                        <div className="mb-2 overflow-x-auto rounded-vault bg-vault-s2/40 dark:bg-[#505862]/40">
                                           {account.transactions.length === 0 ? (
-                                            <p className="px-3 py-2 text-xs text-vault-muted2 dark:text-[#8b949e]">
+                                            <p className="px-3 py-2 text-xs text-vault-muted2 dark:text-[#99a3b0]">
                                               Sin transacciones registradas.
                                             </p>
                                           ) : account.isCreditCard ? (
                                             /* Estilo resumen BBVA: columnas Pesos / Dólares */
                                             <table className="w-full min-w-[420px] text-xs">
                                               <thead>
-                                                <tr className="border-b border-vault-border/40 dark:border-[#30363d]/40">
+                                                <tr className="border-b border-vault-border/40 dark:border-[#68727f]/40">
                                                   {["Fecha", "Descripción", "Pesos", "Dólares"].map(
                                                     (h, i) => (
                                                       <th
                                                         key={h}
-                                                        className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e] ${
+                                                        className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#99a3b0] ${
                                                           i === 0
                                                             ? "pl-3 text-left"
                                                             : i === 1
@@ -912,11 +914,11 @@ export function MonthlyPage() {
                                                   (account.creditCardBreakdown.remanenteArs > 0 ||
                                                     account.creditCardBreakdown.remanenteUsd >
                                                       0) && (
-                                                    <tr className="border-b border-vault-border/20 italic dark:border-[#30363d]/20">
-                                                      <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#8b949e]">
+                                                    <tr className="border-b border-vault-border/20 italic dark:border-[#68727f]/20">
+                                                      <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#99a3b0]">
                                                         —
                                                       </td>
-                                                      <td className="max-w-[180px] truncate py-1.5 text-vault-muted2 dark:text-[#8b949e]">
+                                                      <td className="max-w-[180px] truncate py-1.5 text-vault-muted2 dark:text-[#99a3b0]">
                                                         Saldo anterior sin pagar
                                                         <span
                                                           className="ml-1.5 rounded bg-vault-red/10 px-1 py-0.5 text-[10px] font-medium text-vault-red not-italic"
@@ -953,16 +955,16 @@ export function MonthlyPage() {
                                                   return (
                                                     <tr
                                                       key={t.id}
-                                                      className="border-b border-vault-border/20 last:border-0 dark:border-[#30363d]/20"
+                                                      className="border-b border-vault-border/20 last:border-0 dark:border-[#68727f]/20"
                                                     >
-                                                      <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#8b949e]">
+                                                      <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#99a3b0]">
                                                         {fmtDate(t.date)}
                                                       </td>
-                                                      <td className="max-w-[180px] truncate py-1.5 text-vault-muted2 dark:text-[#8b949e]">
+                                                      <td className="max-w-[180px] truncate py-1.5 text-vault-muted2 dark:text-[#99a3b0]">
                                                         {t.description}
                                                         {t.total_installments && (
                                                           <span
-                                                            className="ml-1.5 rounded bg-vault-accent/10 px-1 py-0.5 text-[10px] font-medium text-vault-accent"
+                                                            className="ml-1.5 rounded bg-vault-accent/10 px-1 py-0.5 text-[10px] font-medium text-vault-accent dark:text-[#93c5fd]"
                                                             title="Número de cuota de esta compra"
                                                           >
                                                             cuota {t.current_installment}/
@@ -998,10 +1000,10 @@ export function MonthlyPage() {
                                               </tbody>
                                               {account.creditCardBreakdown && (
                                                 <tfoot>
-                                                  <tr className="border-t border-vault-border/40 dark:border-[#30363d]/40">
+                                                  <tr className="border-t border-vault-border/40 dark:border-[#68727f]/40">
                                                     <td
                                                       colSpan={2}
-                                                      className="py-1.5 pl-3 font-semibold text-vault-text dark:text-[#e6edf3]"
+                                                      className="py-1.5 pl-3 font-semibold text-vault-text dark:text-[#e6eaf0]"
                                                     >
                                                       Total del período
                                                     </td>
@@ -1027,7 +1029,7 @@ export function MonthlyPage() {
                                             /* Libro diario in native currency */
                                             <table className="w-full min-w-[500px] text-xs">
                                               <thead>
-                                                <tr className="border-b border-vault-border/40 dark:border-[#30363d]/40">
+                                                <tr className="border-b border-vault-border/40 dark:border-[#68727f]/40">
                                                   {[
                                                     "Fecha",
                                                     "Descripción",
@@ -1037,7 +1039,7 @@ export function MonthlyPage() {
                                                   ].map((h, i) => (
                                                     <th
                                                       key={h}
-                                                      className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#8b949e] ${
+                                                      className={`py-1.5 text-[10px] font-semibold uppercase tracking-wider text-vault-muted2 dark:text-[#99a3b0] ${
                                                         i === 0
                                                           ? "pl-3 text-left"
                                                           : i === 1
@@ -1053,20 +1055,20 @@ export function MonthlyPage() {
                                                 </tr>
                                               </thead>
                                               <tbody>
-                                                <tr className="border-b border-vault-border/20 bg-vault-s2/60 dark:border-[#30363d]/20 dark:bg-[#21262d]/60">
-                                                  <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#8b949e]">
+                                                <tr className="border-b border-vault-border/20 bg-vault-s2/60 dark:border-[#68727f]/20 dark:bg-[#505862]/60">
+                                                  <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#99a3b0]">
                                                     —
                                                   </td>
-                                                  <td className="max-w-[180px] truncate py-1.5 font-medium text-vault-text dark:text-[#e6edf3]">
+                                                  <td className="max-w-[180px] truncate py-1.5 font-medium text-vault-text dark:text-[#e6eaf0]">
                                                     Saldo anterior
                                                   </td>
-                                                  <td className="py-1.5 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                                                  <td className="py-1.5 text-right tabular-nums text-vault-muted2 dark:text-[#99a3b0]">
                                                     —
                                                   </td>
-                                                  <td className="py-1.5 text-right tabular-nums text-vault-muted2 dark:text-[#8b949e]">
+                                                  <td className="py-1.5 text-right tabular-nums text-vault-muted2 dark:text-[#99a3b0]">
                                                     —
                                                   </td>
-                                                  <td className="py-1.5 pr-3 text-right tabular-nums font-semibold text-vault-text dark:text-[#e6edf3]">
+                                                  <td className="py-1.5 pr-3 text-right tabular-nums font-semibold text-vault-text dark:text-[#e6eaf0]">
                                                     {formatCurrency(
                                                       account.openingNative,
                                                       account.currency
@@ -1084,12 +1086,12 @@ export function MonthlyPage() {
                                                     return (
                                                       <tr
                                                         key={t.id}
-                                                        className="border-b border-vault-border/20 last:border-0 dark:border-[#30363d]/20"
+                                                        className="border-b border-vault-border/20 last:border-0 dark:border-[#68727f]/20"
                                                       >
-                                                        <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#8b949e]">
+                                                        <td className="py-1.5 pl-3 text-vault-muted2 dark:text-[#99a3b0]">
                                                           {fmtDate(t.date)}
                                                         </td>
-                                                        <td className="max-w-[180px] truncate py-1.5 text-vault-muted2 dark:text-[#8b949e]">
+                                                        <td className="max-w-[180px] truncate py-1.5 text-vault-muted2 dark:text-[#99a3b0]">
                                                           {t.description}
                                                         </td>
                                                         <td className="py-1.5 text-right tabular-nums text-vault-red">
@@ -1108,7 +1110,7 @@ export function MonthlyPage() {
                                                         <td
                                                           className={`py-1.5 pr-3 text-right tabular-nums font-medium ${
                                                             balance >= 0
-                                                              ? "text-vault-text dark:text-[#e6edf3]"
+                                                              ? "text-vault-text dark:text-[#e6eaf0]"
                                                               : "text-vault-red"
                                                           }`}
                                                         >
@@ -1142,14 +1144,14 @@ export function MonthlyPage() {
                 <div className="card-vault">
                   <h2 className="section-label mb-1">Gastos e ingresos por categoría</h2>
                   {isLoadingTransactions ? (
-                    <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#8b949e]">
+                    <div className="flex h-32 items-center justify-center text-sm text-vault-muted2 dark:text-[#99a3b0]">
                       Cargando...
                     </div>
                   ) : (
                     <>
                       <div className="mb-4 flex gap-6">
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                             Débito total
                           </p>
                           <p
@@ -1158,14 +1160,14 @@ export function MonthlyPage() {
                           >
                             {formatCurrency(debitoTotalArs, "ARS")}
                             {debitoTotalUsd > 0 && (
-                              <span className="ml-1.5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+                              <span className="ml-1.5 text-sm text-vault-muted2 dark:text-[#99a3b0]">
                                 + {formatCurrency(debitoTotalUsd, "USD")}
                               </span>
                             )}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#99a3b0]">
                             Crédito total
                           </p>
                           <p
@@ -1174,7 +1176,7 @@ export function MonthlyPage() {
                           >
                             {formatCurrency(creditoTotalArs, "ARS")}
                             {creditoTotalUsd > 0 && (
-                              <span className="ml-1.5 text-sm text-vault-muted2 dark:text-[#8b949e]">
+                              <span className="ml-1.5 text-sm text-vault-muted2 dark:text-[#99a3b0]">
                                 + {formatCurrency(creditoTotalUsd, "USD")}
                               </span>
                             )}
