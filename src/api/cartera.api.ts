@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { apiClient } from "./client";
 
 export type InstrumentoTipo =
@@ -16,6 +16,7 @@ export type InstrumentoTipo =
 
 export interface CarteraPosicion {
   instrumento: string;
+  ticker: string | null;
   tipo: InstrumentoTipo;
   moneda: "ARS" | "USD";
   cantidad: number;
@@ -71,5 +72,23 @@ export function useAccountCartera(accountId: string | undefined, months = 6, per
     },
     enabled: !!accountId,
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+/** Evolución de cartera de varias cuentas comitente a la vez (ej. para sumarlas como
+ * líneas reales en el gráfico de Activos líquidos) — mismo queryKey que
+ * `useAccountCartera(id, 24)` para que el caché se comparta con la página Cartera. */
+export function useAccountsCarteraEvolution(accountIds: string[]) {
+  return useQueries({
+    queries: accountIds.map((accountId) => ({
+      queryKey: ["account-cartera", accountId, 24, undefined],
+      queryFn: async (): Promise<AccountCartera | null> => {
+        const { data } = await apiClient.get<AccountCartera | null>(
+          `/accounts/${accountId}/cartera?months=24`
+        );
+        return data;
+      },
+      staleTime: 1000 * 60 * 5,
+    })),
   });
 }

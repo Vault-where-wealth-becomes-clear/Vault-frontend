@@ -22,15 +22,21 @@ export function useExchangeRates() {
 interface SetExchangeRateParams {
   periodMonth: string;
   mepRate: number;
+  source?: "manual" | "api";
 }
 
 export function useSetExchangeRate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ periodMonth, mepRate }: SetExchangeRateParams): Promise<ExchangeRate> => {
+    mutationFn: async ({
+      periodMonth,
+      mepRate,
+      source,
+    }: SetExchangeRateParams): Promise<ExchangeRate> => {
       const { data } = await apiClient.post<ExchangeRate>("/exchange-rates", {
         period_month: periodMonth,
         mep_rate: mepRate,
+        source: source ?? "manual",
       });
       return data;
     },

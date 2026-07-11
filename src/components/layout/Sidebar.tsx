@@ -150,7 +150,7 @@ export function Sidebar() {
 
         <NavLink to="/cartera" className={({ isActive }) => navLinkClass(isActive)}>
           <span className="w-4 text-center">◆</span>
-          Cartera
+          Cuenta comitente
         </NavLink>
 
         {/* Mis cuentas con desplegable */}

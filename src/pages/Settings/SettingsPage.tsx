@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDeleteMyData } from "@/api/users.api";
+import { ExchangeRateSettings } from "@/pages/Settings/ExchangeRateSettings";
 
 export function SettingsPage() {
   const [notifPatrimonio, setNotifPatrimonio] = useState(false);
@@ -66,6 +67,9 @@ export function SettingsPage() {
           Todos los totales del tablero se mostrarán en esta moneda.
         </p>
       </div>
+
+      {/* TIPO DE CAMBIO MEP */}
+      <ExchangeRateSettings />
 
       {/* NOTIFICACIONES */}
       <div className="card-vault mb-5 max-w-md">

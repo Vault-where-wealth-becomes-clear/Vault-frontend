@@ -6,7 +6,6 @@ import { useDeleteAccount } from "@/api/users.api";
 import { extractErrorMessage } from "@/utils/apiError";
 import { PLAN_LABELS } from "@/utils/planLabels";
 import { useTheme } from "@/hooks/useTheme";
-import { ExchangeRateSettings } from "@/pages/Settings/ExchangeRateSettings";
 import { CategoryRulesSettings } from "@/pages/Settings/CategoryRulesSettings";
 
 export function ProfilePage() {
@@ -190,9 +189,6 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
-
-      {/* TIPO DE CAMBIO MEP */}
-      <ExchangeRateSettings />
 
       {/* REGLAS DE CATEGORIZACIÓN — acordeón */}
       <div className="card-vault mb-5 max-w-md overflow-hidden p-0">

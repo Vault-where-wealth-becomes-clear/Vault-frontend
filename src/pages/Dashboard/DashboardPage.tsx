@@ -8,7 +8,8 @@ import {
 } from "@/api/dashboard.api";
 import { useExportXlsx } from "@/api/exports.api";
 import { useExchangeRates, useSetExchangeRate } from "@/api/exchangeRates.api";
-import { getCotizacionMEP } from "@/api/mepQuote.api";
+import { getCotizacionMEP, useMepQuote } from "@/api/mepQuote.api";
+import { useAccountsCarteraEvolution } from "@/api/cartera.api";
 import { useAccounts, getAccountDisplayName } from "@/api/accounts.api";
 import { useUploads } from "@/api/uploads.api";
 import { useTransactions } from "@/api/transactions.api";
@@ -21,7 +22,7 @@ import { BreakdownChart } from "@/components/charts/BreakdownChart";
 import { SummaryCard } from "@/components/ui/SummaryCard";
 import { extractErrorMessage } from "@/utils/apiError";
 import { formatCurrency, formatPercent } from "@/utils/formatCurrency";
-import { formatPeriod } from "@/utils/formatDate";
+import { formatPeriod, formatDateTime } from "@/utils/formatDate";
 import { computeUploadClosingBalance, groupTransactionsByUpload } from "@/utils/accountBalance";
 
 const ADVANCED_SECTIONS: {
@@ -74,7 +75,13 @@ export function DashboardPage() {
   // muestra el agregado del período más reciente que ya expone monthly-series.
   const latestCarteraUsd = monthlySeries?.at(-1)?.cartera_usd ?? null;
   const { data: exchangeRates } = useExchangeRates();
+  const { data: mepQuote } = useMepQuote();
   const { data: accounts } = useAccounts();
+  const brokerAccounts = useMemo(
+    () => (accounts ?? []).filter((a) => a.is_active && a.account_type === "broker"),
+    [accounts]
+  );
+  const carteraResults = useAccountsCarteraEvolution(brokerAccounts.map((a) => a.id));
   const exportXlsx = useExportXlsx();
   const setRate = useSetExchangeRate();
 
@@ -184,9 +191,15 @@ export function DashboardPage() {
     if (!accounts || !uploads)
       return { points: [] as AccountBalancePoint[], lines: [] as AccountBalanceLine[] };
 
+    // Broker se calcula aparte (más abajo) con el valor real de cartera_snapshots —
+    // el saldo bancario (saldo inicial + neto de transacciones) no le corresponde,
+    // un snapshot de tenencias no tiene movimientos que sumar.
     const nonCcAccounts = accounts.filter(
       (a) =>
-        a.is_active && a.account_type !== "credit_card_ars" && a.account_type !== "credit_card_usd"
+        a.is_active &&
+        a.account_type !== "credit_card_ars" &&
+        a.account_type !== "credit_card_usd" &&
+        a.account_type !== "broker"
     );
     const doneUploads = uploads.filter((u) => u.status === "done");
 
@@ -226,6 +239,20 @@ export function DashboardPage() {
       });
       perAccountBalances.set(account.id, balances);
     }
+
+    // Cuenta comitente: valor real de cartera (valor_base_ars, siempre en ARS) por
+    // mes — nunca saldo bancario. La conversión a la moneda mostrada usa el mismo
+    // TC MEP del período que el resto de las cuentas.
+    brokerAccounts.forEach((account, i) => {
+      const cartera = carteraResults[i]?.data;
+      if (!cartera) return;
+      const balances = new Map<string, number | null>();
+      cartera.evolucion.forEach((point) => {
+        monthSet.add(point.month);
+        balances.set(point.month, toDisplayCurrency(point.valor_base_ars, false, point.month));
+      });
+      if (balances.size > 0) perAccountBalances.set(account.id, balances);
+    });
 
     const months = Array.from(monthSet).sort().slice(-6);
     const latestMonth = months[months.length - 1];
@@ -277,7 +304,7 @@ export function DashboardPage() {
       return point;
     });
 
-    const lines: AccountBalanceLine[] = nonCcAccounts
+    const lines: AccountBalanceLine[] = [...nonCcAccounts, ...brokerAccounts]
       .filter((a) => perAccountBalances.has(a.id))
       .map((a) => ({
         accountId: a.id,
@@ -286,7 +313,15 @@ export function DashboardPage() {
       }));
 
     return { points, lines };
-  }, [accounts, uploads, allTransactions, currencyDisplay, getMepRateForMonth]);
+  }, [
+    accounts,
+    uploads,
+    allTransactions,
+    currencyDisplay,
+    getMepRateForMonth,
+    brokerAccounts,
+    carteraResults,
+  ]);
 
   // Gráfico de activos líquidos: editable — el usuario elige qué cuentas se
   // muestran vía hiddenAccountIds (persistido en localStorage). Las líneas
@@ -298,19 +333,26 @@ export function DashboardPage() {
   );
 
   // Patrimonio neto real por mes para "Flujo del mes": suma de TODAS las
-  // cuentas del gráfico de activos líquidos (no solo las visibles — ocultar
-  // una cuenta del gráfico no debería cambiar el patrimonio total), ya
+  // cuentas de efectivo del gráfico de activos líquidos (no solo las visibles —
+  // ocultar una cuenta del gráfico no debería cambiar el patrimonio total), ya
   // convertidas a currencyDisplay. No usar point.patrimonio_usd del backend
   // acá: ese valor es el patrimonio que calculó el LLM de la ÚLTIMA cuenta
   // procesada ese período (cada extracto solo ve su propia cuenta), no una
   // suma real de todas las cuentas — por eso cuentas sin extracto (efectivo,
   // caja de seguridad) quedaban afuera del patrimonio de meses pasados.
+  // Cuenta comitente queda afuera a propósito: "Flujo del mes" existe para
+  // mostrar el efectivo y los ingresos regulares del usuario, y una
+  // revaluación de mercado de la cartera no es flujo de fondos — mezclarla acá
+  // haría ver como "variación de flujo" algo que es simplemente que subió o
+  // bajó el precio de un instrumento, sin que haya entrado o salido plata real.
+  const brokerAccountIds = useMemo(() => new Set(brokerAccounts.map((a) => a.id)), [brokerAccounts]);
   const netWorthByMonth = useMemo(() => {
     const map = new Map<string, number>();
     for (const point of accountBalanceSeries.points) {
       let sum = 0;
       let hasAny = false;
       for (const line of accountBalanceSeries.lines) {
+        if (brokerAccountIds.has(line.accountId)) continue;
         const v = point[line.accountId];
         if (typeof v === "number") {
           sum += v;
@@ -320,7 +362,7 @@ export function DashboardPage() {
       if (hasAny) map.set(point.month, sum);
     }
     return map;
-  }, [accountBalanceSeries]);
+  }, [accountBalanceSeries, brokerAccountIds]);
 
   if (isLoadingSummary || !summary) {
     return (
@@ -474,6 +516,20 @@ export function DashboardPage() {
         </div>
       ) : (
         <>
+          {/* TC MEP hoy — automático, siempre visible, sin acción del usuario */}
+          {mepQuote && (
+            <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-vault-muted2 dark:text-[#8b949e]">
+              <span>TC MEP hoy:</span>
+              <span className="tabular-nums font-medium text-vault-text dark:text-[#e6edf3]">
+                ${mepQuote.venta.toFixed(2)}
+              </span>
+              <span>
+                · {mepQuote.fuente === "cache" ? "caché" : mepQuote.fuente} · actualizado{" "}
+                {formatDateTime(mepQuote.fechaActualizacion)}
+              </span>
+            </div>
+          )}
+
           {/* MEP banner */}
           {currencyDisplay === "ARS" && !mepForPeriod && (
             <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border border-vault-border bg-vault-s1 dark:bg-[#161b22] px-4 py-3 text-sm text-vault-muted2 dark:text-[#8b949e] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
@@ -607,7 +663,7 @@ export function DashboardPage() {
                         Resultado
                       </th>
                       <th className="py-2 text-right text-[10px] font-semibold uppercase tracking-widest text-vault-muted2 dark:text-[#8b949e]">
-                        Patrimonio neto ({currencyDisplay})
+                        Efectivo neto ({currencyDisplay})
                       </th>
                     </tr>
                   </thead>
@@ -668,13 +724,13 @@ export function DashboardPage() {
             <h2 className="section-label mb-4">Análisis avanzado</h2>
             <div className="grid grid-cols-3 gap-4">
               <Link
-                to="/accounts"
+                to="/cartera"
                 className="rounded-vault border border-vault-border bg-vault-s2 px-3.5 py-2.5 text-sm transition-colors hover:border-vault-accent dark:bg-[#21262d]"
               >
-                <p className="mb-1 font-medium">Cartera de inversiones</p>
+                <p className="mb-1 font-medium">Cuenta comitente</p>
                 {latestCarteraUsd != null ? (
                   <p className="text-xs text-vault-green">
-                    {formatCurrency(latestCarteraUsd, "USD")} · Ver detalle en Mis cuentas →
+                    {formatCurrency(latestCarteraUsd, "USD")} · Ver detalle →
                   </p>
                 ) : (
                   <p className="text-xs text-vault-muted2 dark:text-[#8b949e]">

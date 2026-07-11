@@ -4,7 +4,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { CarteraComposicion } from "@/components/cartera/CarteraComposicion";
 
 /** Tarjeta compacta para "Mis cuentas" — solo "¿cómo está ahora?". El detalle completo
- * (posiciones, evolución, alertas) vive en la página Cartera. */
+ * (posiciones, evolución, alertas) vive en la página Cuenta comitente. */
 export function CarteraSummaryCard({ accountId }: { accountId: string }) {
   const { data: cartera, isLoading } = useAccountCartera(accountId, 1);
 
@@ -38,7 +38,7 @@ export function CarteraSummaryCard({ accountId }: { accountId: string }) {
         to={`/cartera?account=${accountId}`}
         className="mt-2 inline-block text-xs text-vault-accent hover:underline"
       >
-        Ver cartera completa →
+        Ver cuenta comitente completa →
       </Link>
     </div>
   );

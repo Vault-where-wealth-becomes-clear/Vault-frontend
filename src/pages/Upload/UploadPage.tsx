@@ -105,7 +105,11 @@ export function UploadPage() {
       if (!declaredRate) {
         const rateValue = Number(mepRateInput);
         if (rateValue > 0) {
-          await setExchangeRate.mutateAsync({ periodMonth, mepRate: rateValue });
+          await setExchangeRate.mutateAsync({
+            periodMonth,
+            mepRate: rateValue,
+            source: mepEditedByUser ? "manual" : "api",
+          });
         }
       }
       if (declaredRate || Number(mepRateInput) > 0) {
