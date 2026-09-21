@@ -1,0 +1,25 @@
+# Local pre-commit hooks. Install once with:
+#   pip install pre-commit && pre-commit install
+#
+# Run `pre-commit autoupdate` after adding this file to pin the gitleaks
+# hook to the actual latest release tag — the `rev` below may drift
+# behind upstream.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npm run lint
+        language: system
+        pass_filenames: false
+
+      - id: prettier-check
+        name: prettier --check
+        entry: npm run format:check
+        language: system
+        pass_filenames: false
